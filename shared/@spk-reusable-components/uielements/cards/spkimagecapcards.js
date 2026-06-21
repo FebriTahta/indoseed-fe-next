@@ -1,0 +1,42 @@
+import Image from 'next/image'
+import React, { Fragment } from 'react'
+
+
+const Spkimagecapcards = ({ Cardheader = false, Customclass="", Title, Imgafterfooter = false, Imgposition, children, CustomTitleclass="", Customimgclass="", Custombodyclass="", Customfooterclass="", Imgsrc, CardFooter = false, Footertext }) => {
+  return (
+    <Fragment>
+      <div className={`box ${Customclass}`}>
+        {Imgposition === "before" ?
+          <>
+            <Image fill src={Imgsrc} className={Customimgclass} alt="..." />
+          </>
+          : ""}
+        {Cardheader ?
+          <div className="box-header">
+            <div className={`box-title ${CustomTitleclass}`}>{Title}</div>
+          </div>
+          : ''}
+        <div className={`box-body ${Custombodyclass}`}>
+          {children}
+        </div>
+        {Imgposition === "after" ?
+          <>
+            <Image fill src={Imgsrc} className={Customimgclass} alt="..." />
+          </>
+          : ""}
+        {CardFooter ?
+          <div className={`box-footer ${Customfooterclass}`}>
+            <p className="card-text mb-0"><small>{Footertext}</small></p>
+          </div>
+          : ''}
+        {Imgafterfooter ?
+          <>
+            <Image fill src={Imgsrc} className={Customimgclass} alt="..." />
+          </>
+          : ""}
+      </div>
+    </Fragment>
+  )
+}
+
+export default Spkimagecapcards

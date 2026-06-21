@@ -1,0 +1,33 @@
+
+// Color Spinners
+
+export const Colorspinner = [
+    { id: 1, color: 'primary' },
+    { id: 2, color: 'secondary' },
+    { id: 3, color: 'success' },
+    { id: 4, color: 'danger' },
+    { id: 5, color: 'warning' },
+    { id: 6, color: 'info' },
+    { id: 7, color: 'light' },
+    { id: 8, color: 'dark' }
+];
+
+
+export const Buttonspinner = [
+    { id: 1, color: 'primary'},
+    { id: 2, color: 'secondary'},
+    { id: 3, color: 'warning'},
+    { id: 4, color: 'danger'},
+    { id: 5, color: 'info'},
+    { id: 6, color: 'success'},
+];
+export const Growingspinner = [
+    { id: 1, color: 'primary'},
+    { id: 2, color: 'secondary'},
+    { id: 3, color: 'warning'},
+    { id: 4, color: 'danger'},
+    { id: 5, color: 'success'},
+    { id: 6, color: 'info'},
+    { id: 7, color: 'black/20 dark:!bg-light dark:animate-ping'},
+    { id: 8, color: 'gray-400'}
+];
