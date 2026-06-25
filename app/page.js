@@ -36,7 +36,7 @@ export default function Home() {
         
         try {
             const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8080/api';
-            const loginPath = process.env.NEXT_PUBLIC_API_LOGIN || '/auth/login';
+            const loginPath = '/auth/login';
             
             const response = await fetch(`${baseUrl}${loginPath}`, {
                 method: 'POST',

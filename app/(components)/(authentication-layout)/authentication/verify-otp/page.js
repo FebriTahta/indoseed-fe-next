@@ -79,7 +79,7 @@ const VerifyOtp = () => {
         
         // Example implementation using env variables
         const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8080/api';
-        const verifyOtpPath = process.env.NEXT_PUBLIC_API_VERIFY_OTP || '/verify-otp';
+        const verifyOtpPath = '/verify-otp';
         
         try {
             // Assume userId is stored in localStorage or context after register
@@ -127,7 +127,7 @@ const VerifyOtp = () => {
 
     const handleResend = async () => {
         const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8080/api';
-        const resendOtpPath = process.env.NEXT_PUBLIC_API_RESEND_OTP || '/resend-otp';
+        const resendOtpPath = '/resend-otp';
         
         try {
             const userId = localStorage.getItem('registeredUserId') || 'guest-user-id';
