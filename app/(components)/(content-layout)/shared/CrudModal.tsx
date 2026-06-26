@@ -8,6 +8,7 @@ interface CrudModalProps {
   onSubmit: (e: React.FormEvent) => void;
   submitText?: string;
   cancelText?: string;
+  isLoading?: boolean;
 }
 
 export default function CrudModal({
@@ -17,14 +18,18 @@ export default function CrudModal({
   children,
   onSubmit,
   submitText = 'Simpan Data',
-  cancelText = 'Batal'
+  cancelText = 'Batal',
+  isLoading = false
 }: CrudModalProps) {
   if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 z-[100] overflow-y-auto">
       {/* Backdrop */}
-      <div className="fixed inset-0 bg-black/50 transition-opacity" onClick={onClose}></div>
+      <div 
+        className="fixed inset-0 bg-black/50 transition-opacity" 
+        onClick={isLoading ? undefined : onClose}
+      ></div>
 
       {/* Center Container */}
       <div className="flex min-h-full items-center justify-center p-4">
@@ -35,7 +40,8 @@ export default function CrudModal({
             <button
               type="button"
               onClick={onClose}
-              className="text-white/80 hover:text-white transition-colors"
+              className={`text-white/80 hover:text-white transition-colors ${isLoading ? 'pointer-events-none opacity-40' : ''}`}
+              disabled={isLoading}
             >
               <i className="ri-close-line text-2xl"></i>
             </button>
@@ -52,15 +58,20 @@ export default function CrudModal({
               <button
                 type="button"
                 onClick={onClose}
-                className="py-2 px-4 rounded border text-gray-600 hover:bg-gray-100 text-xs font-semibold transition-colors"
+                className="py-2 px-4 rounded border text-gray-600 hover:bg-gray-100 text-xs font-semibold transition-colors disabled:opacity-50 disabled:pointer-events-none"
+                disabled={isLoading}
               >
                 {cancelText}
               </button>
               <button
                 type="submit"
-                className="py-2 px-4 rounded text-white bg-emerald-600 hover:bg-emerald-700 text-xs font-semibold transition-colors"
+                className="py-2 px-4 rounded text-white bg-emerald-600 hover:bg-emerald-700 text-xs font-semibold transition-colors flex items-center gap-1.5 disabled:opacity-80"
+                disabled={isLoading}
               >
-                {submitText}
+                {isLoading && (
+                  <div className="animate-spin rounded-full h-3.5 w-3.5 border-b-2 border-white"></div>
+                )}
+                {isLoading ? 'Menyimpan...' : submitText}
               </button>
             </div>
           </form>

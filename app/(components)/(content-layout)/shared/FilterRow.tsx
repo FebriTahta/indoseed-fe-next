@@ -52,7 +52,7 @@ export default function FilterRow({
 
           {/* Dynamic Select Filters */}
           {selectFilters.map((config, index) => (
-            <div key={index} className={`w-full sm:${config.widthClass || 'w-32'} text-xs`}>
+            <div key={index} className={`w-full ${config.widthClass || 'sm:w-36'} text-xs`}>
               <SpkSelect
                 {...({
                   option: config.options,

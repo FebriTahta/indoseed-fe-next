@@ -11,6 +11,7 @@ interface DataTableProps<T> {
   onPageChange: (page: number) => void;
   onPageSizeChange: (size: number) => void;
   emptyMessage?: string;
+  isLoading?: boolean;
 }
 
 export default function DataTable({
@@ -23,7 +24,8 @@ export default function DataTable({
   totalRecords,
   onPageChange,
   onPageSizeChange,
-  emptyMessage = 'Tidak ada data tersedia'
+  emptyMessage = 'Tidak ada data tersedia',
+  isLoading = false
 }: DataTableProps<any>) {
   return (
     <div className="box border border-defaultborder/60 bg-white shadow-sm rounded-md overflow-hidden">
@@ -37,7 +39,16 @@ export default function DataTable({
             </tr>
           </thead>
           <tbody className="divide-y divide-defaultborder text-sm text-gray-600">
-            {items.length > 0 ? (
+            {isLoading ? (
+              <tr>
+                <td colSpan={headers.length} className="p-8 text-center text-gray-400">
+                  <div className="flex flex-col items-center justify-center gap-2">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-500"></div>
+                    <span className="text-xs text-gray-400">Memuat data lahan...</span>
+                  </div>
+                </td>
+              </tr>
+            ) : items.length > 0 ? (
               items.map((item, index) => renderRow(item, index))
             ) : (
               <tr>
@@ -50,7 +61,7 @@ export default function DataTable({
         </table>
       </div>
 
-      {totalRecords > 0 && (
+      {!isLoading && totalRecords > 0 && (
         <div className="box-footer p-4 border-t border-defaultborder flex flex-col sm:flex-row items-center justify-between gap-4 bg-gray-50/50">
           <span className="text-xs text-textmuted">
             Menampilkan {(currentPage - 1) * pageSize + 1} - {Math.min(currentPage * pageSize, totalRecords)} dari {totalRecords} data
