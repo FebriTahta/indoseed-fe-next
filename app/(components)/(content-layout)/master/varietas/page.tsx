@@ -78,7 +78,17 @@ export default function VarietasPage() {
 
   // Filters State
   const [search, setSearch] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
   const [filterCommodity, setFilterCommodity] = useState<any>(null);
+
+  // Debounce search input and reset pagination page on change
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedSearch(search);
+      setCurrentPage(1);
+    }, 500);
+    return () => clearTimeout(handler);
+  }, [search]);
   const [filterStatus, setFilterStatus] = useState<any>(null);
 
   // Pagination State
@@ -165,7 +175,7 @@ export default function VarietasPage() {
       const queryParams = new URLSearchParams();
       queryParams.append('page', String(pageToFetch));
       queryParams.append('pageSize', String(pageSize));
-      if (search) queryParams.append('search', search);
+      if (debouncedSearch) queryParams.append('search', debouncedSearch);
       if (filterCommodity) queryParams.append('commodityId', filterCommodity.value);
       if (filterStatus) queryParams.append('status', filterStatus.value);
 
@@ -261,7 +271,7 @@ export default function VarietasPage() {
     if (token && !loading) {
       fetchVarietiesList(currentPage);
     }
-  }, [search, filterCommodity, filterStatus, currentPage, pageSize]);
+  }, [debouncedSearch, filterCommodity, filterStatus, currentPage, pageSize]);
 
   // Dynamic Statistics
   const stats = useMemo(() => {
@@ -316,6 +326,7 @@ export default function VarietasPage() {
   // Reset Filters
   const handleResetFilters = () => {
     setSearch('');
+    setDebouncedSearch('');
     setFilterCommodity(null);
     setFilterStatus(null);
     setCurrentPage(1);
@@ -888,7 +899,7 @@ export default function VarietasPage() {
           {/* Filters Bar */}
           <FilterRow
             search={search}
-            onSearchChange={(val) => { setSearch(val); setCurrentPage(1); }}
+            onSearchChange={(val) => { setSearch(val); }}
             searchPlaceholder="Cari varietas..."
             selectFilters={filterConfig}
             onReset={handleResetFilters}

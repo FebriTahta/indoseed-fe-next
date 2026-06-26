@@ -77,7 +77,17 @@ export default function GreenhousePage() {
 
   // Filters State
   const [search, setSearch] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
   const [filterJenis, setFilterJenis] = useState<any>(null);
+
+  // Debounce search input and reset pagination page on change
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedSearch(search);
+      setCurrentPage(1);
+    }, 500);
+    return () => clearTimeout(handler);
+  }, [search]);
   const [filterStatus, setFilterStatus] = useState<any>(null);
   const [filterKomoditas, setFilterKomoditas] = useState<any>(null);
   const [filterLokasi, setFilterLokasi] = useState<any>(null);
@@ -170,7 +180,7 @@ export default function GreenhousePage() {
       const queryParams = new URLSearchParams();
       queryParams.append('page', String(pageToFetch));
       queryParams.append('pageSize', String(pageSize));
-      if (search) queryParams.append('search', search);
+      if (debouncedSearch) queryParams.append('search', debouncedSearch);
       if (filterJenis) queryParams.append('jenisLahan', filterJenis.value);
       if (filterStatus) queryParams.append('status', filterStatus.value);
       if (filterKomoditas) queryParams.append('commodityId', filterKomoditas.value);
@@ -315,7 +325,7 @@ export default function GreenhousePage() {
     if (token && !loading) {
       fetchLandsList(currentPage);
     }
-  }, [search, filterJenis, filterStatus, filterKomoditas, filterLokasi, currentPage, pageSize]);
+  }, [debouncedSearch, filterJenis, filterStatus, filterKomoditas, filterLokasi, currentPage, pageSize]);
 
   // Dynamic Statistics
   const stats = useMemo(() => {
@@ -392,6 +402,7 @@ export default function GreenhousePage() {
   // Reset Filters
   const handleResetFilters = () => {
     setSearch('');
+    setDebouncedSearch('');
     setFilterJenis(null);
     setFilterStatus(null);
     setFilterKomoditas(null);
@@ -1025,7 +1036,7 @@ export default function GreenhousePage() {
           {/* Filters Bar */}
           <FilterRow
             search={search}
-            onSearchChange={(val) => { setSearch(val); setCurrentPage(1); }}
+            onSearchChange={(val) => { setSearch(val); }}
             searchPlaceholder="Cari greenhouse / lahan..."
             selectFilters={filterConfig}
             onReset={handleResetFilters}

@@ -75,7 +75,17 @@ export default function PetaniMitraPage() {
 
   // Filters State
   const [search, setSearch] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
   const [filterKelompok, setFilterKelompok] = useState<any>(null);
+
+  // Debounce search input and reset pagination page on change
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedSearch(search);
+      setCurrentPage(1);
+    }, 500);
+    return () => clearTimeout(handler);
+  }, [search]);
   const [filterKomoditas, setFilterKomoditas] = useState<any>(null);
   const [filterStatus, setFilterStatus] = useState<any>(null);
 
@@ -143,7 +153,7 @@ export default function PetaniMitraPage() {
       const queryParams = new URLSearchParams();
       queryParams.append('page', String(pageToFetch));
       queryParams.append('pageSize', String(pageSize));
-      if (search) queryParams.append('search', search);
+      if (debouncedSearch) queryParams.append('search', debouncedSearch);
       if (filterKelompok) queryParams.append('kelompokTani', filterKelompok.value);
       if (filterKomoditas) queryParams.append('komoditasUtama', filterKomoditas.value);
       if (filterStatus) queryParams.append('status', filterStatus.value);
@@ -258,7 +268,7 @@ export default function PetaniMitraPage() {
     if (token && !loading) {
       fetchPartnersList(currentPage);
     }
-  }, [search, filterKelompok, filterKomoditas, filterStatus, currentPage, pageSize]);
+  }, [debouncedSearch, filterKelompok, filterKomoditas, filterStatus, currentPage, pageSize]);
 
   // Dynamic Statistics
   const stats = useMemo(() => {
@@ -320,6 +330,7 @@ export default function PetaniMitraPage() {
   // Reset Filters
   const handleResetFilters = () => {
     setSearch('');
+    setDebouncedSearch('');
     setFilterKelompok(null);
     setFilterKomoditas(null);
     setFilterStatus(null);
@@ -963,7 +974,7 @@ export default function PetaniMitraPage() {
           {/* Filters Bar */}
           <FilterRow
             search={search}
-            onSearchChange={(val) => { setSearch(val); setCurrentPage(1); }}
+            onSearchChange={(val) => { setSearch(val); }}
             searchPlaceholder="Cari petani mitra..."
             selectFilters={filterConfig}
             onReset={handleResetFilters}

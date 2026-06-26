@@ -58,7 +58,17 @@ export default function KomoditasPage() {
 
   // Filters State
   const [search, setSearch] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
   const [filterKategori, setFilterKategori] = useState<any>(null);
+
+  // Debounce search input and reset pagination page on change
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedSearch(search);
+      setCurrentPage(1);
+    }, 500);
+    return () => clearTimeout(handler);
+  }, [search]);
   const [filterStatus, setFilterStatus] = useState<any>(null);
 
   // Pagination State
@@ -117,7 +127,7 @@ export default function KomoditasPage() {
       const queryParams = new URLSearchParams();
       queryParams.append('page', String(pageToFetch));
       queryParams.append('pageSize', String(pageSize));
-      if (search) queryParams.append('search', search);
+      if (debouncedSearch) queryParams.append('search', debouncedSearch);
       if (filterKategori) queryParams.append('kategori', filterKategori.value);
       if (filterStatus) queryParams.append('status', filterStatus.value);
 
@@ -212,7 +222,7 @@ export default function KomoditasPage() {
     if (token && !loading) {
       fetchCommoditiesList(currentPage);
     }
-  }, [search, filterKategori, filterStatus, currentPage, pageSize]);
+  }, [debouncedSearch, filterKategori, filterStatus, currentPage, pageSize]);
 
   // Dynamic Statistics
   const stats = useMemo(() => {
@@ -267,6 +277,7 @@ export default function KomoditasPage() {
   // Reset Filters
   const handleResetFilters = () => {
     setSearch('');
+    setDebouncedSearch('');
     setFilterKategori(null);
     setFilterStatus(null);
     setCurrentPage(1);
@@ -768,7 +779,7 @@ export default function KomoditasPage() {
           {/* Filters Bar */}
           <FilterRow
             search={search}
-            onSearchChange={(val) => { setSearch(val); setCurrentPage(1); }}
+            onSearchChange={(val) => { setSearch(val); }}
             searchPlaceholder="Cari komoditas..."
             selectFilters={filterConfig}
             onReset={handleResetFilters}
