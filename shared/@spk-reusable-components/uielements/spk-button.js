@@ -1,9 +1,9 @@
 import { Fragment } from 'react'
 
-const SpkButton = ({ children, variant, disabled, customClass="", buttontype, Btnstyle, Role, Themevalue, Currentpage, Steppercomplete, Decremenet, Copymarkup, Increment, Togglepassword, Size, Stepperskip, Stepperreset, StepperBack, Stepperfinish, onclickfunc, Steppernext, removeelement, Overlayoptions, Id, Expand, Label, Collapse, Controls, Overlay, Tab, Overlayclose }) => {
+const SpkButton = ({ children, variant, disabled, customClass="", className="", style, buttontype, Btnstyle, Role, Themevalue, Currentpage, Steppercomplete, Decremenet, Copymarkup, Increment, Togglepassword, Size, Stepperskip, Stepperreset, StepperBack, Stepperfinish, onclickfunc, Steppernext, removeelement, Overlayoptions, Id, Expand, Label, Collapse, Controls, Overlay, Tab, Overlayclose }) => {
   return (
     <Fragment>
-      <button type={buttontype} id={Id} aria-expanded={Expand} className={`${variant ? `ti-btn-${variant}` : ''}  ti-btn-wave ${customClass} ${Size ? `ti-btn-${Size}` : ''}`} disabled={disabled}
+      <button type={buttontype} id={Id} aria-expanded={Expand} className={`${variant ? `ti-btn-${variant}` : ''}  ti-btn-wave ${customClass} ${className} ${Size ? `ti-btn-${Size}` : ''}`} disabled={disabled}
         data-hs-tab={Tab} role={Role}
         onClick={onclickfunc} data-hs-remove-element={removeelement} aria-label={Label} data-hs-collapse={Collapse} aria-controls={Controls} data-hs-overlay={Overlay}
         data-hs-overlay-close={Overlayclose}
@@ -20,7 +20,7 @@ const SpkButton = ({ children, variant, disabled, customClass="", buttontype, Bt
         data-hs-copy-markup={Copymarkup}
         data-hs-theme-click-value={Themevalue}
         aria-current={Currentpage}
-        style={Btnstyle} >
+        style={Btnstyle || style} >
         {children}
       </button>
     </Fragment>

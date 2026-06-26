@@ -55,3 +55,26 @@
 .w-\[80\%\] {
     width: 80%;
 }
+
+/* Custom Active Link Color for Sidebar */
+.side-menu__item.active,
+.side-menu__item.active .side-menu__icon {
+    color: #0A8F3E !important;
+    fill: #0A8F3E !important;
+}
+
+/* Custom Sidebar Background Color */
+.app-sidebar {
+    background-color: #013B21 !important;
+    background: #013B21 !important;
+}
+
+.app-sidebar .main-sidebar-header {
+    background-color: #013B21 !important;
+    background: #013B21 !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+}
+
+.app-sidebar .main-sidebar {
+    background-color: #013B21 !important;
+}

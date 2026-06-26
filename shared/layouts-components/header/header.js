@@ -1,5 +1,6 @@
 "use client"
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import React, { Fragment, useEffect, useRef, useState } from "react";
 import { ThemeChanger, removeFromCart } from "@/shared/redux/action";
 import { connect, useDispatch, useSelector } from "react-redux";
@@ -13,6 +14,29 @@ import { basePath } from '@/next.config';
 import { data$, getState, setState } from "../services/switcherServices";
 
 const Header = () => {
+    const router = useRouter();
+
+    const handleLogout = async (e) => {
+        e.preventDefault();
+        try {
+            const token = localStorage.getItem('token');
+            const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8080/api';
+            if (token) {
+                await fetch(`${baseUrl}/auth/logout`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+            }
+        } catch (error) {
+            console.error("Logout error:", error);
+        } finally {
+            localStorage.removeItem('token');
+            router.push('/');
+        }
+    };
 
     //Menu-Close
     let [variable, setVariable] = useState(getState());
@@ -1080,7 +1104,8 @@ const Header = () => {
               <li>
                 <Link scroll={false}
                   className="ti-dropdown-item flex items-center"
-                  href="/authentication/sign-in/cover"
+                  href="#!"
+                  onClick={handleLogout}
                 >
                   <i className="fe fe-lock p-1 rounded-full bg-primary/10 text-primary ut me-2 text-[1rem]"></i>
                   Log Out

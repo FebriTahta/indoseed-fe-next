@@ -34,7 +34,15 @@ export const MENUITEMS = [
   {
     menutitle: "MAIN",
   },
-
+  {
+    menutitle: "MASTER DATA",
+  },
+  {
+    title: "Master Data", icon: Dashboardicon, type: "sub", active: false, children: [
+      { path: "/master/user", type: "link", active: false, selected: false, title: "User / Karyawan" },
+      { path: "/master/greenhouse", type: "link", active: false, selected: false, title: "Greenhouse / Lahan" }
+    ]
+  },
   {
     title: "Dashboards", icon: Dashboardicon, type: "sub", active: false, children: [
       { path: "/dashboard/sales", type: "link", active: false, selected: false, title: "Sales" },
