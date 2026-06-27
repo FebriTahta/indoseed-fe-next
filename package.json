@@ -26,6 +26,7 @@
     "@yaireo/tagify": "^4.33.2",
     "apexcharts": "^4.7.0",
     "autoprefixer": "^10.4.20",
+    "axios": "^1.18.1",
     "dragula": "^3.7.3",
     "echarts": "^5.6.0",
     "echarts-for-react": "^3.0.2",
