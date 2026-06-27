@@ -23,7 +23,6 @@ Open [http://localhost:3000](http://localhost:3000) with your browser to see the
 Copy the `.env.example` file to `.env` or set the variables manually.
 Currently used environment variables:
 - `NEXT_PUBLIC_API_BASE_URL`: Base URL for the API (e.g., `http://localhost:8080/api`)
-- `JWT_SECRET`: Secret key for JWT.
 
 ## API Integration
 
