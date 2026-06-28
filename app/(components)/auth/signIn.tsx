@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, Fragment } from "react";
 import { ToastContainer, toast } from 'react-toastify';
-import Turnstile from "./Turnstile";
+// import Turnstile from "./Turnstile";
 
 export default function SignIn() {
     const [passwordshow1, setpasswordshow1] = useState(false);
@@ -36,14 +36,14 @@ export default function SignIn() {
     const handleLogin = async (e: any) => {
         e.preventDefault();
 
-        const siteKey = process.env.NEXT_PUBLIC_CLOUDFLARE_TURNISTILE_SITE_KEY || '0x4AAAAAADsac7zEzG0Ar8xw';
-        if (siteKey && !captchaToken) {
-            toast.error('Silakan selesaikan captcha terlebih dahulu', {
-                position: 'top-right',
-                autoClose: 1500,
-            });
-            return;
-        }
+        // const siteKey = process.env.NEXT_PUBLIC_CLOUDFLARE_TURNISTILE_SITE_KEY || '0x4AAAAAADsac7zEzG0Ar8xw';
+        // if (siteKey && !captchaToken) {
+        //     toast.error('Silakan selesaikan captcha terlebih dahulu', {
+        //         position: 'top-right',
+        //         autoClose: 1500,
+        //     });
+        //     return;
+        // }
 
         setIsLoading(true);
 
@@ -177,13 +177,13 @@ export default function SignIn() {
                                         </div>
                                     </div>
                                 </div>
-                                <Turnstile
+                                {/* <Turnstile
                                     key={turnstileKey}
                                     siteKey={process.env.NEXT_PUBLIC_CLOUDFLARE_TURNISTILE_SITE_KEY || '0x4AAAAAADsac7zEzG0Ar8xw'}
                                     onSuccess={(token) => setCaptchaToken(token)}
                                     onExpire={() => setCaptchaToken(null)}
                                     onError={() => setCaptchaToken(null)}
-                                />
+                                /> */}
                                 <div className="grid mt-4">
                                     <button className="ti-btn ti-btn-primary" onClick={handleLogin} disabled={isLoading}>
                                         {isLoading ? 'Signing In...' : 'Sign In'}
