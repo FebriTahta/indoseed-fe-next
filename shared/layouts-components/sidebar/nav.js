@@ -65,19 +65,21 @@ export const MENUITEMS = [
       { path: "/master/varietas", type: "link", active: false, selected: false, title: "Varietas" },
       { path: "/master/greenhouse", type: "link", active: false, selected: false, title: "Greenhouse" },
       { path: "/master/petani-mitra", type: "link", active: false, selected: false, title: "Petani Mitra" },
-      { path: "/master/customer", type: "link", active: false, selected: false, title: "Customer" }
+      { path: "/master/customer", type: "link", active: false, selected: false, title: "Customer" },
+      { path: "/master/gudang", type: "link", active: false, selected: false, title: "Gudang" },
+      { path: "/master/supplier", type: "link", active: false, selected: false, title: "Supplier" }
     ]
   },
-   {
-    menutitle: "GUDANG",
-  },
-  {
-    title: "Gudang", icon: Warehouseicon, type: "sub", active: false, children: [
-      { path: "/gudang/stok-masuk", type: "link", active: false, selected: false, title: "Stok Masuk" },
-      // { path: "/gudang/stok-keluar", type: "link", active: false, selected: false, title: "Stok Keluar" },
-      // { path: "/gudang/stok-inventaris", type: "link", active: false, selected: false, title: "Stok Inventaris" },
-    ]
-  },
+  //  {
+  //   menutitle: "GUDANG",
+  // },
+  // {
+  //   title: "Gudang", icon: Warehouseicon, type: "sub", active: false, children: [
+  //     { path: "/gudang/stok-masuk", type: "link", active: false, selected: false, title: "Stok Masuk" },
+  //     // { path: "/gudang/stok-keluar", type: "link", active: false, selected: false, title: "Stok Keluar" },
+  //     // { path: "/gudang/stok-inventaris", type: "link", active: false, selected: false, title: "Stok Inventaris" },
+  //   ]
+  // },
 
   // {
   //   menutitle: "WEB APPS"

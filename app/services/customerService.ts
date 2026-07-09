@@ -21,13 +21,12 @@ export const custService = {
     return response.data;
   },
   createCustomer: async (data: FormData) => {
-
-    console.log("==> Creating customer with data:", data);
     const response = await api.post<ApiResponse<CustData>>(`${baseUrl}/master/customer`, data);
     return response.data;
   },
 
   updateCustomer: async (id: string, data: FormData) => {
+    console.log("==> Updating customer with ID:", id, "and data:", data);
     const response = await api.put<ApiResponse<CustData>>(`${baseUrl}/master/customer/${id}`, data);
     return response.data;
   },
