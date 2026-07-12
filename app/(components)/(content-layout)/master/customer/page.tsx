@@ -82,6 +82,15 @@ const CATEGORY_COLORS: Record<string, string> = {
 
 };
 
+const CATEGORY_LABEL: Record<string, string> = {
+  'toko_pertanian': 'Toko Pertanian',
+  'koperasi': 'Koperasi',
+  'distributor': 'Distributor',
+  'perusahaan': 'Perusahaan',
+  'kelompok_tani': 'Kelompok Tani'
+
+};
+
   // Shared Filters Configuration
   const filterConfig: FilterSelectConfig[] = [
     {
@@ -118,9 +127,9 @@ const CATEGORY_COLORS: Record<string, string> = {
           <td>{item.namaCust}</td>
           <td>
             <span className={`badge bg-${CATEGORY_COLORS[item.kategori] || 'default'}/10 text-${CATEGORY_COLORS[item.kategori] || 'default'}`}>
-                {item.status === 'Aktif' ? 'Active' : 'Non active'}
+                {CATEGORY_LABEL[item.kategori] || item.kategori}
             </span>
-            {item.kategori}
+            
           </td>
           <td>{item.pic}</td>
           <td>{item.noTelepon}</td>
@@ -386,11 +395,12 @@ const CATEGORY_COLORS: Record<string, string> = {
                 className="form-select w-full border border-defaultborder p-2 rounded text-sm bg-white cursor-pointer"
                 disabled={isSubmitLoading}
               >
-                <option value="toko_pertanian">Toko Pertanian</option>
-                <option value="koperasi">Koperasi</option>
-                <option value="distributor">Distributor</option>
-                <option value="perusahaan">Perusahaan</option>
-                <option value="kelompok_tani">Kelompok Tani</option>
+                {Object.entries(CATEGORY_LABEL).map(([key, label]) => (
+                  <option key={key} value={key}>
+                    {label}
+                  </option>
+                ))}
+                
               </select>
             </div>
 
@@ -450,8 +460,8 @@ const CATEGORY_COLORS: Record<string, string> = {
               <label className="block text-xs font-bold text-gray-700 mb-1.5">Kode Pos</label>
               <input
                 type="text"
-                value={formValues.postalCode}
-                onChange={(e) => setFormValues(prev => ({ ...prev, postalCode: e.target.value }))}
+                value={formValues.kodePos}
+                onChange={(e) => setFormValues(prev => ({ ...prev, kodePos: e.target.value }))}
                 className="form-control w-full border border-defaultborder p-2 rounded text-sm focus:border-emerald-500"
                 placeholder="Contoh: 60000"
                 disabled={isSubmitLoading}
@@ -505,8 +515,8 @@ const CATEGORY_COLORS: Record<string, string> = {
               <label className="block text-xs font-bold text-gray-700 mb-1.5">Limit Kredit</label>
               <input
                 type="text"
-                value={formValues.credit_limit}
-                onChange={(e) => setFormValues(prev => ({ ...prev, credit_limit: Number(e.target.value) }))}
+                value={formValues.limitKredit}
+                onChange={(e) => setFormValues(prev => ({ ...prev, limitKredit: Number(e.target.value) }))}
                 className="form-control w-full border border-defaultborder p-2 rounded text-sm focus:border-emerald-500"
                 placeholder="Contoh: 000000000000000"
                 disabled={isSubmitLoading}
@@ -517,8 +527,8 @@ const CATEGORY_COLORS: Record<string, string> = {
               <label className="block text-xs font-bold text-gray-700 mb-1.5">Sisa Kredit</label>
               <input
                 type="text"
-                value={formValues.remaining_credit}
-                onChange={(e) => setFormValues(prev => ({ ...prev, remaining_credit: Number(e.target.value) }))}
+                value={formValues.remainKredit}
+                onChange={(e) => setFormValues(prev => ({ ...prev, remainKredit: Number(e.target.value) }))}
                 className="form-control w-full border border-defaultborder p-2 rounded text-sm focus:border-emerald-500"
                 placeholder="Contoh: 000000000000000"
                 disabled={isSubmitLoading}

@@ -8,13 +8,13 @@ export interface CustData {
   pic: string;
   kota: string;
   alamat: string;
-  postalCode: string;
+  kodePos: string;
   noTelepon: string;
   email: string;
   isTop: boolean;
   isActive: boolean;
-  credit_limit: number;
-  remaining_credit: number;
+  limitKredit: number;
+  remainKredit: number;
   createdAt: string;
   updatedAt: string;
 }

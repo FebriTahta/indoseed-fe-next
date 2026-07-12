@@ -43,13 +43,13 @@ export function useCustomer() {
       pic: '',
       kota: '',
       alamat: '',
-      postalCode: '',
+      kodePos: '',
       noTelepon: '',
       email: '',
       isTop: false,
       isActive: true,
-      credit_limit: 0,
-      remaining_credit: 0
+      limitKredit: 0,
+      remainKredit: 0
     });
 
   // Options
@@ -168,6 +168,36 @@ export function useCustomer() {
 
   const handleEdit = (id: string) => {
     console.log("Edit customer", id);
+
+    const cust = customers.find(c => c.kodeCust === id);
+
+    console.log("Found customer for edit:", cust);
+
+    if (!cust) {
+      toast.error('Customer tidak ditemukan');
+      return;
+    }
+
+    setModalMode('edit');
+
+    setFormValues({
+      id: cust.kodeCust,
+      namaCust: cust.namaCust,
+      kategori: cust.kategori,
+      status: cust.status,
+      NPWP: cust.NPWP,
+      pic: cust.pic,
+      kota: cust.kota,
+      alamat: cust.alamat,
+      kodePos: cust.kodePos,
+      noTelepon: cust.noTelepon,
+      email: cust.email,
+      isTop: cust.isTop,
+      isActive: cust.isActive,
+      limitKredit: cust.limitKredit,
+      remainKredit: cust.remainKredit 
+    });
+    setIsModalOpen(true);
   };
 
   const handleDelete = (id: string) => {
@@ -187,13 +217,13 @@ export function useCustomer() {
       pic: cust.pic,
       kota: cust.kota,
       alamat: cust.alamat,
-      postalCode: cust.postalCode,
+      kodePos: cust.kodePos,
       noTelepon: cust.noTelepon,
       email: cust.email,
       isTop: cust.isTop,
       isActive: cust.isActive,
-      credit_limit: cust.credit_limit,
-      remaining_credit: cust.remaining_credit
+      limitKredit: cust.limitKredit,
+      remainKredit: cust.remainKredit 
     });
     setIsModalOpen(true);
   };
@@ -224,13 +254,13 @@ export function useCustomer() {
       formData.append('pic', formValues.pic);
       formData.append('kota', formValues.kota);
       formData.append('alamat', formValues.alamat);
-      formData.append('postalCode', formValues.postalCode);
+      formData.append('kodePos', formValues.kodePos);
       formData.append('noTelepon', formValues.noTelepon);
       formData.append('email', formValues.email);
       formData.append('isTop', String(formValues.isTop));
       formData.append('isActive', String(formValues.isActive));
-      formData.append('credit_limit', String(formValues.credit_limit));
-      formData.append('remaining_credit', String(formValues.remaining_credit));
+      formData.append('limitKredit', String(formValues.limitKredit));
+      formData.append('remainKredit', String(formValues.remainKredit));
 
       console.log("=2=> Customer form values:", formData);
       
@@ -335,13 +365,13 @@ export function useCustomer() {
       pic: '',
       kota: '',
       alamat: '',
-      postalCode: '',
+      kodePos: '',
       noTelepon: '',
       email: '',
       isTop: false,
       isActive: true,
-      credit_limit: 0,
-      remaining_credit: 0
+      limitKredit: 0,
+      remainKredit: 0
     });
     setIsModalOpen(true);
   };
