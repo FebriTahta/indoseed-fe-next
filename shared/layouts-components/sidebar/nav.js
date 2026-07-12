@@ -4,6 +4,8 @@ const Dashboardicon = <svg xmlns="http://www.w3.org/2000/svg" className="w-6 h-6
 
 const Appsicon = <svg xmlns="http://www.w3.org/2000/svg" className="w-6 h-6 side-menu__icon" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor"> <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 16.875h3.375m0 0h3.375m-3.375 0V13.5m0 3.375v3.375M6 10.5h2.25a2.25 2.25 0 0 0 2.25-2.25V6a2.25 2.25 0 0 0-2.25-2.25H6A2.25 2.25 0 0 0 3.75 6v2.25A2.25 2.25 0 0 0 6 10.5Zm0 9.75h2.25A2.25 2.25 0 0 0 10.5 18v-2.25a2.25 2.25 0 0 0-2.25-2.25H6a2.25 2.25 0 0 0-2.25 2.25V18A2.25 2.25 0 0 0 6 20.25Zm9.75-9.75H18a2.25 2.25 0 0 0 2.25-2.25V6A2.25 2.25 0 0 0 18 3.75h-2.25A2.25 2.25 0 0 0 13.5 6v2.25a2.25 2.25 0 0 0 2.25 2.25Z"></path> </svg>
 
+const Warehouseicon = <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-building-warehouse"><path stroke="none" d="M0 0h24v24H0z" fill="none" /><path d="M3 21v-13l9 -4l9 4v13" /><path d="M13 13h4v8h-10v-6h6" /><path d="M13 21v-9a1 1 0 0 0 -1 -1h-2a1 1 0 0 0 -1 1v3" /></svg>
+
 const Authenticationicon = <svg xmlns="http://www.w3.org/2000/svg" className="w-6 h-6 side-menu__icon" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor"> <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 1 0-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 0 0 2.25-2.25v-6.75a2.25 2.25 0 0 0-2.25-2.25H6.75a2.25 2.25 0 0 0-2.25 2.25v6.75a2.25 2.25 0 0 0 2.25 2.25Z"></path> </svg>
 
 const Erroricon = <svg xmlns="http://www.w3.org/2000/svg" className="w-6 h-6 side-menu__icon" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor"> <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z"></path> </svg>
@@ -62,9 +64,22 @@ export const MENUITEMS = [
       { path: "/master/komoditas", type: "link", active: false, selected: false, title: "Komoditas" },
       { path: "/master/varietas", type: "link", active: false, selected: false, title: "Varietas" },
       { path: "/master/greenhouse", type: "link", active: false, selected: false, title: "Greenhouse" },
-      { path: "/master/petani-mitra", type: "link", active: false, selected: false, title: "Petani Mitra" }
+      { path: "/master/petani-mitra", type: "link", active: false, selected: false, title: "Petani Mitra" },
+      { path: "/master/customer", type: "link", active: false, selected: false, title: "Customer" },
+      { path: "/master/gudang", type: "link", active: false, selected: false, title: "Gudang" },
+      { path: "/master/supplier", type: "link", active: false, selected: false, title: "Supplier" }
     ]
   },
+  //  {
+  //   menutitle: "GUDANG",
+  // },
+  // {
+  //   title: "Gudang", icon: Warehouseicon, type: "sub", active: false, children: [
+  //     { path: "/gudang/stok-masuk", type: "link", active: false, selected: false, title: "Stok Masuk" },
+  //     // { path: "/gudang/stok-keluar", type: "link", active: false, selected: false, title: "Stok Keluar" },
+  //     // { path: "/gudang/stok-inventaris", type: "link", active: false, selected: false, title: "Stok Inventaris" },
+  //   ]
+  // },
 
   // {
   //   menutitle: "WEB APPS"

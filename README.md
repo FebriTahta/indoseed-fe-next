@@ -33,3 +33,8 @@ Authentication routes have been hardcoded inside the components:
 - Resend OTP: `/resend-otp`
 
 The frontend communicates with the backend via `fetch` pointing to `NEXT_PUBLIC_API_BASE_URL` concatenated with the hardcoded paths.
+
+```
+# cloudflare turnstile
+NEXT_PUBLIC_CLOUDFLARE_TURNISTILE_SITE_KEY="0x4AAAAAADsac7zEzG0Ar8xw"
+```

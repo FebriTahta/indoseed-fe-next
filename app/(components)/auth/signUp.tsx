@@ -4,11 +4,14 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, Fragment, useEffect } from "react";
 import { ToastContainer, toast } from 'react-toastify';
+import Turnstile from "./Turnstile";
 
 export default function SignUp() {
     const [passwordshow1, setpasswordshow1] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
     const [countdown, setCountdown] = useState(0);
+    const [captchaToken, setCaptchaToken] = useState<string | null>(null);
+    const [turnstileKey, setTurnstileKey] = useState(0);
 
     const [err1, setError1] = useState("");
     const [data, setData] = useState({
@@ -37,6 +40,16 @@ export default function SignUp() {
 
     const handleRegister = async (e: any) => {
         e.preventDefault();
+        
+        const siteKey = process.env.NEXT_PUBLIC_CLOUDFLARE_TURNISTILE_SITE_KEY || '0x4AAAAAADsac7zEzG0Ar8xw';
+        if (siteKey && !captchaToken) {
+            toast.error('Silakan selesaikan captcha terlebih dahulu', {
+                position: 'top-right',
+                autoClose: 1500,
+            });
+            return;
+        }
+
         setIsLoading(true);
         setError1("");
         
@@ -52,13 +65,16 @@ export default function SignUp() {
                 body: JSON.stringify({
                     username: username,
                     email: email,
-                    password: password
+                    password: password,
+                    captchaToken: captchaToken
                 })
             });
 
             const result = await response.json().catch(() => ({}));
 
             if (!response.ok) {
+                setTurnstileKey(prev => prev + 1);
+                setCaptchaToken(null);
                 if (result.sisaWaktu) {
                     setCountdown(result.sisaWaktu);
                     setError1(result.error || `Silakan kirimkan OTP ulang ke email tersebut dalam sisa waktu ${result.sisaWaktu} detik.`);
@@ -93,6 +109,8 @@ export default function SignUp() {
             }
 
         } catch (error: any) {
+            setTurnstileKey(prev => prev + 1);
+            setCaptchaToken(null);
             setError1(error.message || 'Terjadi kesalahan unhandled saat mendaftar');
             toast.error(error.message || 'Terjadi kesalahan unhandled saat mendaftar', {
                 position: 'top-right',
@@ -145,6 +163,13 @@ export default function SignUp() {
                                         </div>
                                     </div>
                                 </div>
+                                <Turnstile
+                                    key={turnstileKey}
+                                    siteKey={process.env.NEXT_PUBLIC_CLOUDFLARE_TURNISTILE_SITE_KEY || '0x4AAAAAADsac7zEzG0Ar8xw'}
+                                    onSuccess={(token) => setCaptchaToken(token)}
+                                    onExpire={() => setCaptchaToken(null)}
+                                    onError={() => setCaptchaToken(null)}
+                                />
                                 <div className="grid mt-4">
                                     <button className="ti-btn ti-btn-primary" onClick={handleRegister} disabled={isLoading || countdown > 0}>
                                         {isLoading ? 'Signing Up...' : (countdown > 0 ? `Tunggu ${countdown}s` : 'Sign Up')}

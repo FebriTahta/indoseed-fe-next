@@ -4,10 +4,13 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, Fragment } from "react";
 import { ToastContainer, toast } from 'react-toastify';
+// import Turnstile from "./Turnstile";
 
 export default function SignIn() {
     const [passwordshow1, setpasswordshow1] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
+    const [captchaToken, setCaptchaToken] = useState<string | null>(null);
+    const [turnstileKey, setTurnstileKey] = useState(0);
 
     const [err1, setError1] = useState("");
     const [data, setData] = useState({
@@ -32,6 +35,16 @@ export default function SignIn() {
 
     const handleLogin = async (e: any) => {
         e.preventDefault();
+
+        // const siteKey = process.env.NEXT_PUBLIC_CLOUDFLARE_TURNISTILE_SITE_KEY || '0x4AAAAAADsac7zEzG0Ar8xw';
+        // if (siteKey && !captchaToken) {
+        //     toast.error('Silakan selesaikan captcha terlebih dahulu', {
+        //         position: 'top-right',
+        //         autoClose: 1500,
+        //     });
+        //     return;
+        // }
+
         setIsLoading(true);
 
         try {
@@ -45,12 +58,14 @@ export default function SignIn() {
                 },
                 body: JSON.stringify({
                     username: username,
-                    password: password
+                    password: password,
+                    captchaToken: captchaToken
                 })
             });
 
             if (!response.ok) {
-                throw new Error('Invalid login credentials');
+                const errorData = await response.json().catch(() => ({}));
+                throw new Error(errorData.error || 'Invalid login credentials');
             }
 
             const result = await response.json();
@@ -97,8 +112,10 @@ export default function SignIn() {
             }, 1200);
 
         } catch (error: any) {
+            setTurnstileKey(prev => prev + 1);
+            setCaptchaToken(null);
             setError1(error.message || 'Login failed');
-            toast.error('Invalid login credentials', {
+            toast.error(error.message || 'Invalid login credentials', {
                 position: 'top-right',
                 autoClose: 1500,
                 hideProgressBar: false,
@@ -160,6 +177,13 @@ export default function SignIn() {
                                         </div>
                                     </div>
                                 </div>
+                                {/* <Turnstile
+                                    key={turnstileKey}
+                                    siteKey={process.env.NEXT_PUBLIC_CLOUDFLARE_TURNISTILE_SITE_KEY || '0x4AAAAAADsac7zEzG0Ar8xw'}
+                                    onSuccess={(token) => setCaptchaToken(token)}
+                                    onExpire={() => setCaptchaToken(null)}
+                                    onError={() => setCaptchaToken(null)}
+                                /> */}
                                 <div className="grid mt-4">
                                     <button className="ti-btn ti-btn-primary" onClick={handleLogin} disabled={isLoading}>
                                         {isLoading ? 'Signing In...' : 'Sign In'}
