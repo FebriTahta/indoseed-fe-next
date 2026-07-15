@@ -133,26 +133,26 @@ export default function SignIn() {
     return (
         <Fragment>
             <div className="container">
-                <div className="grid grid-cols-12 justify-center items-center authentication authentication-basic h-full">
-                    <div className="col-span-6"></div>
-                    <div className="col-span-6 flex justify-center items-center h-full">
+                <div className="grid grid-cols-12 justify-center items-center authentication authentication-basic h-full min-h-screen">
+                    <div className="hidden lg:block lg:col-span-6"></div>
+                    <div className="col-span-12 sm:col-span-10 sm:col-start-2 md:col-span-8 md:col-start-2 lg:col-span-6 flex justify-center items-center h-full">
                         <div className="box w-full">
 
-                            
+
 
                             {/* <nav className="!block firebase-data mt-6 bg-light mx-auto p-2 rounded-md" aria-label="Tabs" role='tablist'>
                                 <div className="flex justify-center space-x-2 rtl:space-x-reverse">
                                     <Image width={200} height={100} src="/assets/images/logo-web-green.png" alt="user-img" className='' />
                                 </div>
                             </nav> */}
-                            <div className="box-body !p-[3rem]">
+                            <div className="box-body !p-6 sm:!p-10 md:!p-[3rem]">
 
                                 <h4 className="mb-1">
                                     Selamat Datang Kembali
                                 </h4>
 
                                 <span className="text-textmuted dark:text-textmuted/50">
-                                    Silahkan login untuk mengakses <br/> sistem informasi perusahaan benih.
+                                    Silahkan login untuk mengakses <br className="hidden sm:inline" /> sistem informasi perusahaan benih.
                                 </span>
 
                                 <div className="grid grid-cols-12 gap-y-3 mt-4">
@@ -170,7 +170,7 @@ export default function SignIn() {
                                         {/* <input type="text" name="username" className="form-control" onChange={changeHandler} value={username} id="signin-username" placeholder="Username" /> */}
                                         <div className="input-group">
                                             <div className="input-group-text"><i className="ri-user-line"></i></div>
-                                            <input type="text" name="username" className="form-control" onChange={changeHandler} value={username} id="signin-username" placeholder="Username"/>
+                                            <input type="text" name="username" className="form-control" onChange={changeHandler} value={username} id="signin-username" placeholder="Username" />
                                         </div>
                                     </div>
                                     <div className="xl:col-span-12 col-span-12 mb-2">
@@ -179,9 +179,9 @@ export default function SignIn() {
                                             <div className="input-group">
                                                 <div className="input-group-text"><i className="ri-lock-line"></i></div>
                                                 <input type={(passwordshow1) ? 'text' : "password"} className="form-control form-control-lg !rounded-s-md "
-                                                name="password"
-                                                placeholder="Password" value={password}
-                                                onChange={changeHandler}/>
+                                                    name="password"
+                                                    placeholder="Password" value={password}
+                                                    onChange={changeHandler} />
                                             </div>
                                             {/* <input type={(passwordshow1) ? 'text' : "password"} className="form-control form-control-lg !rounded-s-md "
                                                 name="password"
@@ -216,7 +216,7 @@ export default function SignIn() {
                                 <div className="text-center">
                                     <p className="text-textmuted dark:text-textmuted/50 mt-3 mb-0">Dont have an account? <Link href="/auth/sign-up" className="text-primary">Sign Up</Link></p>
                                 </div>
-                                
+
 
                                 <div className="flex items-center gap-4 rounded-xl bg-emerald-50 mt-5 px-5 py-4">
                                     <div className="flex h-10 w-10 items-center justify-center">
@@ -242,7 +242,7 @@ export default function SignIn() {
                                 <div className="text-center">
                                     <p className="text-textmuted italic dark:text-textmuted/50 mt-3 mb-0">Sistem informasi perusahaan benih</p>
                                 </div>
-                                
+
                             </div>
                         </div>
                     </div>
