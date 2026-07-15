@@ -4,6 +4,8 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, Fragment } from "react";
 import { ToastContainer, toast } from 'react-toastify';
+
+
 // import Turnstile from "./Turnstile";
 
 export default function SignIn() {
@@ -132,17 +134,28 @@ export default function SignIn() {
         <Fragment>
             <div className="container">
                 <div className="grid grid-cols-12 justify-center items-center authentication authentication-basic h-full">
-                    <div className="xxl:col-span-4 xl:col-span-4 lg:col-span-3 md:col-span-3 sm:col-span-2 col-span-12"></div>
-                    <div className="xxl:col-span-4 xl:col-span-4 lg:col-span-6 md:col-span-6 sm:col-span-8 col-span-12">
-                        <div className="box my-4">
+                    <div className="col-span-6"></div>
+                    <div className="col-span-6 flex justify-center items-center h-full">
+                        <div className="box w-full">
 
-                            <nav className="!block firebase-data mt-6 bg-light mx-auto p-2 rounded-md" aria-label="Tabs" role='tablist'>
+                            
+
+                            {/* <nav className="!block firebase-data mt-6 bg-light mx-auto p-2 rounded-md" aria-label="Tabs" role='tablist'>
                                 <div className="flex justify-center space-x-2 rtl:space-x-reverse">
                                     <Image width={200} height={100} src="/assets/images/logo-web-green.png" alt="user-img" className='' />
                                 </div>
-                            </nav>
+                            </nav> */}
                             <div className="box-body !p-[3rem]">
-                                <div className="grid grid-cols-12 gap-y-3">
+
+                                <h4 className="mb-1">
+                                    Selamat Datang Kembali
+                                </h4>
+
+                                <span className="text-textmuted dark:text-textmuted/50">
+                                    Silahkan login untuk mengakses <br/> sistem informasi perusahaan benih.
+                                </span>
+
+                                <div className="grid grid-cols-12 gap-y-3 mt-4">
                                     <div className="xl:col-span-12 col-span-12">
                                         {err1 && <div className="alert-danger px-4 py-3 shadow-md mb-2" role="alert">
                                             <div className="flex">
@@ -153,16 +166,27 @@ export default function SignIn() {
                                         </div>}
                                     </div>
                                     <div className="xl:col-span-12 col-span-12">
-                                        <label htmlFor="signin-username" className="form-label text-defaulttextcolor">Username<sup className="text-xs text-danger">*</sup></label>
-                                        <input type="text" name="username" className="form-control " onChange={changeHandler} value={username} id="signin-username" placeholder="Username" />
+                                        <label htmlFor="signin-username" className="form-label text-defaulttextcolor">Email / Username <sup className="text-xs text-danger">*</sup></label>
+                                        {/* <input type="text" name="username" className="form-control" onChange={changeHandler} value={username} id="signin-username" placeholder="Username" /> */}
+                                        <div className="input-group">
+                                            <div className="input-group-text"><i className="ri-user-line"></i></div>
+                                            <input type="text" name="username" className="form-control" onChange={changeHandler} value={username} id="signin-username" placeholder="Username"/>
+                                        </div>
                                     </div>
                                     <div className="xl:col-span-12 col-span-12 mb-2">
-                                        <label htmlFor="signin-password" className="form-label text-defaulttextcolor block">Password<sup className="text-xs text-danger">*</sup></label>
+                                        <label htmlFor="signin-password" className="form-label text-defaulttextcolor block">Kata Sandi<sup className="text-xs text-danger">*</sup></label>
                                         <div className="relative">
-                                            <input type={(passwordshow1) ? 'text' : "password"} className="form-control form-control-lg !rounded-s-md"
+                                            <div className="input-group">
+                                                <div className="input-group-text"><i className="ri-lock-line"></i></div>
+                                                <input type={(passwordshow1) ? 'text' : "password"} className="form-control form-control-lg !rounded-s-md "
                                                 name="password"
                                                 placeholder="Password" value={password}
-                                                onChange={changeHandler} />
+                                                onChange={changeHandler}/>
+                                            </div>
+                                            {/* <input type={(passwordshow1) ? 'text' : "password"} className="form-control form-control-lg !rounded-s-md "
+                                                name="password"
+                                                placeholder="Password" value={password}
+                                                onChange={changeHandler} /> */}
                                             <Link scroll={false} href="#!" onClick={(e) => { e.preventDefault(); setpasswordshow1(!passwordshow1); }} className="show-password-button text-textmuted dark:text-textmuted/50" id="button-addon2">
                                                 <i className={`${passwordshow1 ? 'ri-eye-line' : 'ri-eye-off-line'} align-middle`}></i>
                                             </Link>
@@ -171,7 +195,7 @@ export default function SignIn() {
                                             <div className="form-check">
                                                 <input className="form-check-input" type="checkbox" defaultValue="" id="defaultCheck1" />
                                                 <label className="form-check-label text-textmuted dark:text-textmuted/50 font-normal" htmlFor="defaultCheck1">
-                                                    Remember password ?
+                                                    Ingat Saya ?
                                                 </label>
                                             </div>
                                         </div>
@@ -186,16 +210,43 @@ export default function SignIn() {
                                 /> */}
                                 <div className="grid mt-4">
                                     <button className="ti-btn ti-btn-primary" onClick={handleLogin} disabled={isLoading}>
-                                        {isLoading ? 'Signing In...' : 'Sign In'}
+                                        <i className="ti ti-login-2" /> {isLoading ? 'Process Login...' : 'Login'}
                                     </button>
                                 </div>
                                 <div className="text-center">
                                     <p className="text-textmuted dark:text-textmuted/50 mt-3 mb-0">Dont have an account? <Link href="/auth/sign-up" className="text-primary">Sign Up</Link></p>
                                 </div>
+                                
+
+                                <div className="flex items-center gap-4 rounded-xl bg-emerald-50 mt-5 px-5 py-4">
+                                    <div className="flex h-10 w-10 items-center justify-center">
+                                        {/* <AlertTriangle
+                                            className="h-6 w-6 text-yellow-500"
+                                            fill="#FACC15"
+                                            strokeWidth={2}
+                                        /> */}
+                                        <i className="fa-solid fa-triangle-exclamation text-yellow-400 text-2xl ti ti-alert-triangle"></i>
+                                    </div>
+
+                                    <div>
+                                        <p className="text-sm text-emerald-700">
+                                            Sistem ini dilindungi dengan enkripsi SSL
+                                        </p>
+
+                                        <p className="mt-1 text-sm  text-emerald-700">
+                                            dan <span className="font-semibold">standar keamanan tinggi.</span>
+                                        </p>
+                                    </div>
+                                </div>
+
+                                <div className="text-center">
+                                    <p className="text-textmuted italic dark:text-textmuted/50 mt-3 mb-0">Sistem informasi perusahaan benih</p>
+                                </div>
+                                
                             </div>
                         </div>
                     </div>
-                    <div className="xxl:col-span-4 xl:col-span-4 lg:col-span-3 md:col-span-3 sm:col-span-2 col-span-12"></div>
+                    {/* <div className="xxl:col-span-4 xl:col-span-4 lg:col-span-3 md:col-span-3 sm:col-span-2 col-span-12"></div> */}
                 </div>
             </div>
             <ToastContainer />
