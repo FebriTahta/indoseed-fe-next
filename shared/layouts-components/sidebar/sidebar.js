@@ -842,6 +842,19 @@ const Sidebar = () => {
 						<div className="slide-right" id="slide-right" onClick={slideRight}><svg xmlns="http://www.w3.org/2000/svg" fill="#7b8191" width="24" height="24" viewBox="0 0 24 24"> <path d="M10.707 17.707 16.414 12l-5.707-5.707-1.414 1.414L13.586 12l-4.293 4.293z"></path> </svg></div>
 					</nav>
 				</SimpleBar>
+				<div className="p-4 mt-auto sticky bottom-0 z-10" style={{ backgroundColor: 'inherit' }}>
+					<Link href="/support" className="flex items-center gap-3 py-2 px-3 rounded-lg hover:bg-white/10 transition-colors">
+						<div className="text-white">
+							<svg xmlns="http://www.w3.org/2000/svg" className="w-6 h-6" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
+								<path strokeLinecap="round" strokeLinejoin="round" d="M12 2C6.477 2 2 6.477 2 12c0 4.418 2.865 8.166 6.839 9.489.102.034.209.04.314.015l1.696-.424A3 3 0 0013.293 18.6L12.5 17.027a1.5 1.5 0 011.692-2.115l.182.046a3 3 0 003.585-1.921l1.642-4.106c.219-.548.219-1.157 0-1.705l-1.642-4.106A3 3 0 0014.375 5.2l-.182.046A1.5 1.5 0 0112.5 3.13L13.293 1.56a3 3 0 00-2.444-2.474l-1.696-.424a1.36 1.36 0 00-.314-.015C2.865 3.834 2 7.582 2 12z" />
+							</svg>
+						</div>
+						<div className="flex flex-col">
+							<span className="text-white text-[13px] font-semibold leading-tight">Butuh Bantuan?</span>
+							<span className="text-white/70 text-[11px]">Hubungi Support</span>
+						</div>
+					</Link>
+				</div>
 			</aside>
 		</Fragment>
 	)

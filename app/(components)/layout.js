@@ -3,7 +3,7 @@ import { data$, getState } from '@/shared/layouts-components/services/switcherSe
 import * as switcherdata from '../../shared/data/switcherdata/switcherdata';
 import { Initialload } from '../../shared/layouts-components/contextapi';
 import { ThemeChanger } from '../../shared/redux/action';
-import React, { useContext, useEffect, useState } from 'react'
+import React, { useContext, useEffect, useState, Fragment } from 'react'
 import { connect } from 'react-redux';
 
 const Layout = ({ children }) => {
@@ -37,32 +37,28 @@ const Layout = ({ children }) => {
   }, []);
 
   return (
-    <html
-      suppressHydrationWarning={true}
-      lang={localVariable.lang || undefined}
-      dir={localVariable.dir || undefined}
-      className={localVariable.class || undefined}
-      data-header-styles={localVariable.dataHeaderStyles || undefined}
-      data-vertical-style={localVariable.dataVerticalStyle || undefined}
-      data-nav-layout={localVariable.dataNavLayout || undefined}
-      data-menu-styles={localVariable.dataMenuStyles || undefined}
-      data-toggled={localVariable.toggled || undefined}
-      data-nav-style={localVariable.dataNavStyle || undefined}
-      data-page-style={localVariable.dataPageStyle || undefined}
-      data-width={localVariable.dataWidth || undefined}
-      data-menu-position={localVariable.dataMenuPosition || undefined}
-      data-header-position={localVariable.dataHeaderPosition || undefined}
-      data-icon-overlay={localVariable.iconOverlay || undefined}
-      bg-img={localVariable.bgImg || undefined}
-      icon-text={localVariable.iconText || undefined}
-      style={customstyles}>
-      <head>
-        <meta name="keywords" content="dashboard js ,dashboard nextjs ,dashboard template nextjs ,javascript next js ,javascript template ,next js admin panel ,next js dashboard template ,next js ui framework ,nextjs admin panel ,nextjs dashboard ,nextjs styled components ,nextjs template ,nextjs ui ,tailwind admin dashboard ,tailwind css nextjs" />
-      </head>
-      <body>
+    <Fragment>
+      <div
+        suppressHydrationWarning={true}
+        className={localVariable.class || undefined}
+        dir={localVariable.dir || undefined}
+        data-header-styles={localVariable.dataHeaderStyles || undefined}
+        data-vertical-style={localVariable.dataVerticalStyle || undefined}
+        data-nav-layout={localVariable.dataNavLayout || undefined}
+        data-menu-styles={localVariable.dataMenuStyles || undefined}
+        data-toggled={localVariable.toggled || undefined}
+        data-nav-style={localVariable.dataNavStyle || undefined}
+        data-page-style={localVariable.dataPageStyle || undefined}
+        data-width={localVariable.dataWidth || undefined}
+        data-menu-position={localVariable.dataMenuPosition || undefined}
+        data-header-position={localVariable.dataHeaderPosition || undefined}
+        data-icon-overlay={localVariable.iconOverlay || undefined}
+        bg-img={localVariable.bgImg || undefined}
+        icon-text={localVariable.iconText || undefined}
+        style={customstyles}>
         {children}
-      </body>
-    </html>
+      </div>
+    </Fragment>
   )
 }
 
