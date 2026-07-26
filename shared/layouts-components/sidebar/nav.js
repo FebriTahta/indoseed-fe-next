@@ -70,6 +70,15 @@ export const MENUITEMS = [
       { path: "/master/supplier", type: "link", active: false, selected: false, title: "Supplier" }
     ]
   },
+  {
+    menutitle: "PRODUKSI",
+  },
+  {
+    title: "Produksi", icon: Appsicon, type: "sub", active: false, children: [
+      // { path: "/master/user", type: "link", active: false, selected: false, title: "User / Karyawan" },
+      { path: "/produksi/jadwaltanam", type: "link", active: false, selected: false, title: "Jadwal Tanam" },
+    ]
+  },
   //  {
   //   menutitle: "GUDANG",
   // },
