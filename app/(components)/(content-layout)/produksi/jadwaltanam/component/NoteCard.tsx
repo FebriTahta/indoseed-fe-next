@@ -1,3 +1,4 @@
+import React from 'react';
 
 interface NoteCardProps {
   title?: string;
@@ -9,16 +10,15 @@ export default function NoteCard({
   description,
 }: NoteCardProps) {
   return (
-    <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-      <div className="flex items-center gap-2">
-        <i className="h-4 w-4 text-slate-500 ri-file-edit-line" />
-
-        <h3 className="text-sm font-semibold text-slate-800">
+    <div className="box border border-defaultborder/60 bg-white shadow-sm rounded-lg p-4 mb-6">
+      <div className="flex items-center gap-2 mb-2">
+        <i className="ri-file-text-line text-gray-500 text-sm" />
+        <h3 className="text-xs font-bold text-gray-800">
           {title}
         </h3>
       </div>
 
-      <p className="mt-4 text-xs leading-6 text-slate-500">
+      <p className="text-xs text-gray-600 leading-relaxed font-normal">
         {description}
       </p>
     </div>

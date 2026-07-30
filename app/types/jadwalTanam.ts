@@ -6,7 +6,7 @@ export interface JadwalTanam {
   status: string;
   catatan?: string;
   dokumenPendukung?: File | null;
-  
+
 }
 
 export interface InformasiUmum {
@@ -32,7 +32,9 @@ export interface LahanKomoditas {
   luasTanam: number;
 
   komoditas: string;
+  namaKomoditas?: string;
   varietas: string;
+  namaVarietas?: string;
 
   idBenih: string;
   asalBenih?: string;
@@ -52,7 +54,7 @@ export interface RencanaTanam {
   tanggalTanam: string;
   perkiraanPanen: string;
 
-  siklusTanam: string;
+  siklusTanam?: string;
   siklusTanamHari: number;
 
   metodeTanam: string;
@@ -96,6 +98,7 @@ export interface TargetProduksi {
 export interface CatatanTambahan {
   catatan?: string;
   dokumen?: File | null;
+  dokumenFiles?: File[];
 }
 
 export type StatusJadwal =
@@ -112,24 +115,24 @@ export interface SelectOption {
 }
 
 export interface InformasiLahan {
-    idLahan: string;
+  idLahan: string;
 
-    luasTanam: number;
+  luasTanam: number;
 
-    statusLahan: string;
-    tipeLahan: string;
+  statusLahan: string;
+  tipeLahan: string;
 
-    koordinat: string;
-    ketinggian: number;
+  koordinat: string;
+  ketinggian: number;
 
-    jenisTanah: string;
-    phTanah: number;
+  jenisTanah: string;
+  phTanah: number;
 
-    sumberAir: string;
-    jarakSumberAir: number;
+  sumberAir: string;
+  jarakSumberAir: number;
 
-    sistemIrigasi: string;
-    ketersediaanAir: string;
+  sistemIrigasi: string;
+  ketersediaanAir: string;
 }
 
 export interface PersyaratanIsolasi {

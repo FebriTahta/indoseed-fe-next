@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import SpkButton from '@/shared/@spk-reusable-components/uielements/spk-button';
 import SpkSelect from '@/shared/@spk-reusable-components/spk-packages/spk-reactselect';
 import SpkDatepickr from '@/shared/@spk-reusable-components/spk-packages/datepicker-component';
 
@@ -10,106 +9,94 @@ export interface FilterSelectConfig {
   placeholder: string;
   title?: string;
   widthClass?: string;
-  type?: string
+  type?: 'date' | 'opsi';
 }
 
 interface FilterRowProps {
-  search: string;
-  onSearchChange: (search: string) => void;
-  searchPlaceholder?: string;
+  search?: string;
+  onSearchChange?: (search: string) => void;
   selectFilters: FilterSelectConfig[];
   onSearch: () => void;
   onReset: () => void;
 }
 
 export default function FilterRow({
-  search,
-  onSearchChange,
-  searchPlaceholder = 'Cari...',
   selectFilters,
   onSearch,
   onReset,
 }: FilterRowProps) {
-
-  const [dateRange, setDateRange] = useState([]);
+  const [dateRange, setDateRange] = useState<[Date | null, Date | null]>([
+    new Date(2026, 5, 1),
+    new Date(2026, 5, 30)
+  ]);
   const [startDate, endDate] = dateRange;
 
-  return (
-    <div className="box border border-defaultborder/60 bg-white shadow-sm rounded-md mb-6">
-      <div className="box-body p-4 flex flex-col md:flex-row justify-between items-center gap-4 flex-wrap">
-        <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
-         
+  const handleReset = () => {
+    setDateRange([new Date(2026, 5, 1), new Date(2026, 5, 30)]);
+    onReset();
+  };
 
-          {/* Dynamic Select Filters */}
-          {selectFilters.map((config, index) => 
-            config.type === "date" ? (
-              <div key={index} className={`w-full ${config.widthClass || 'sm:w-36'} text-xs`}>
-                Periode Tanam
-                <div className="input-group custom-picker flex-nowrap">
-                  <div className="input-group-text !text-textmuted   dark:text-textmuted/50 !border-defaultborder dark:!border-defaultborder/10"> <i className="ri-calendar-line"></i> </div>
+  return (
+    <div className="box border border-defaultborder/60 bg-white shadow-sm rounded-lg mb-6">
+      <div className="box-body p-4 flex flex-wrap items-end justify-between gap-3">
+        {/* Controls Container */}
+        <div className="flex flex-wrap items-end gap-3 flex-1">
+          {selectFilters.map((config, index) => (
+            <div key={index} className="flex flex-col gap-1 min-w-[140px] flex-1 sm:flex-none">
+              {config.title && (
+                <label className="text-xs text-gray-600 font-medium mb-0">
+                  {config.title}
+                </label>
+              )}
+              {config.type === 'date' ? (
+                <div className="relative flex items-center">
                   <SpkDatepickr
-                    className="form-control datepicker-input"
-                    placeholderText="Select date range"
+                    selectsRange={true}
                     startDate={startDate}
                     endDate={endDate}
-                    selectsRange={true}
-                    onChange={(update) => setDateRange(update)} 
-                    selected={undefined} 
-                    minDate={undefined} 
-                    maxDate={undefined} 
-                    Timeinput={undefined} 
-                    isClearable={undefined} 
-                    Iconvisible={undefined} 
-                    showTimeSelectOnly={undefined} 
-                    showTimeInput={undefined} 
-                    Localtime={undefined} 
-                    Caption={undefined} 
-                    Inline={undefined} 
-                    Yearpicker={undefined} />
+                    onChange={(update: [Date | null, Date | null]) => {
+                      setDateRange(update);
+                      if (config.onChange) {
+                        config.onChange(update);
+                      }
+                    }}
+                    dateFormat="dd/MM/yyyy"
+                    placeholderText="01/06/2026 - 30/06/2026"
+                    className="form-control text-xs border border-gray-300 rounded-md py-1.5 px-3 pr-8 w-full font-medium text-gray-700 bg-white"
+                  />
+                  <i className="ri-calendar-line absolute right-2.5 text-gray-400 text-sm pointer-events-none z-10"></i>
                 </div>
-              </div>
-            ) : (
-              // jika option
-              <div key={index} className={`w-full ${config.widthClass || 'sm:w-36'} text-xs`}>
-                {config.title || '' }
+              ) : (
                 <SpkSelect
                   {...({
                     option: config.options,
                     placeholder: config.placeholder,
                     onfunchange: config.onChange,
                     getValue: config.value,
-                    classNameprefix: "react-select",
+                    classNameprefix: 'react-select',
                     clearable: true
                   } as any)}
                 />
-              </div>
-            )
-          
-            
-          )}
+              )}
+            </div>
+          ))}
         </div>
 
-        {/* Reset & Export Actions */}
-        <div className="flex items-center justify-between md:justify-end gap-4 w-full md:w-auto border-t md:border-t-0 pt-3 md:pt-0">
-          
-          <SpkButton
-              {...({
-              onclickfunc: onSearch,
-              style: { backgroundColor: '#078836', color: 'white' },
-              className: "hover:bg-[#06732d] hover:text-white",
-              customClass: "ti-btn !border-0 btn-wave !me-0 flex items-center gap-1.5"
-            } as any)}
-          >
-            <i className="ri-filter-2-line text-lg"></i> Filter
-          </SpkButton>
-          
+        {/* Filter & Reset Buttons */}
+        <div className="flex items-center gap-2 mt-2 sm:mt-0">
           <button
-            onClick={onReset}
-            className="flex items-center gap-1 text-xs text-textmuted hover:text-danger font-medium transition-colors"
+            onClick={onSearch}
+            className="px-4 py-1.5 rounded-md bg-[#078836] hover:bg-[#06732d] text-white text-xs font-semibold flex items-center gap-1.5 shadow-sm transition-colors"
           >
-            <i className="ri-refresh-line"></i> Reset
+            <i className="ri-filter-3-line text-sm"></i> Terapkan
           </button>
 
+          <button
+            onClick={handleReset}
+            className="px-4 py-1.5 rounded-md bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 text-xs font-semibold flex items-center gap-1.5 transition-colors"
+          >
+            Reset
+          </button>
         </div>
       </div>
     </div>

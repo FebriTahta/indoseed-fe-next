@@ -11,11 +11,23 @@ export interface StatItem {
 
 interface StatsWidgetsProps {
   items: StatItem[];
+  columns?: 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8;
 }
 
-export default function StatsWidgets({ items }: StatsWidgetsProps) {
+export default function StatsWidgets({ items, columns = 5 }: StatsWidgetsProps) {
+  const gridColsClass = {
+    1: 'xl:grid-cols-1',
+    2: 'xl:grid-cols-2',
+    3: 'xl:grid-cols-3',
+    4: 'xl:grid-cols-4',
+    5: 'xl:grid-cols-5',
+    6: 'xl:grid-cols-6',
+    7: 'xl:grid-cols-7',
+    8: 'xl:grid-cols-8',
+  }[columns] || 'xl:grid-cols-5';
+
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-x-6 gap-y-4 mb-6">
+    <div className={`grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 ${gridColsClass} gap-x-6 gap-y-4 mb-6`}>
       {items.map((stat, i) => (
         <div key={i} className="box border border-defaultborder/60 bg-white shadow-sm rounded-md">
           <div className="box-body flex items-center gap-4 p-4">

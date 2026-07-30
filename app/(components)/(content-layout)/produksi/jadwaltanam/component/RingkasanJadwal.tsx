@@ -7,10 +7,10 @@ interface Props {
     komoditas: string;
     varietas: string;
     lahan: string;
-    luasTanam: number;
+    luasTanam: number | string;
     periodeTanam: string;
     perkiraanPanen: string;
-    benihDiperlukan: number;
+    benihDiperlukan: number | string;
     tujuanProduksi: string;
     tipeProduksi: string;
   };

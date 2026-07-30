@@ -1,46 +1,38 @@
 'use client';
 
-import SpkButton from '@/shared/@spk-reusable-components/uielements/spk-button';
+import React, { useState, Fragment } from 'react';
+import { useRouter } from 'next/navigation';
 import Pageheader from '@/shared/layouts-components/page-header/pageheader';
-import { Fragment } from 'react';
 import Stepper from '../component/Stepper';
-import FormSection from '../component/FormSection';
-import InformasiUmumCard from '../component/InformasiUmum';
-import LahanKomoditasCard from '../component/LahanKomoditas';
 import useJadwalTanamAdd from '@/app/hooks/useJadwalTanamAdd';
-import RencanaTanamCard from '../component/RencanaTanam';
-import CatatanTambahanCard from '../component/CatatanTambahan';
-import StandarKepatuhanISO from '../component/StandarKepatuhan';
-import RingkasanJadwal from '../component/RingkasanJadwal';
-import InformasiBenih from '../component/InfoBenih';
-import InformasiLahanCard from '../component/InformasiLahan';
-import PetaLayoutCard from '../component/PetaLayout';
-import InfoKomoditasVarietas from '../component/InfoKomoditasVarietas';
-import RencanaJadwalTanamCard from '../component/RencanaJadwalTanam';
+
+import Step1InformasiUmum from '../component/steps/Step1InformasiUmum';
+import Step2LahanKomoditas from '../component/steps/Step2LahanKomoditas';
+import Step3RencanaTanam from '../component/steps/Step3RencanaTanam';
+import Step4PersonilPeralatan from '../component/steps/Step4PersonilPeralatan';
+import Step5ReviewKonfirmasi from '../component/steps/Step5ReviewKonfirmasi';
 
 export default function CreateJadwalTanamPage() {
+  const router = useRouter();
+  const [currentStep, setCurrentStep] = useState(1);
 
   const {
     informasiUmum,
-    setInformasiUmum,
     lahanKomoditas,
-    setLahanKomoditas,
     rencanaTanam,
-    setRencanaTanam,
     catatanTambahan,
-    setCatatanTambahan,
-    informasiLahan, 
-    setInformasiLahan,
-    commodityOptions,
-    varietasOptions,
+    informasiLahan,
     stats,
-    infoSummary,
     handleChangeIU,
     handleChangeLK,
     handleChangeRT,
     handleChangeCT,
-    handleChangeIL
+    handleChangeIL,
   } = useJadwalTanamAdd();
+
+  const [detailRencanaTanam, setDetailRencanaTanam] = useState<any[]>([]);
+  const [personilList, setPersonilList] = useState<any[]>([]);
+  const [peralatanList, setPeralatanList] = useState<any[]>([]);
 
   const steps = [
     {
@@ -65,333 +57,232 @@ export default function CreateJadwalTanamPage() {
     },
     {
       id: 5,
-      title: 'Review',
+      title: 'Review & Konfirmasi',
       description: 'Verifikasi sebelum simpan',
     },
   ];
 
+  // Dynamic header titles & labels
+  const getHeaderMeta = () => {
+    switch (currentStep) {
+      case 1:
+        return {
+          title: 'Buat Jadwal Tanam Baru',
+          activePage: 'Buat Jadwal Tanam Baru',
+          mainPage: 'Jadwal Tanam',
+          description: 'Buat jadwal tanam baru sesuai standar ISO 9001:2015 dan prinsip Good Seed Production.',
+          nextLabel: 'Lanjut: Lahan & Komoditas >'
+        };
+      case 2:
+        return {
+          title: 'Buat Jadwal Tanam Baru',
+          activePage: 'Buat Jadwal Tanam Baru',
+          mainPage: 'Jadwal Tanam',
+          description: 'Buat jadwal tanam baru sesuai standar ISO 9001:2015 dan prinsip Good Seed Production.',
+          nextLabel: 'Lanjut: Rencana Tanam >'
+        };
+      case 3:
+        return {
+          title: 'Rencana Tanam',
+          activePage: 'Rencana Tanam',
+          mainPage: 'Jadwal Tanam',
+          description: 'Buat dan kelola rencana tanam benih untuk periode produksi.',
+          nextLabel: 'Lanjut: Personil & Peralatan >'
+        };
+      case 4:
+        return {
+          title: 'Personil & Peralatan',
+          activePage: 'Personil & Peralatan',
+          mainPage: 'Rencana Tanam',
+          description: 'Kelola personil dan peralatan yang dialokasikan untuk rencana tanam ini.',
+          nextLabel: 'Lanjut: Review & Konfirmasi >'
+        };
+      case 5:
+        return {
+          title: 'Review & Konfirmasi',
+          activePage: 'Review & Konfirmasi',
+          mainPage: 'Rencana Tanam',
+          description: 'Review seluruh rencana tanam sebelum dikonfirmasi untuk pelaksanaan.',
+          nextLabel: 'Konfirmasi Rencana Tanam >'
+        };
+      default:
+        return {
+          title: 'Buat Jadwal Tanam Baru',
+          activePage: 'Buat Jadwal Tanam Baru',
+          mainPage: 'Jadwal Tanam',
+          description: 'Buat jadwal tanam baru sesuai standar ISO 9001:2015 dan prinsip Good Seed Production.',
+          nextLabel: 'Lanjut >'
+        };
+    }
+  };
+
+  const meta = getHeaderMeta();
+
+  const handleNext = () => {
+    if (currentStep < 5) {
+      setCurrentStep(prev => prev + 1);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    } else {
+      router.push('/produksi/jadwaltanam');
+    }
+  };
+
+  const handleBack = () => {
+    if (currentStep > 1) {
+      setCurrentStep(prev => prev - 1);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    } else {
+      router.push('/produksi/jadwaltanam');
+    }
+  };
+
   return (
     <Fragment>
-      <Pageheader title="Buat Jadwal Tanam Baru"
+      <Pageheader
+        title={meta.title}
         currentpage="Jadwal Tanam"
-        activepage="Buat Jadwal Tanam Baru"
+        activepage={meta.activePage}
         mainpage="Produksi"
-        description="Buat jadwal tanam baru sesuai ISO 90001:2015 dan prinsip Good Seed Production"
+        description={meta.description}
         customButton={
-          <SpkButton
-            {...({
-              onclickfunc: undefined,
-              style: { backgroundColor: '#078836', color: 'white' },
-              className: "hover:bg-[#06732d] hover:text-white",
-              customClass: "ti-btn !border-0 btn-wave !me-0 flex items-center gap-1.5"
-            } as any)}
-          >
-            <i className="ri-add-line text-lg"></i> Simpan Jadwal
-          </SpkButton>
-        } />
+          <div className="flex items-center gap-2">
+            {currentStep > 1 ? (
+              <button
+                onClick={handleBack}
+                className="px-3.5 py-1.5 bg-white border border-gray-300 rounded-md text-xs font-semibold text-gray-700 hover:bg-gray-50 shadow-sm flex items-center gap-1"
+              >
+                <i className="ri-arrow-left-s-line text-sm"></i> Kembali
+              </button>
+            ) : (
+              <button
+                onClick={() => router.push('/produksi/jadwaltanam')}
+                className="px-3.5 py-1.5 bg-white border border-gray-300 rounded-md text-xs font-semibold text-gray-700 hover:bg-gray-50 shadow-sm"
+              >
+                Batal
+              </button>
+            )}
 
-      <Stepper
-        items={steps}
-        current={1}
+            <button
+              onClick={handleNext}
+              className="px-4 py-1.5 bg-[#078836] hover:bg-[#06732d] text-white rounded-md text-xs font-semibold flex items-center gap-1.5 shadow-sm transition-colors"
+            >
+              {currentStep === 1 ? (
+                <>
+                  Simpan Jadwal <i className="ri-arrow-down-s-line text-xs"></i>
+                </>
+              ) : (
+                <>
+                  {meta.nextLabel}
+                </>
+              )}
+            </button>
+          </div>
+        }
       />
 
-      <div className="grid grid-cols-12 gap-5 mt-5">
+      {/* Stepper Navigation */}
+      <Stepper
+        items={steps}
+        current={currentStep}
+        onChange={(step) => setCurrentStep(step)}
+      />
 
-        <div className="col-span-9">
+      {/* Step Content */}
+      <div className="mt-5 mb-8">
+        {currentStep === 1 && (
+          <Step1InformasiUmum
+            dataIU={informasiUmum}
+            dataLK={lahanKomoditas}
+            dataRT={rencanaTanam}
+            dataCT={catatanTambahan}
+            onChangeIU={handleChangeIU}
+            onChangeLK={handleChangeLK}
+            onChangeRT={handleChangeRT}
+            onChangeCT={handleChangeCT}
+            options={stats}
+          />
+        )}
 
-          <FormSection title="Informasi Umum">
-          
-            <InformasiUmumCard value={informasiUmum} options={stats.infoUmumOption} onChange={handleChangeIU} />          
-          
-          </FormSection>
+        {currentStep === 2 && (
+          <Step2LahanKomoditas
+            options={stats}
+            dataLK={lahanKomoditas}
+            dataIL={informasiLahan}
+            onChangeLK={handleChangeLK}
+            onChangeIL={handleChangeIL}
+          />
+        )}
 
-          <FormSection title="Lahan & Komoditas">
+        {currentStep === 3 && (
+          <Step3RencanaTanam
+            options={stats}
+            dataLK={lahanKomoditas}
+            dataRT={rencanaTanam}
+            dataCT={catatanTambahan}
+            onChangeRT={handleChangeRT}
+            onChangeCT={handleChangeCT}
+            detailList={detailRencanaTanam}
+            setDetailList={setDetailRencanaTanam}
+          />
+        )}
 
-            <LahanKomoditasCard value={lahanKomoditas} options={stats.lahanKomoOption} onChange={handleChangeLK} />  
+        {currentStep === 4 && (
+          <Step4PersonilPeralatan
+            options={stats}
+            dataIU={informasiUmum}
+            dataIL={informasiLahan}
+            dataLK={lahanKomoditas}
+            dataRT={rencanaTanam}
+            detailList={detailRencanaTanam}
+            personilList={personilList}
+            setPersonilList={setPersonilList}
+            peralatanList={peralatanList}
+            setPeralatanList={setPeralatanList}
+          />
+        )}
 
-          </FormSection>
-
-          <FormSection title="Rencana Tanam">
-
-            <RencanaTanamCard value={rencanaTanam} options={stats.rencanaTanamOption} onChange={handleChangeRT} />          
-
-          </FormSection>
-
-          <FormSection title="Catatan Tambahan">
-
-            <CatatanTambahanCard value={catatanTambahan} onChange={handleChangeCT} />          
-
-          </FormSection>
-
-        </div>
-
-        <div className="col-span-3">
-
-          <StandarKepatuhanISO />
-
-          <RingkasanJadwal summary={infoSummary.summary} />
-
-          <InformasiBenih data={infoSummary.infoBenih} /> 
-
-        </div>
-
+        {currentStep === 5 && (
+          <Step5ReviewKonfirmasi
+            options={stats}
+            dataIU={informasiUmum}
+            dataIL={informasiLahan}
+            dataLK={lahanKomoditas}
+            dataRT={rencanaTanam}
+            dataCT={catatanTambahan}
+            detailList={detailRencanaTanam}
+            personilList={personilList}
+            peralatanList={peralatanList}
+          />
+        )}
       </div>
 
-      <div className="grid grid-cols-12 gap-5 mt-5">
+      {/* Bottom Navigation Bar */}
+      <div className="box border border-defaultborder/60 bg-white shadow-sm rounded-lg p-4 flex items-center justify-between mb-8">
+        <button
+          onClick={() => router.push('/produksi/jadwaltanam')}
+          className="px-4 py-2 bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 text-xs font-semibold rounded-md transition-colors"
+        >
+          Batal
+        </button>
 
-        <div className="col-span-9">
-          <FormSection title="A. Informasi Lahan">
+        <div className="flex items-center gap-3">
+          {currentStep > 1 && (
+            <button
+              onClick={handleBack}
+              className="px-4 py-2 bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 text-xs font-semibold rounded-md flex items-center gap-1 transition-colors"
+            >
+              <i className="ri-arrow-left-s-line"></i> Kembali
+            </button>
+          )}
 
-            <InformasiLahanCard value={informasiLahan} options={stats.informasiLahanOption} onChange={handleChangeIL} />
-
-          </FormSection>
-
-          <FormSection title="Peta & Layout Lahan">
-
-            <PetaLayoutCard value={lahanKomoditas} onChange={handleChangeLK} />
-
-          </FormSection>
-
-          <div className="rounded-xl border border-primary/20 bg-primary/5 p-4">
-            <div className="flex items-start gap-3">
-              <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary/10">
-                <i className="ri-shield-check-line text-lg text-primary" />
-              </div>
-
-              <div className="flex-1">
-                <h6 className="mb-1 text-sm font-semibold text-primary">
-                  Catatan ISO
-                </h6>
-
-                <p className="text-sm text-defaulttextcolor">
-                  Pastikan lahan bebas dari kontaminasi, memiliki riwayat budidaya yang
-                  baik, dan memenuhi persyaratan isolasi sesuai standar sertifikasi
-                  benih.
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div className="col-span-3">
-
-          <InfoKomoditasVarietas value={lahanKomoditas} onChange={handleChangeLK} options={stats.lahanKomoOption} />
-
-        </div>
-
-      </div>
-
-      <div className="grid grid-cols-12 gap-5 mt-5">
-
-        <div className="col-span-12">
-
-          <FormSection title="Rencana Tanam">
-
-            <RencanaJadwalTanamCard value={rencanaTanam} options={stats.rencanaTanamOption} onChange={handleChangeRT} />          
-
-          </FormSection>
-
+          <button
+            onClick={handleNext}
+            className="px-5 py-2 bg-[#078836] hover:bg-[#06732d] text-white text-xs font-semibold rounded-md flex items-center gap-1.5 shadow-sm transition-colors"
+          >
+            {meta.nextLabel}
+          </button>
         </div>
       </div>
-
-
     </Fragment>
-    // <div className="space-y-6">
-
-    //     {/* Header */}
-
-    //     <div className="flex justify-between items-center">
-
-    //         <div>
-
-    //             <h1 className="text-2xl font-bold">
-    //                 Buat Jadwal Tanam Baru
-    //             </h1>
-
-    //             <p className="text-gray-500">
-    //                 Buat jadwal tanam baru sesuai standar ISO.
-    //             </p>
-
-    //         </div>
-
-    //         <div className="flex gap-2">
-
-    //             <button
-    //                 className="btn btn-outline"
-    //                 onClick={vm.cancel}
-    //             >
-    //                 Batal
-    //             </button>
-
-    //             <button
-    //                 className="btn btn-success"
-    //                 onClick={() => vm.submit('draft')}
-    //             >
-    //                 Simpan Draft
-    //             </button>
-
-    //         </div>
-
-    //     </div>
-
-    //     {/* Step */}
-
-    //     <Stepper
-
-    //         current={vm.step}
-
-    //         items={vm.steps}
-
-    //         onChange={vm.goToStep}
-
-    //     />
-
-    //     {/* Layout */}
-
-    //     <div className="grid grid-cols-12 gap-6">
-
-    //         {/* Left */}
-
-    //         <div className="col-span-9">
-
-    //             {vm.step == 1 && (
-
-    //                 <Step1InformasiUmum
-
-    //                     value={vm.form.informasiUmum}
-
-    //                     options={vm.options}
-
-    //                     onChange={vm.updateInformasi}
-
-    //                 />
-
-    //             )}
-
-    //             {vm.step == 2 && (
-
-    //                 <Step2LahanKomoditas
-
-    //                     value={vm.form.lahanKomoditas}
-
-    //                     options={vm.options}
-
-    //                     onChange={vm.updateLahan}
-
-    //                 />
-
-    //             )}
-
-    //             {vm.step == 3 && (
-
-    //                 <Step3RencanaTanam
-
-    //                     value={vm.form.rencanaTanam}
-
-    //                     options={vm.options}
-
-    //                     onChange={vm.updateRencana}
-
-    //                 />
-
-    //             )}
-
-    //             {vm.step == 4 && (
-
-    //                 <Step4Personil
-
-    //                     value={vm.form.personil}
-
-    //                     options={vm.options}
-
-    //                     onChange={vm.updatePersonil}
-
-    //                 />
-
-    //             )}
-
-    //             {vm.step == 5 && (
-
-    //                 <Step5Review
-
-    //                     form={vm.form}
-
-    //                 />
-
-    //             )}
-
-    //         </div>
-
-    //         {/* Right */}
-
-    //         <div className="col-span-3 space-y-5">
-
-    //             <ISOCard />
-
-    //             <SummaryCard
-
-    //                 summary={vm.summary}
-
-    //             />
-
-    //         </div>
-
-    //     </div>
-
-    //     {/* Footer */}
-
-    //     <div className="flex justify-between">
-
-    //         <button
-
-    //             className="btn"
-
-    //             disabled={vm.step == 1}
-
-    //             onClick={vm.previous}
-
-    //         >
-
-    //             Sebelumnya
-
-    //         </button>
-
-    //         {vm.step != 5 && (
-
-    //             <button
-
-    //                 className="btn btn-primary"
-
-    //                 onClick={vm.next}
-
-    //             >
-
-    //                 Selanjutnya
-
-    //             </button>
-
-    //         )}
-
-    //         {vm.step == 5 && (
-
-    //             <button
-
-    //                 className="btn btn-success"
-
-    //                 onClick={() => vm.submit('publish')}
-
-    //             >
-
-    //                 Simpan Jadwal
-
-    //             </button>
-
-    //         )}
-
-    //     </div>
-
-    // </div>
-
   );
-
 }

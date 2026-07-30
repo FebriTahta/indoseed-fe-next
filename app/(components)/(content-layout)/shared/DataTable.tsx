@@ -80,11 +80,10 @@ export default function DataTable({
               <button
                 key={num}
                 onClick={() => onPageChange(num)}
-                className={`w-8 h-8 flex items-center justify-center rounded border font-medium text-sm transition-colors ${
-                  currentPage === num
+                className={`w-8 h-8 flex items-center justify-center rounded border font-medium text-sm transition-colors ${currentPage === num
                     ? 'bg-emerald-600 text-white border-emerald-600'
                     : 'bg-white text-gray-700 hover:bg-gray-100'
-                }`}
+                  }`}
               >
                 {num}
               </button>
