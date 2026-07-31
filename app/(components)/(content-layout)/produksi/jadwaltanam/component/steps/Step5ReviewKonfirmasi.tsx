@@ -10,6 +10,7 @@ interface Step5Props {
   detailList?: any[];
   personilList?: any[];
   peralatanList?: any[];
+  isEditMode?: boolean;
 }
 
 export default function Step5ReviewKonfirmasi({
@@ -22,6 +23,7 @@ export default function Step5ReviewKonfirmasi({
   detailList = [],
   personilList = [],
   peralatanList = [],
+  isEditMode = false,
 }: Step5Props) {
   // Modal states for detail views
   const [activeModal, setActiveModal] = useState<'A' | 'B' | 'C' | 'D' | null>(null);
@@ -114,8 +116,9 @@ export default function Step5ReviewKonfirmasi({
     return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
   };
 
-  const getFileBadge = (fileName: string) => {
-    const ext = fileName.split('.').pop()?.toLowerCase();
+  const getFileBadge = (fileName?: string) => {
+    const nameStr = fileName || '';
+    const ext = nameStr.includes('.') ? nameStr.split('.').pop()?.toLowerCase() : '';
     if (ext === 'pdf') {
       return { label: 'PDF', bg: 'bg-red-100 text-red-700' };
     }
@@ -125,15 +128,13 @@ export default function Step5ReviewKonfirmasi({
     return { label: 'FILE', bg: 'bg-gray-100 text-gray-700' };
   };
 
-  const handleViewFile = (fileItem: File | { name: string; size?: string; url?: string }) => {
-    const name = fileItem.name;
-    let url = '';
+  const handleViewFile = (fileItem: any) => {
+    const name = fileItem?.name || fileItem?.nama || 'Dokumen';
+    let url = fileItem?.url || fileItem?.fileUrl || '';
     const isPdf = name.toLowerCase().endsWith('.pdf');
 
     if (fileItem instanceof File) {
       url = URL.createObjectURL(fileItem);
-    } else if (fileItem.url) {
-      url = fileItem.url;
     }
 
     setPreviewFile({ name, url, isPdf });
@@ -395,8 +396,9 @@ export default function Step5ReviewKonfirmasi({
 
             <div className="space-y-2">
               {dataCT?.dokumenFiles && dataCT.dokumenFiles.length > 0 ? (
-                dataCT.dokumenFiles.map((file: File, idx: number) => {
-                  const badge = getFileBadge(file.name);
+                dataCT.dokumenFiles.map((file: any, idx: number) => {
+                  const fileName = file?.name || file?.nama || 'Dokumen Rencana Tanam';
+                  const badge = getFileBadge(fileName);
                   return (
                     <div key={idx} className="border border-gray-200 rounded p-2.5 flex items-center justify-between bg-white text-xs shadow-sm hover:bg-gray-50 transition-colors">
                       <div className="flex items-center gap-2 overflow-hidden">
@@ -404,8 +406,10 @@ export default function Step5ReviewKonfirmasi({
                           {badge.label}
                         </span>
                         <div className="truncate">
-                          <p className="font-semibold text-gray-800 truncate mb-0 text-[11px]" title={file.name}>{file.name}</p>
-                          <span className="text-[9px] text-gray-400">{formatFileSize(file.size)}</span>
+                          <p className="font-semibold text-gray-800 truncate mb-0 text-[11px]" title={fileName}>{fileName}</p>
+                          <span className="text-[9px] text-gray-400">
+                            {file?.size ? formatFileSize(file.size) : 'Dokumen Pendukung'}
+                          </span>
                         </div>
                       </div>
                       <div className="flex items-center gap-1 shrink-0 ml-1">
@@ -430,20 +434,24 @@ export default function Step5ReviewKonfirmasi({
             </div>
           </div>
 
-          {/* F. Alur Approval (Default Menunggu) */}
+          {/* F. Alur Approval */}
           <div className="box border border-defaultborder/60 bg-white shadow-sm rounded-lg p-5">
             <div className="flex items-center justify-between mb-4 pb-2 border-b border-gray-100">
               <h3 className="text-sm font-bold text-gray-800">F. Alur Approval</h3>
-              <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-amber-100 text-amber-800">
-                Menunggu Pengajuan
+              <span className={`px-2 py-0.5 rounded text-[10px] font-semibold ${
+                (isEditMode || dataIU?.kodeJadwalTanam) ? 'bg-amber-100 text-amber-800' : 'bg-amber-100 text-amber-800'
+              }`}>
+                {(isEditMode || dataIU?.kodeJadwalTanam) ? 'Menunggu Review' : 'Menunggu Pengajuan'}
               </span>
             </div>
 
             <div className="space-y-4 text-xs relative pl-2">
               {/* Step 1: Diajukan Oleh */}
               <div className="flex items-start gap-3 relative">
-                <div className="w-6 h-6 rounded-full bg-amber-500 text-white flex items-center justify-center font-bold text-xs shrink-0 z-10">
-                  1
+                <div className={`w-6 h-6 rounded-full text-white flex items-center justify-center font-bold text-xs shrink-0 z-10 ${
+                  (isEditMode || dataIU?.kodeJadwalTanam) ? 'bg-emerald-500' : 'bg-amber-500'
+                }`}>
+                  {(isEditMode || dataIU?.kodeJadwalTanam) ? <i className="ri-check-line text-xs"></i> : 1}
                 </div>
                 <div className="flex-1 border-b border-gray-100 pb-3">
                   <div className="flex justify-between items-start">
@@ -451,15 +459,29 @@ export default function Step5ReviewKonfirmasi({
                       <h5 className="font-bold text-gray-800 mb-0.5">Diajukan Oleh</h5>
                       <span className="text-[11px] text-gray-500 block">Staf / Koordinator Produksi</span>
                     </div>
-                    <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-amber-100 text-amber-800">Menunggu</span>
+                    <span className={`px-2 py-0.5 rounded text-[10px] font-semibold ${
+                      (isEditMode || dataIU?.kodeJadwalTanam)
+                        ? 'bg-emerald-50 text-emerald-700 border border-emerald-100'
+                        : 'bg-amber-100 text-amber-800'
+                    }`}>
+                      {(isEditMode || dataIU?.kodeJadwalTanam) ? 'Selesai' : 'Menunggu'}
+                    </span>
                   </div>
-                  <span className="text-[10px] text-gray-400 mt-1 block">Status: Menunggu Konfirmasi Simpan</span>
+                  <span className="text-[10px] text-gray-400 mt-1 block">
+                    {(isEditMode || dataIU?.kodeJadwalTanam)
+                      ? `Status: Disetujui / Selesai (Diajukan oleh: ${dataIU?.penanggungJawab || 'Staf Produksi'})`
+                      : 'Status: Menunggu Konfirmasi Simpan'}
+                  </span>
                 </div>
               </div>
 
               {/* Step 2: Review Oleh */}
               <div className="flex items-start gap-3 relative">
-                <div className="w-6 h-6 rounded-full bg-gray-300 text-gray-600 flex items-center justify-center font-bold text-xs shrink-0 z-10">
+                <div className={`w-6 h-6 rounded-full flex items-center justify-center font-bold text-xs shrink-0 z-10 ${
+                  (isEditMode || dataIU?.kodeJadwalTanam)
+                    ? 'bg-amber-500 text-white ring-2 ring-amber-100'
+                    : 'bg-gray-300 text-gray-600'
+                }`}>
                   2
                 </div>
                 <div className="flex-1 border-b border-gray-100 pb-3">
@@ -468,9 +490,17 @@ export default function Step5ReviewKonfirmasi({
                       <h5 className="font-bold text-gray-800 mb-0.5">Review Oleh</h5>
                       <span className="text-[11px] text-gray-500 block">Supervisor Produksi</span>
                     </div>
-                    <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-gray-100 text-gray-600">Menunggu</span>
+                    <span className={`px-2 py-0.5 rounded text-[10px] font-semibold ${
+                      (isEditMode || dataIU?.kodeJadwalTanam)
+                        ? 'bg-amber-100 text-amber-800'
+                        : 'bg-gray-100 text-gray-600'
+                    }`}>
+                      Menunggu
+                    </span>
                   </div>
-                  <span className="text-[10px] text-gray-400 mt-1 block">—</span>
+                  <span className="text-[10px] text-gray-400 mt-1 block">
+                    {(isEditMode || dataIU?.kodeJadwalTanam) ? 'Status: Menunggu Review Supervisor' : '—'}
+                  </span>
                 </div>
               </div>
 

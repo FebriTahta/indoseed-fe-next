@@ -57,6 +57,7 @@ export const MENUITEMS = [
       { path: "/produksi/jadwaltanam", type: "link", active: false, selected: false, title: "Jadwal Tanam" },
       { path: "/produksi/monitoringlahan", type: "link", active: false, selected: false, title: "Monitoring Lahan" },
       { path: "/produksi/monitoringgreenhouse", type: "link", active: false, selected: false, title: "Monitoring Greenhouse" },
+      { path: "/produksi/panen", type: "link", active: false, selected: false, title: "Panen" },
       { path: "/produksi/kesiapanpanen", type: "link", active: false, selected: false, title: "Kesiapan Panen" },
       { path: "/produksi/sortasi", type: "link", active: false, selected: false, title: "Sortasi" },
       { path: "/produksi/treatment", type: "link", active: false, selected: false, title: "Treatment" },

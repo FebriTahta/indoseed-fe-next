@@ -2,9 +2,11 @@
 
 import React, { useState, Fragment } from 'react';
 import { useRouter } from 'next/navigation';
+import { toast } from 'react-toastify';
 import Pageheader from '@/shared/layouts-components/page-header/pageheader';
 import Stepper from '../component/Stepper';
 import useJadwalTanamAdd from '@/app/hooks/useJadwalTanamAdd';
+import jadwalTanamService from '@/app/services/jadwalTanamService';
 
 import Step1InformasiUmum from '../component/steps/Step1InformasiUmum';
 import Step2LahanKomoditas from '../component/steps/Step2LahanKomoditas';
@@ -15,6 +17,7 @@ import Step5ReviewKonfirmasi from '../component/steps/Step5ReviewKonfirmasi';
 export default function CreateJadwalTanamPage() {
   const router = useRouter();
   const [currentStep, setCurrentStep] = useState(1);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const {
     informasiUmum,
@@ -103,7 +106,7 @@ export default function CreateJadwalTanamPage() {
           activePage: 'Review & Konfirmasi',
           mainPage: 'Rencana Tanam',
           description: 'Review seluruh rencana tanam sebelum dikonfirmasi untuk pelaksanaan.',
-          nextLabel: 'Konfirmasi Rencana Tanam >'
+          nextLabel: isSubmitting ? 'Menyimpan...' : 'Konfirmasi Rencana Tanam >'
         };
       default:
         return {
@@ -118,12 +121,73 @@ export default function CreateJadwalTanamPage() {
 
   const meta = getHeaderMeta();
 
-  const handleNext = () => {
+  const handleNext = async () => {
     if (currentStep < 5) {
       setCurrentStep(prev => prev + 1);
       window.scrollTo({ top: 0, behavior: 'smooth' });
     } else {
-      router.push('/produksi/jadwaltanam');
+      try {
+        setIsSubmitting(true);
+        const uploadedDocs = (catatanTambahan?.dokumenFiles || []).map((file: any) => ({
+          nama: file.name || file.nama || 'Dokumen Rencana Tanam',
+          fileUrl: file instanceof File ? URL.createObjectURL(file) : (file.url || file.fileUrl || ''),
+          fileType: file.type || file.fileType || 'application/pdf',
+        }));
+
+        const docsToSave = uploadedDocs.length > 0 ? uploadedDocs : [
+          {
+            nama: 'Dokumen SOP Tanam & Standar ISO 9001:2015.pdf',
+            fileUrl: '/sample-sop.pdf',
+            fileType: 'application/pdf',
+          }
+        ];
+
+        const payload = {
+          kodeJadwalTanam: informasiUmum.kodeJadwalTanam,
+          periodeTanam: informasiUmum.periodeTanamMulai,
+          periodeTanamMulai: informasiUmum.periodeTanamMulai,
+          periodeTanamSelesai: informasiUmum.periodeTanamSelesai,
+          musimTanam: informasiUmum.musimTanam,
+          tujuanProduksi: informasiUmum.tujuanProduksi,
+          tipeProduksi: informasiUmum.tipeProduksi,
+          statusJadwal: informasiUmum.statusJadwal || 'Draft',
+          penanggungJawab: informasiUmum.penanggungJawab,
+          deskripsi: informasiUmum.deskripsi,
+
+          greenhouseId: lahanKomoditas.idLahan,
+          commodityId: lahanKomoditas.komoditas,
+          varietyId: lahanKomoditas.varietas,
+          luasTanam: lahanKomoditas.luasTanam,
+          asalBenih: lahanKomoditas.asalBenih,
+          jumlahBenihDiperlukan: lahanKomoditas.jumlahBenihDiperlukan,
+          jarakTanam: lahanKomoditas.jarakTanam,
+          sistemTanam: lahanKomoditas.sistemTanam,
+
+          tanggalPersemaian: rencanaTanam.tanggalPersemaian,
+          tanggalTanam: rencanaTanam.tanggalTanam,
+          perkiraanPanen: rencanaTanam.perkiraanPanen,
+          siklusTanamHari: rencanaTanam.siklusTanamHari,
+          metodeTanam: rencanaTanam.metodeTanam,
+          kepadatanTanam: rencanaTanam.kepadatanTanam,
+          irigasi: rencanaTanam.irigasi,
+          sumberAir: rencanaTanam.sumberAir,
+          catatan: catatanTambahan.catatan,
+
+          detailRencanaTanam,
+          personilList,
+          peralatanList,
+          dokumenList: docsToSave,
+        };
+
+        const res = await jadwalTanamService.createJadwalTanams(payload);
+        toast.success(res.message || 'Jadwal tanam berhasil dibuat!');
+        router.push('/produksi/jadwaltanam');
+      } catch (err: any) {
+        console.error('Error creating Jadwal Tanam:', err);
+        toast.error(err.response?.data?.message || 'Gagal membuat jadwal tanam');
+      } finally {
+        setIsSubmitting(false);
+      }
     }
   };
 
@@ -208,8 +272,10 @@ export default function CreateJadwalTanamPage() {
             options={stats}
             dataLK={lahanKomoditas}
             dataIL={informasiLahan}
+            dataRT={rencanaTanam}
             onChangeLK={handleChangeLK}
             onChangeIL={handleChangeIL}
+            onChangeRT={handleChangeRT}
           />
         )}
 

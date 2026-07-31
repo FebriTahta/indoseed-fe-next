@@ -1,65 +1,126 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
+import { JadwalTanam } from '@/app/types/jadwalTanam';
 
-export default function KalenderJadwalTanam() {
-  const [currentMonth, setCurrentMonth] = useState('Juni 2026');
+interface KalenderJadwalTanamProps {
+  jadwalTanams?: JadwalTanam[];
+}
+
+export default function KalenderJadwalTanam({ jadwalTanams = [] }: KalenderJadwalTanamProps) {
+  const [currentDate, setCurrentDate] = useState(() => new Date());
+  const [selectedDayKey, setSelectedDayKey] = useState<string | null>(null);
 
   const daysHeader = ['Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab', 'Min'];
 
-  const calendarDays = [
-    // Week 1 (May 2026 prev month)
-    { day: 25, isCurrentMonth: false },
-    { day: 26, isCurrentMonth: false },
-    { day: 27, isCurrentMonth: false },
-    { day: 28, isCurrentMonth: false },
-    { day: 29, isCurrentMonth: false },
-    { day: 30, isCurrentMonth: false },
-    { day: 31, isCurrentMonth: false },
+  const monthYearLabel = useMemo(() => {
+    return currentDate.toLocaleDateString('id-ID', { month: 'long', year: 'numeric' });
+  }, [currentDate]);
 
-    // Week 2 (June)
-    { day: 1, isCurrentMonth: true },
-    { day: 2, isCurrentMonth: true },
-    { day: 3, isCurrentMonth: true },
-    { day: 4, isCurrentMonth: true, hasGreenDot: true },
-    { day: 5, isCurrentMonth: true },
-    { day: 6, isCurrentMonth: true },
-    { day: 7, isCurrentMonth: true, hasOrangeCircle: true },
+  const handlePrevMonth = () => {
+    setCurrentDate(prev => new Date(prev.getFullYear(), prev.getMonth() - 1, 1));
+  };
 
-    // Week 3
-    { day: 8, isCurrentMonth: true },
-    { day: 9, isCurrentMonth: true },
-    { day: 10, isCurrentMonth: true },
-    { day: 11, isCurrentMonth: true, hasGreenDot: true },
-    { day: 12, isCurrentMonth: true, hasGreenDot: true },
-    { day: 13, isCurrentMonth: true },
-    { day: 14, isCurrentMonth: true },
+  const handleNextMonth = () => {
+    setCurrentDate(prev => new Date(prev.getFullYear(), prev.getMonth() + 1, 1));
+  };
 
-    // Week 4
-    { day: 15, isCurrentMonth: true, hasOrangeDot: true, isOrangeMarked: true },
-    { day: 16, isCurrentMonth: true },
-    { day: 17, isCurrentMonth: true, isSelected: true },
-    { day: 18, isCurrentMonth: true },
-    { day: 19, isCurrentMonth: true, hasOrangeDot: true },
-    { day: 20, isCurrentMonth: true },
-    { day: 21, isCurrentMonth: true },
+  // Generate 35 or 42 calendar grid cells
+  const calendarGrid = useMemo(() => {
+    const year = currentDate.getFullYear();
+    const month = currentDate.getMonth();
 
-    // Week 5
-    { day: 22, isCurrentMonth: true },
-    { day: 23, isCurrentMonth: true },
-    { day: 24, isCurrentMonth: true },
-    { day: 25, isCurrentMonth: true },
-    { day: 26, isCurrentMonth: true },
-    { day: 27, isCurrentMonth: true },
-    { day: 28, isCurrentMonth: true },
+    const firstDayIndex = (new Date(year, month, 1).getDay() + 6) % 7; // Monday = 0
+    const totalDaysInMonth = new Date(year, month + 1, 0).getDate();
+    const prevMonthDays = new Date(year, month, 0).getDate();
 
-    // Week 6
-    { day: 29, isCurrentMonth: true },
-    { day: 30, isCurrentMonth: true },
-    { day: 1, isCurrentMonth: false },
-    { day: 2, isCurrentMonth: false },
-    { day: 3, isCurrentMonth: false },
-    { day: 4, isCurrentMonth: false },
-    { day: 6, isCurrentMonth: false },
-  ];
+    const days = [];
+
+    // Prev month days
+    for (let i = firstDayIndex - 1; i >= 0; i--) {
+      const dayNum = prevMonthDays - i;
+      const d = new Date(year, month - 1, dayNum);
+      const isoKey = d.toISOString().split('T')[0];
+      days.push({
+        day: dayNum,
+        isCurrentMonth: false,
+        dateObj: d,
+        isoKey,
+      });
+    }
+
+    // Current month days
+    for (let dayNum = 1; dayNum <= totalDaysInMonth; dayNum++) {
+      const d = new Date(year, month, dayNum);
+      const monthStr = String(month + 1).padStart(2, '0');
+      const dayStr = String(dayNum).padStart(2, '0');
+      const isoKey = `${year}-${monthStr}-${dayStr}`;
+      days.push({
+        day: dayNum,
+        isCurrentMonth: true,
+        dateObj: d,
+        isoKey,
+      });
+    }
+
+    // Next month days
+    const totalCells = days.length > 35 ? 42 : 35;
+    const remaining = totalCells - days.length;
+    for (let dayNum = 1; dayNum <= remaining; dayNum++) {
+      const d = new Date(year, month + 1, dayNum);
+      const isoKey = d.toISOString().split('T')[0];
+      days.push({
+        day: dayNum,
+        isCurrentMonth: false,
+        dateObj: d,
+        isoKey,
+      });
+    }
+
+    return days;
+  }, [currentDate]);
+
+  // Map events to days
+  const eventsByDateKey = useMemo(() => {
+    const map: Record<string, { items: JadwalTanam[]; hasAkanTanam: boolean; hasBerlangsung: boolean; hasSelesai: boolean }> = {};
+
+    const parseDateToKey = (dateStr?: string) => {
+      if (!dateStr) return null;
+      if (dateStr.includes('/')) {
+        const parts = dateStr.split('/');
+        if (parts.length === 3) {
+          return `${parts[2]}-${parts[1].padStart(2, '0')}-${parts[0].padStart(2, '0')}`;
+        }
+      }
+      if (dateStr.includes('-')) {
+        return dateStr.slice(0, 10);
+      }
+      return null;
+    };
+
+    jadwalTanams.forEach(item => {
+      const keyMulai = parseDateToKey(item.informasiUmum?.periodeTanamMulai || item.rencanaTanam?.tanggalTanam);
+      if (keyMulai) {
+        if (!map[keyMulai]) {
+          map[keyMulai] = { items: [], hasAkanTanam: false, hasBerlangsung: false, hasSelesai: false };
+        }
+        map[keyMulai].items.push(item);
+
+        const st = item.status || item.informasiUmum?.statusJadwal || '';
+        if (st === 'Akan Tanam' || st === 'Draft') map[keyMulai].hasAkanTanam = true;
+        else if (st === 'Sedang Berlangsung' || st === 'Berjalan') map[keyMulai].hasBerlangsung = true;
+        else if (st === 'Selesai') map[keyMulai].hasSelesai = true;
+        else map[keyMulai].hasAkanTanam = true;
+      }
+    });
+
+    return map;
+  }, [jadwalTanams]);
+
+  const selectedDayItems = selectedDayKey && eventsByDateKey[selectedDayKey] ? eventsByDateKey[selectedDayKey].items : [];
+
+  const todayIsoKey = useMemo(() => {
+    const now = new Date();
+    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+  }, []);
 
   return (
     <div className="box border border-defaultborder/60 bg-white shadow-sm rounded-lg mb-6 overflow-hidden">
@@ -69,11 +130,21 @@ export default function KalenderJadwalTanam() {
       <div className="box-body p-4">
         {/* Month Selector Header */}
         <div className="flex items-center justify-between mb-3">
-          <button className="p-1 hover:bg-gray-100 rounded text-gray-500">
+          <button
+            type="button"
+            onClick={handlePrevMonth}
+            className="p-1 hover:bg-gray-100 rounded text-gray-500 transition-colors"
+            title="Bulan Sebelumnya"
+          >
             <i className="ri-chevron-left-s-line text-base"></i>
           </button>
-          <span className="text-xs font-bold text-gray-800">{currentMonth}</span>
-          <button className="p-1 hover:bg-gray-100 rounded text-gray-500">
+          <span className="text-xs font-bold text-gray-800 capitalize">{monthYearLabel}</span>
+          <button
+            type="button"
+            onClick={handleNextMonth}
+            className="p-1 hover:bg-gray-100 rounded text-gray-500 transition-colors"
+            title="Bulan Berikutnya"
+          >
             <i className="ri-chevron-right-s-line text-base"></i>
           </button>
         </div>
@@ -89,39 +160,84 @@ export default function KalenderJadwalTanam() {
 
         {/* Calendar Grid */}
         <div className="grid grid-cols-7 gap-y-1.5 gap-x-1 text-center text-xs">
-          {calendarDays.map((item, idx) => (
-            <div key={idx} className="relative flex flex-col items-center justify-center py-1 min-h-[30px]">
-              {item.isSelected ? (
-                <span className="w-6.5 h-6.5 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold text-xs shadow-sm">
-                  {item.day}
-                </span>
-              ) : item.hasOrangeCircle ? (
-                <span className="w-6.5 h-6.5 rounded-full border-2 border-orange-500 text-orange-600 flex items-center justify-center font-bold text-xs">
-                  {item.day}
-                </span>
-              ) : item.isOrangeMarked ? (
-                <span className="w-6.5 h-6.5 rounded-full border border-orange-400 text-orange-600 flex items-center justify-center font-medium text-xs">
-                  {item.day}
-                </span>
-              ) : (
-                <span className={`font-medium ${item.isCurrentMonth ? 'text-gray-700' : 'text-gray-300'}`}>
-                  {item.day}
-                </span>
-              )}
+          {calendarGrid.map((item, idx) => {
+            const eventInfo = eventsByDateKey[item.isoKey];
+            const isToday = item.isoKey === todayIsoKey;
+            const isSelected = selectedDayKey === item.isoKey;
 
-              {/* Dots underneath dates */}
-              {item.hasGreenDot && (
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 mt-0.5"></span>
-              )}
-              {item.hasOrangeDot && !item.isOrangeMarked && (
-                <span className="w-1.5 h-1.5 rounded-full bg-orange-500 mt-0.5"></span>
-              )}
-            </div>
-          ))}
+            return (
+              <button
+                type="button"
+                key={idx}
+                onClick={() => setSelectedDayKey(item.isoKey)}
+                className={`relative flex flex-col items-center justify-center py-1 min-h-[32px] rounded cursor-pointer transition-colors ${
+                  isSelected ? 'bg-blue-50 ring-1 ring-blue-500' : 'hover:bg-gray-50'
+                }`}
+              >
+                <span
+                  className={`w-6.5 h-6.5 rounded-full flex items-center justify-center text-xs font-medium ${
+                    isToday
+                      ? 'bg-emerald-600 text-white font-bold shadow-sm'
+                      : item.isCurrentMonth
+                      ? 'text-gray-700'
+                      : 'text-gray-300'
+                  }`}
+                >
+                  {item.day}
+                </span>
+
+                {/* Status Dots */}
+                {eventInfo && (
+                  <div className="flex items-center justify-center gap-0.5 mt-0.5">
+                    {eventInfo.hasAkanTanam && (
+                      <span className="w-1.5 h-1.5 rounded-full bg-orange-500" title="Akan Tanam"></span>
+                    )}
+                    {eventInfo.hasBerlangsung && (
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" title="Sedang Berlangsung"></span>
+                    )}
+                    {eventInfo.hasSelesai && (
+                      <span className="w-1.5 h-1.5 rounded-full bg-blue-600" title="Selesai"></span>
+                    )}
+                  </div>
+                )}
+              </button>
+            );
+          })}
         </div>
 
+        {/* Selected Day Agenda Items */}
+        {selectedDayKey && (
+          <div className="mt-3 pt-3 border-t border-gray-100">
+            <p className="text-[11px] font-bold text-gray-700 mb-1.5">
+              Jadwal Tanggal {selectedDayKey.split('-').reverse().join('/')}:
+            </p>
+            {selectedDayItems.length > 0 ? (
+              <div className="space-y-1.5">
+                {selectedDayItems.map((evt, eIdx) => (
+                  <div key={eIdx} className="p-2 bg-gray-50 rounded border border-gray-100 text-[11px] text-left">
+                    <div className="flex items-center justify-between font-semibold text-gray-800">
+                      <span>{evt.informasiUmum?.kodeJadwalTanam}</span>
+                      <span className={`text-[10px] px-1.5 py-0.5 rounded font-bold ${
+                        evt.status === 'Sedang Berlangsung' ? 'bg-emerald-100 text-emerald-700' :
+                        evt.status === 'Selesai' ? 'bg-blue-100 text-blue-700' : 'bg-orange-100 text-orange-700'
+                      }`}>
+                        {evt.status}
+                      </span>
+                    </div>
+                    <p className="text-gray-600 mt-0.5">
+                      {evt.lahanKomoditas?.komoditas} - {evt.lahanKomoditas?.varietas} ({evt.lahanKomoditas?.namaLahan})
+                    </p>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-[11px] text-gray-400 italic">Tidak ada jadwal tanam pada tanggal ini.</p>
+            )}
+          </div>
+        )}
+
         {/* Legend Footer */}
-        <div className="mt-5 pt-3.5 border-t border-gray-100 flex items-center justify-between text-[11px] text-gray-600 flex-wrap gap-2">
+        <div className="mt-4 pt-3.5 border-t border-gray-100 flex items-center justify-between text-[11px] text-gray-600 flex-wrap gap-2">
           <div className="flex items-center gap-1.5">
             <span className="w-2.5 h-2.5 rounded-full bg-orange-500 inline-block"></span>
             <span>Akan Tanam</span>

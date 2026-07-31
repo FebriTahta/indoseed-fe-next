@@ -201,8 +201,8 @@ export default function Step1InformasiUmum({
                 onChange={(e) => onChangeIU('musimTanam', e.target.value)}
                 className="form-select text-xs border border-gray-300 rounded px-3 py-2 text-gray-700 w-full bg-white"
               >
-                <option value="kemarau">Musim Kemarau</option>
-                <option value="hujan">Musim Hujan</option>
+                <option value="Musim Kemarau">Musim Kemarau</option>
+                <option value="Musim Hujan">Musim Hujan</option>
               </select>
             </div>
 
@@ -337,13 +337,13 @@ export default function Step1InformasiUmum({
             <div>
               <label className="font-semibold text-gray-700 mb-1 block">Asal Benih <span className="text-red-500">*</span></label>
               <select
-                value={dataLK?.asalBenih || ''}
+                value={dataLK?.asalBenih || 'Gudang Benih - Batch BP-2505-001'}
                 onChange={(e) => onChangeLK('asalBenih', e.target.value)}
                 className="form-select text-xs border border-gray-300 rounded px-3 py-2 text-gray-700 w-full bg-white mb-1"
               >
                 <option value="">Pilih Asal Benih</option>
                 {options?.lahanKomoOption?.asalBenih?.map((opt: any, idx: number) => (
-                  <option key={idx} value={opt.value}>
+                  <option key={idx} value={opt.label || opt.value}>
                     {opt.label}
                   </option>
                 ))}
@@ -355,7 +355,7 @@ export default function Step1InformasiUmum({
               <div className="relative flex items-center">
                 <input
                   type="text"
-                  value={dataLK?.jumlahBenihDiperlukan || '125'}
+                  value={dataLK?.jumlahBenihDiperlukan || '100'}
                   onChange={(e) => onChangeLK('jumlahBenihDiperlukan', e.target.value)}
                   className="form-control text-xs border border-gray-300 rounded px-3 py-2 pr-8 text-gray-700 w-full"
                 />

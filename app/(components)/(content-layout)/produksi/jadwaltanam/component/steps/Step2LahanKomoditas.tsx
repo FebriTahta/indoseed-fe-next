@@ -10,11 +10,13 @@ interface Step2Props {
   options?: any;
   dataLK?: any;
   dataIL?: any;
+  dataRT?: any;
   onChangeLK?: (field: string, val: any) => void;
   onChangeIL?: (field: string, val: any) => void;
+  onChangeRT?: (field: string, val: any) => void;
 }
 
-export default function Step2LahanKomoditas({ options, dataLK, dataIL, onChangeLK, onChangeIL }: Step2Props) {
+export default function Step2LahanKomoditas({ options, dataLK, dataIL, dataRT, onChangeLK, onChangeIL, onChangeRT }: Step2Props) {
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
 
   const selectedLandId = dataLK?.idLahan || '';
@@ -169,13 +171,17 @@ export default function Step2LahanKomoditas({ options, dataLK, dataIL, onChangeL
             <div>
               <label className="font-semibold text-gray-700 mb-1 block">Sumber Air</label>
               <select
-                value={dataIL?.sumberAir || 'Sumur Bor'}
-                onChange={(e) => onChangeIL && onChangeIL('sumberAir', e.target.value)}
+                value={dataRT?.sumberAir || dataIL?.sumberAir || 'Sumur Bor'}
+                onChange={(e) => {
+                  if (onChangeRT) onChangeRT('sumberAir', e.target.value);
+                  if (onChangeIL) onChangeIL('sumberAir', e.target.value);
+                }}
                 className="form-select text-xs border border-gray-300 rounded px-3 py-2 text-gray-700 w-full bg-white"
               >
                 <option value="Sumur Bor">Sumur Bor</option>
                 <option value="Sungai">Sungai</option>
-                <option value="Waduk">Waduk</option>
+                <option value="Irigasi Teknis">Irigasi Teknis</option>
+                <option value="Waduk / Embung">Waduk / Embung</option>
               </select>
             </div>
 
@@ -196,13 +202,16 @@ export default function Step2LahanKomoditas({ options, dataLK, dataIL, onChangeL
             <div>
               <label className="font-semibold text-gray-700 mb-1 block">Sistem Irigasi</label>
               <select
-                value={dataIL?.sistemIrigasi || 'Irigasi Terjadwal'}
-                onChange={(e) => onChangeIL && onChangeIL('sistemIrigasi', e.target.value)}
+                value={dataRT?.irigasi || dataIL?.sistemIrigasi || 'Irigasi Terjadwal'}
+                onChange={(e) => {
+                  if (onChangeRT) onChangeRT('irigasi', e.target.value);
+                  if (onChangeIL) onChangeIL('sistemIrigasi', e.target.value);
+                }}
                 className="form-select text-xs border border-gray-300 rounded px-3 py-2 text-gray-700 w-full bg-white"
               >
                 <option value="Irigasi Terjadwal">Irigasi Terjadwal</option>
                 <option value="Irigasi Otomatis">Irigasi Otomatis</option>
-                <option value="Irigasi Tetes">Irigasi Tetes</option>
+                <option value="Manual">Manual</option>
               </select>
             </div>
 

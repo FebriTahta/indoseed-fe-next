@@ -1,4 +1,5 @@
-import React from "react";
+import React, { useMemo } from "react";
+import { JadwalTanam } from "@/app/types/jadwalTanam";
 
 export interface TimelineItem {
   title: string;
@@ -9,37 +10,81 @@ export interface TimelineItem {
 
 interface TimelineProps {
   items?: TimelineItem[];
+  jadwalTanams?: JadwalTanam[];
 }
 
-export default function Timeline({ items }: TimelineProps) {
-  const defaultItems: TimelineItem[] = [
-    {
-      title: "Akan Tanam",
-      date: "01 - 07 Jun 2026",
-      total: 7,
-      color: "#f97316", // Orange
-    },
-    {
-      title: "Sedang Berlangsung",
-      date: "08 - 24 Jun 2026",
-      total: 15,
-      color: "#16a34a", // Green
-    },
-    {
-      title: "Menjelang Panen",
-      date: "25 Jun - 05 Jul 2026",
-      total: 4,
-      color: "#f59e0b", // Yellow/Amber
-    },
-    {
-      title: "Selesai",
-      date: "> 05 Jul 2026",
-      total: 6,
-      color: "#2563eb", // Blue
-    },
-  ];
+export default function Timeline({ items, jadwalTanams }: TimelineProps) {
+  const computedItems = useMemo<TimelineItem[]>(() => {
+    if (items && items.length > 0) return items;
 
-  const list = items && items.length > 0 ? items : defaultItems;
+    // Get current date / month / year info
+    const now = new Date();
+    const currentYear = now.getFullYear();
+    const currentMonthIndex = now.getMonth();
+
+    const monthShorts = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agt', 'Sep', 'Okt', 'Nov', 'Des'];
+    const curMonthName = monthShorts[currentMonthIndex];
+    const nextMonthName = monthShorts[(currentMonthIndex + 1) % 12];
+    const nextYear = currentMonthIndex === 11 ? currentYear + 1 : currentYear;
+
+    let akanTanamCount = 0;
+    let sedangBerlangsungCount = 0;
+    let menjelangPanenCount = 0;
+    let selesaiCount = 0;
+
+    (jadwalTanams || []).forEach(item => {
+      const st = (item.status || item.informasiUmum?.statusJadwal || '').toLowerCase();
+      if (st === 'selesai') {
+        selesaiCount++;
+      } else if (st === 'sedang berlangsung' || st === 'berjalan') {
+        let isMenjelangPanen = false;
+        if (item.rencanaTanam?.perkiraanPanen) {
+          const parts = item.rencanaTanam.perkiraanPanen.split('/');
+          if (parts.length === 3) {
+            const harvestDate = new Date(Number(parts[2]), Number(parts[1]) - 1, Number(parts[0]));
+            const diffDays = Math.ceil((harvestDate.getTime() - now.getTime()) / (1000 * 3600 * 24));
+            if (diffDays >= 0 && diffDays <= 14) {
+              isMenjelangPanen = true;
+            }
+          }
+        }
+        if (isMenjelangPanen) {
+          menjelangPanenCount++;
+        } else {
+          sedangBerlangsungCount++;
+        }
+      } else {
+        akanTanamCount++;
+      }
+    });
+
+    return [
+      {
+        title: "Akan Tanam",
+        date: `01 - 07 ${curMonthName} ${currentYear}`,
+        total: akanTanamCount,
+        color: "#f97316", // Orange
+      },
+      {
+        title: "Sedang Berlangsung",
+        date: `08 - 24 ${curMonthName} ${currentYear}`,
+        total: sedangBerlangsungCount,
+        color: "#16a34a", // Green
+      },
+      {
+        title: "Menjelang Panen",
+        date: `25 ${curMonthName} - 05 ${nextMonthName} ${nextYear}`,
+        total: menjelangPanenCount,
+        color: "#f59e0b", // Yellow/Amber
+      },
+      {
+        title: "Selesai",
+        date: `> 05 ${nextMonthName} ${nextYear}`,
+        total: selesaiCount,
+        color: "#2563eb", // Blue
+      },
+    ];
+  }, [jadwalTanams, items]);
 
   return (
     <div className="box border border-defaultborder/60 bg-white shadow-sm rounded-lg p-6 mb-6">
@@ -54,7 +99,7 @@ export default function Timeline({ items }: TimelineProps) {
         {/* Colored progress line segments */}
         <div className="absolute left-2 right-1/4 top-[13px] h-[3px] bg-gradient-to-r from-orange-500 via-emerald-500 to-amber-500 z-0" />
 
-        {list.map((item, index) => (
+        {computedItems.map((item, index) => (
           <div
             key={index}
             className="relative z-10 flex flex-1 flex-col items-start pr-2"

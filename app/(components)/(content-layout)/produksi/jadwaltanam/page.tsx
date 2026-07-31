@@ -1,6 +1,7 @@
 "use client";
 
-import React, { Fragment } from 'react';
+import React, { useState, Fragment } from 'react';
+import { useRouter } from 'next/navigation';
 import Pageheader from '../../../../../shared/layouts-components/page-header/pageheader';
 import { useJadwalTanams } from '@/app/hooks/useJadwalTanam';
 import StatsWidgets from '../../shared/StatsWidgets';
@@ -10,9 +11,11 @@ import Timeline from './component/TimeLine';
 import KalenderJadwalTanam from './component/KalenderJadwalTanam';
 import RingkasanKomoditas from './component/RingkasanKomoditas';
 import NoteCard from './component/NoteCard';
+import ModalDetailJadwalTanam from './component/ModalDetailJadwalTanam';
 import { JadwalTanam } from '@/app/types/jadwalTanam';
 
 export default function JadwalTanamPage() {
+  const router = useRouter();
   const {
     jadwalTanams,
     loading,
@@ -39,9 +42,18 @@ export default function JadwalTanamPage() {
     handleApplyFilters,
     handleResetFilters,
     handleAdd,
+    handleDelete,
     statItems,
     statMaster
   } = useJadwalTanams();
+
+  const [selectedPreviewJadwal, setSelectedPreviewJadwal] = useState<JadwalTanam | null>(null);
+  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+
+  const handleOpenPreview = (item: JadwalTanam) => {
+    setSelectedPreviewJadwal(item);
+    setIsPreviewOpen(true);
+  };
 
   // Filters Configuration
   const filterConfig: FilterSelectConfig[] = [
@@ -159,14 +171,26 @@ export default function JadwalTanamPage() {
         <td className="p-3 text-gray-700">{item.informasiUmum?.penanggungJawab}</td>
         <td className="p-3">
           <div className="flex items-center gap-2">
-            <button className="p-1 text-gray-500 hover:text-emerald-700 transition-colors" title="Lihat Detail">
+            <button
+              onClick={() => handleOpenPreview(item)}
+              className="p-1 text-gray-500 hover:text-emerald-700 transition-colors"
+              title="Lihat Detail"
+            >
               <i className="ri-eye-line text-base"></i>
             </button>
-            <button className="p-1 text-gray-500 hover:text-emerald-700 transition-colors" title="Edit">
+            <button
+              onClick={() => router.push(`/produksi/jadwaltanam/edit/${(item as any).id}`)}
+              className="p-1 text-gray-500 hover:text-emerald-700 transition-colors"
+              title="Edit"
+            >
               <i className="ri-pencil-line text-base"></i>
             </button>
-            <button className="p-1 text-gray-500 hover:text-emerald-700 transition-colors" title="Lainnya">
-              <i className="ri-more-2-fill text-base"></i>
+            <button
+              onClick={() => handleDelete((item as any).id, item.informasiUmum?.kodeJadwalTanam)}
+              className="p-1 text-gray-500 hover:text-red-600 transition-colors"
+              title="Hapus Jadwal Tanam"
+            >
+              <i className="ri-delete-bin-line text-base"></i>
             </button>
           </div>
         </td>
@@ -235,21 +259,29 @@ export default function JadwalTanamPage() {
           </div>
 
           {/* Timeline Jadwal Tanam */}
-          <Timeline />
+          <Timeline jadwalTanams={jadwalTanams} />
         </div>
 
         {/* Right Column */}
         <div className="xl:col-span-3 col-span-12">
           {/* Kalender Jadwal Tanam */}
-          <KalenderJadwalTanam />
+          <KalenderJadwalTanam jadwalTanams={jadwalTanams} />
 
           {/* Ringkasan per Komoditas */}
-          <RingkasanKomoditas />
+          <RingkasanKomoditas jadwalTanams={jadwalTanams} />
 
           {/* Catatan Card */}
           <NoteCard description="Pastikan seluruh jadwal tanam telah diverifikasi dan lahan dalam kondisi siap tanam." />
         </div>
       </div>
+
+      {/* Modal Preview Detail Jadwal Tanam */}
+      <ModalDetailJadwalTanam
+        isOpen={isPreviewOpen}
+        onClose={() => setIsPreviewOpen(false)}
+        jadwal={selectedPreviewJadwal}
+        onRefresh={handleApplyFilters}
+      />
     </Fragment>
   );
 }
