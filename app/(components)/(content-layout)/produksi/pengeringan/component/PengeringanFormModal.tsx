@@ -2,6 +2,15 @@
 
 import React, { useEffect, useState } from 'react';
 import { PengeringanBatchItem } from '@/app/types/pengeringan';
+import { PanenItem } from '@/app/services/panenService';
+
+const DEFAULT_PANEN_LIST: PanenItem[] = [
+  { id: 'pn-1', kodePanen: 'PN-2606-0001', komoditas: 'Padi', varietas: 'Inpari 32', lahan: 'Lahan A1 (Greenhouse 1)', produksiKg: 10000, kadarAir: 19.8, tanggalPanen: '2026-06-01', luasHa: 2, hasilKgHa: 5000, status: 'Selesai' },
+  { id: 'pn-2', kodePanen: 'PN-2606-0002', komoditas: 'Jagung', varietas: 'Pioneer 21', lahan: 'Lahan B2 (Block B)', produksiKg: 8000, kadarAir: 18.5, tanggalPanen: '2026-06-03', luasHa: 1.5, hasilKgHa: 5333, status: 'Selesai' },
+  { id: 'pn-3', kodePanen: 'PN-2606-0003', komoditas: 'Padi', varietas: 'Ciliwung', lahan: 'Lahan A2 (Greenhouse 2)', produksiKg: 10500, kadarAir: 21.2, tanggalPanen: '2026-06-05', luasHa: 2.1, hasilKgHa: 5000, status: 'Selesai' },
+  { id: 'pn-4', kodePanen: 'PN-2606-0004', komoditas: 'Kedelai', varietas: 'Anjasmoro', lahan: 'Lahan C1 (Plot C)', produksiKg: 6000, kadarAir: 17.6, tanggalPanen: '2026-06-07', luasHa: 1.2, hasilKgHa: 5000, status: 'Selesai' },
+  { id: 'pn-5', kodePanen: 'PN-2606-0005', komoditas: 'Padi', varietas: 'Inpari 42', lahan: 'Lahan A3 (Greenhouse 3)', produksiKg: 9000, kadarAir: 20.1, tanggalPanen: '2026-06-09', luasHa: 1.8, hasilKgHa: 5000, status: 'Selesai' },
+];
 
 interface PengeringanFormModalProps {
   isOpen: boolean;
@@ -13,6 +22,7 @@ interface PengeringanFormModalProps {
   varietasOptions: { value: string; label: string }[];
   alatOptions: { value: string; label: string }[];
   lokasiOptions: { value: string; label: string }[];
+  panenOptions?: PanenItem[];
 }
 
 export default function PengeringanFormModal({
@@ -25,9 +35,14 @@ export default function PengeringanFormModal({
   varietasOptions,
   alatOptions,
   lokasiOptions,
+  panenOptions,
 }: PengeringanFormModalProps) {
+  const availablePanenList = panenOptions && panenOptions.length > 0 ? panenOptions : DEFAULT_PANEN_LIST;
+
   const [formData, setFormData] = useState<Partial<PengeringanBatchItem>>({
     kodeBatch: '',
+    panenId: '',
+    referensiPanen: '',
     komoditas: 'Padi',
     varietas: 'Inpari 32',
     alatPengering: 'DR-01',
@@ -48,15 +63,18 @@ export default function PengeringanFormModal({
     if (initialData && mode === 'edit') {
       setFormData({ ...initialData });
     } else if (mode === 'add') {
+      const firstPanen = availablePanenList[0];
       setFormData({
+        panenId: firstPanen?.id,
+        referensiPanen: firstPanen?.kodePanen,
         kodeBatch: `PN-2606-${String(Math.floor(Math.random() * 9000) + 1000)}`,
-        komoditas: 'Padi',
-        varietas: 'Inpari 32',
+        komoditas: firstPanen?.komoditas || 'Padi',
+        varietas: firstPanen?.varietas || 'Inpari 32',
         alatPengering: 'DR-01',
-        beratMasuk: 10000,
-        kadarAirMasuk: 19.8,
+        beratMasuk: firstPanen?.produksiKg || 10000,
+        kadarAirMasuk: firstPanen?.kadarAir || 19.8,
         kadarAirTarget: 12.0,
-        kadarAirSaatIni: 19.8,
+        kadarAirSaatIni: firstPanen?.kadarAir || 19.8,
         beratKeluar: 0,
         status: 'Proses',
         selesai: '-',
@@ -64,9 +82,31 @@ export default function PengeringanFormModal({
         catatan: '',
       });
     }
-  }, [initialData, mode, isOpen]);
+  }, [initialData, mode, isOpen, panenOptions]);
 
   if (!isOpen) return null;
+
+  const handlePanenChange = (panenIdOrKode: string) => {
+    const panen = availablePanenList.find((p) => p.id === panenIdOrKode || p.kodePanen === panenIdOrKode);
+    if (panen) {
+      setFormData((prev) => ({
+        ...prev,
+        panenId: panen.id,
+        referensiPanen: panen.kodePanen,
+        komoditas: panen.komoditas,
+        varietas: panen.varietas,
+        beratMasuk: panen.produksiKg || prev.beratMasuk || 10000,
+        kadarAirMasuk: panen.kadarAir || prev.kadarAirMasuk || 19.8,
+        kadarAirSaatIni: panen.kadarAir || prev.kadarAirSaatIni || 19.8,
+      }));
+    } else {
+      setFormData((prev) => ({
+        ...prev,
+        panenId: '',
+        referensiPanen: '',
+      }));
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -105,6 +145,28 @@ export default function PengeringanFormModal({
 
         {/* Body */}
         <form onSubmit={handleSubmit} className="p-5 overflow-y-auto space-y-4 text-xs">
+          {/* Referensi Panen Dropdown */}
+          <div>
+            <label className="font-semibold text-gray-700 mb-1 flex items-center justify-between">
+              <span>Referensi Panen</span>
+              <span className="text-[10px] text-emerald-600 font-medium flex items-center gap-1 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
+                <i className="ri-links-line"></i> Auto-fill Komoditas & Varietas
+              </span>
+            </label>
+            <select
+              value={formData.panenId || formData.referensiPanen || ''}
+              onChange={(e) => handlePanenChange(e.target.value)}
+              className="form-select text-xs border border-gray-300 rounded px-3 py-2 w-full bg-white font-medium focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500"
+            >
+              <option value="">-- Pilih Referensi Panen --</option>
+              {availablePanenList.map((item) => (
+                <option key={item.id} value={item.id}>
+                  {item.kodePanen} | {item.komoditas} - {item.varietas} ({item.lahan || 'Lahan'}) {item.produksiKg ? `[${item.produksiKg.toLocaleString('id-ID')} Kg]` : ''}
+                </option>
+              ))}
+            </select>
+          </div>
+
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="font-semibold text-gray-700 mb-1 block">Kode Batch</label>
@@ -135,49 +197,35 @@ export default function PengeringanFormModal({
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="font-semibold text-gray-700 mb-1 block">Komoditas</label>
-              <select
+              <label className="font-semibold text-gray-700 mb-1 flex items-center justify-between">
+                <span>Komoditas</span>
+                <span className="text-[10px] text-gray-400 font-normal flex items-center gap-1">
+                  <i className="ri-lock-2-line"></i> Tidak dapat dipilih
+                </span>
+              </label>
+              <input
+                type="text"
+                disabled
                 value={formData.komoditas || ''}
-                onChange={(e) => setFormData({ ...formData, komoditas: e.target.value })}
-                className="form-select text-xs border border-gray-300 rounded px-3 py-2 w-full bg-white"
-              >
-                <option value="Padi">Padi</option>
-                <option value="Jagung">Jagung</option>
-                <option value="Kedelai">Kedelai</option>
-                {komoditasOptions
-                  .filter((opt) => opt.value && !['Padi', 'Jagung', 'Kedelai'].includes(opt.value))
-                  .map((opt, idx) => (
-                    <option key={idx} value={opt.value}>
-                      {opt.label}
-                    </option>
-                  ))}
-              </select>
+                className="form-control text-xs border border-gray-200 bg-gray-100 text-gray-600 rounded px-3 py-2 w-full cursor-not-allowed font-medium select-none"
+                placeholder="Terisi otomatis dari Panen"
+              />
             </div>
 
             <div>
-              <label className="font-semibold text-gray-700 mb-1 block">Varietas</label>
-              <select
+              <label className="font-semibold text-gray-700 mb-1 flex items-center justify-between">
+                <span>Varietas</span>
+                <span className="text-[10px] text-gray-400 font-normal flex items-center gap-1">
+                  <i className="ri-lock-2-line"></i> Tidak dapat dipilih
+                </span>
+              </label>
+              <input
+                type="text"
+                disabled
                 value={formData.varietas || ''}
-                onChange={(e) => setFormData({ ...formData, varietas: e.target.value })}
-                className="form-select text-xs border border-gray-300 rounded px-3 py-2 w-full bg-white"
-              >
-                <option value="Inpari 32">Inpari 32</option>
-                <option value="Pioneer 21">Pioneer 21</option>
-                <option value="Ciliwung">Ciliwung</option>
-                <option value="Anjasmoro">Anjasmoro</option>
-                <option value="Inpari 42">Inpari 42</option>
-                {varietasOptions
-                  .filter(
-                    (opt) =>
-                      opt.value &&
-                      !['Inpari 32', 'Pioneer 21', 'Ciliwung', 'Anjasmoro', 'Inpari 42'].includes(opt.value)
-                  )
-                  .map((opt, idx) => (
-                    <option key={idx} value={opt.value}>
-                      {opt.label}
-                    </option>
-                  ))}
-              </select>
+                className="form-control text-xs border border-gray-200 bg-gray-100 text-gray-600 rounded px-3 py-2 w-full cursor-not-allowed font-medium select-none"
+                placeholder="Terisi otomatis dari Panen"
+              />
             </div>
           </div>
 

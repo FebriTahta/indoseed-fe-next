@@ -6,6 +6,7 @@ import useVarietas from './useVarietas';
 import { Commodity } from '../types/commodity';
 import { Variety } from '../types/variety';
 import { pengeringanService } from '../services/pengeringanService';
+import { panenService, PanenItem } from '../services/panenService';
 
 export const INITIAL_ALAT_PENGERING: AlatPengeringItem[] = [
   {
@@ -150,6 +151,14 @@ export const INITIAL_ALERTS: AlertPengeringanItem[] = [
   },
 ];
 
+export const INITIAL_PANEN_OPTIONS: PanenItem[] = [
+  { id: 'pn-1', kodePanen: 'PN-2606-0001', komoditas: 'Padi', varietas: 'Inpari 32', lahan: 'Lahan A1 (Greenhouse 1)', produksiKg: 10000, kadarAir: 19.8, tanggalPanen: '2026-06-01', luasHa: 2, hasilKgHa: 5000, status: 'Selesai' },
+  { id: 'pn-2', kodePanen: 'PN-2606-0002', komoditas: 'Jagung', varietas: 'Pioneer 21', lahan: 'Lahan B2 (Block B)', produksiKg: 8000, kadarAir: 18.5, tanggalPanen: '2026-06-03', luasHa: 1.5, hasilKgHa: 5333, status: 'Selesai' },
+  { id: 'pn-3', kodePanen: 'PN-2606-0003', komoditas: 'Padi', varietas: 'Ciliwung', lahan: 'Lahan A2 (Greenhouse 2)', produksiKg: 10500, kadarAir: 21.2, tanggalPanen: '2026-06-05', luasHa: 2.1, hasilKgHa: 5000, status: 'Selesai' },
+  { id: 'pn-4', kodePanen: 'PN-2606-0004', komoditas: 'Kedelai', varietas: 'Anjasmoro', lahan: 'Lahan C1 (Plot C)', produksiKg: 6000, kadarAir: 17.6, tanggalPanen: '2026-06-07', luasHa: 1.2, hasilKgHa: 5000, status: 'Selesai' },
+  { id: 'pn-5', kodePanen: 'PN-2606-0005', komoditas: 'Padi', varietas: 'Inpari 42', lahan: 'Lahan A3 (Greenhouse 3)', produksiKg: 9000, kadarAir: 20.1, tanggalPanen: '2026-06-09', luasHa: 1.8, hasilKgHa: 5000, status: 'Selesai' },
+];
+
 export function usePengeringan() {
   const { commodities } = useKomoditas();
   const { varieties } = useVarietas();
@@ -157,6 +166,7 @@ export function usePengeringan() {
   const [batchList, setBatchList] = useState<PengeringanBatchItem[]>(INITIAL_BATCH_LIST);
   const [alatList, setAlatList] = useState<AlatPengeringItem[]>(INITIAL_ALAT_PENGERING);
   const [alertList, setAlertList] = useState<AlertPengeringanItem[]>(INITIAL_ALERTS);
+  const [panenOptions, setPanenOptions] = useState<PanenItem[]>(INITIAL_PANEN_OPTIONS);
   const [loading, setLoading] = useState(false);
   const [apiStats, setApiStats] = useState<any>(null);
 
@@ -209,6 +219,22 @@ export function usePengeringan() {
   useEffect(() => {
     fetchPengeringan();
   }, [fetchPengeringan]);
+
+  const fetchPanenOptions = useCallback(async () => {
+    try {
+      const res = await panenService.getPanenList({ limit: 100 });
+      const list: PanenItem[] = res?.data || [];
+      if (list.length > 0) {
+        setPanenOptions(list);
+      }
+    } catch (err) {
+      console.error('Error fetching panen options for pengeringan:', err);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchPanenOptions();
+  }, [fetchPanenOptions]);
 
   // Options
   const komoditasOptions = useMemo(() => [
@@ -409,6 +435,7 @@ export function usePengeringan() {
     batchList,
     alatList,
     alertList,
+    panenOptions,
     loading,
     filterPeriode,
     setFilterPeriode,

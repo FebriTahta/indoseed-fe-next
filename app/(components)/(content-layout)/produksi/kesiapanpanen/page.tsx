@@ -19,6 +19,7 @@ export default function KesiapanPanenPage() {
   const {
     kesiapanList,
     loading,
+    apiStats,
     filterPeriode,
     setFilterPeriode,
     filterKomoditas,
@@ -39,6 +40,7 @@ export default function KesiapanPanenPage() {
     varietasOptions,
     lokasiOptions,
     statusOptions,
+    jadwalTanamOptions,
     handleApplyFilters,
     handleResetFilters,
     statItems,
@@ -259,7 +261,7 @@ export default function KesiapanPanenPage() {
           </div>
 
           {/* Parameter Kematangan (Rata-rata) */}
-          <ParameterKematangan />
+          <ParameterKematangan items={kesiapanList} />
 
           {/* ISO Alert Banner */}
           <div className="rounded-lg border border-emerald-200/80 bg-emerald-50/60 p-3.5 mb-6 flex items-center gap-2 text-xs text-emerald-900">
@@ -273,13 +275,13 @@ export default function KesiapanPanenPage() {
         {/* Right Column (4 cols on xl) */}
         <div className="xl:col-span-4 col-span-12 space-y-6">
           {/* Ringkasan Kesiapan Panen */}
-          <RingkasanKesiapanPanen />
+          <RingkasanKesiapanPanen items={kesiapanList} stats={apiStats} />
 
           {/* Prediksi Panen (7 Hari ke Depan) */}
-          <PrediksiPanenChart />
+          <PrediksiPanenChart items={kesiapanList} />
 
           {/* Lahan Mendekati Siap Panen */}
-          <LahanMendekatiSiapPanen />
+          <LahanMendekatiSiapPanen items={kesiapanList} />
         </div>
       </div>
 
@@ -292,6 +294,7 @@ export default function KesiapanPanenPage() {
         komoditasOptions={komoditasOptions}
         varietasOptions={varietasOptions}
         lokasiOptions={lokasiOptions}
+        jadwalTanamOptions={jadwalTanamOptions}
       />
 
       {/* Edit Modal */}
@@ -304,6 +307,7 @@ export default function KesiapanPanenPage() {
         komoditasOptions={komoditasOptions}
         varietasOptions={varietasOptions}
         lokasiOptions={lokasiOptions}
+        jadwalTanamOptions={jadwalTanamOptions}
       />
 
       {/* Detail Modal */}

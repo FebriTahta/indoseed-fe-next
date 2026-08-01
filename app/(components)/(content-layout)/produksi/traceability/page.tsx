@@ -24,6 +24,8 @@ export default function TraceabilityPage() {
     setFilterPeriode,
     filterLokasi,
     setFilterLokasi,
+    handleApplyFilters,
+    handleResetFilters,
     batchInfo,
     flowSteps,
     timelineActivities,
@@ -43,7 +45,7 @@ export default function TraceabilityPage() {
       options: komoditasOptions,
       placeholder: 'Semua Komoditas',
       title: 'Komoditas',
-      widthClass: 'sm:w-40',
+      widthClass: 'sm:w-36',
       type: 'opsi'
     },
     {
@@ -52,7 +54,7 @@ export default function TraceabilityPage() {
       options: varietasOptions,
       placeholder: 'Semua Varietas',
       title: 'Varietas',
-      widthClass: 'sm:w-40',
+      widthClass: 'sm:w-36',
       type: 'opsi'
     },
     {
@@ -70,7 +72,7 @@ export default function TraceabilityPage() {
       options: lokasiOptions,
       placeholder: 'Semua Lokasi',
       title: 'Lokasi Saat Ini',
-      widthClass: 'sm:w-40',
+      widthClass: 'sm:w-36',
       type: 'opsi'
     },
   ];
@@ -86,7 +88,7 @@ export default function TraceabilityPage() {
         customButton={
           <div className="flex items-center gap-2">
             <button className="bg-[#078836] hover:bg-[#06732d] text-white px-3.5 py-1.5 rounded-md font-semibold text-xs flex items-center gap-1.5 shadow-sm transition-colors">
-              <i className="ri-[#078836] ri-qr-scan-line text-sm"></i> Scan QR / Barcode
+              <i className="ri-qr-scan-line text-sm"></i> Scan QR / Barcode
             </button>
             <button className="bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 px-3.5 py-1.5 rounded-md font-semibold text-xs flex items-center gap-1.5 shadow-sm transition-colors">
               <i className="ri-download-line text-xs"></i> Export Laporan <i className="ri-arrow-down-s-line text-xs"></i>
@@ -98,31 +100,16 @@ export default function TraceabilityPage() {
       {/* 6 Summary Stat Cards */}
       <StatsWidgets items={statItems} columns={6} />
 
-      {/* Filter Row with Search Box on Left */}
-      <div className="box border border-defaultborder/60 bg-white shadow-sm rounded-lg p-4 mb-6">
-        <div className="flex flex-wrap items-end gap-3">
-          {/* Batch Code Search Input */}
-          <div className="flex-1 min-w-[200px] sm:max-w-xs space-y-1">
-            <label className="font-semibold text-gray-700 text-xs block">Cari Batch / Lot / Barcode</label>
-            <div className="relative">
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="BP-2606-0005"
-                className="form-control text-xs border border-gray-300 rounded px-3 py-1.5 pr-8 text-gray-700 w-full"
-              />
-              <i className="ri-search-line absolute right-2.5 top-2 text-gray-400 text-xs"></i>
-            </div>
-          </div>
-
-          <FilterRow
-            selectFilters={filterConfig}
-            onSearch={() => {}}
-            onReset={() => {}}
-          />
-        </div>
-      </div>
+      {/* Filter Row with Search Box & Filter Dropdowns */}
+      <FilterRow
+        search={searchQuery}
+        onSearchChange={setSearchQuery}
+        searchPlaceholder="BP-2606-0005"
+        searchTitle="Cari Batch / Lot / Barcode"
+        selectFilters={filterConfig}
+        onSearch={handleApplyFilters}
+        onReset={handleResetFilters}
+      />
 
       {/* Full-width 9-Stage Process Flow */}
       <AlurTraceabilityFlow steps={flowSteps} />

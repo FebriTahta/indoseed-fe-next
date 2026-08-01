@@ -8,6 +8,66 @@ import { Land } from '../types/greenhouse';
 import { Commodity } from '../types/commodity';
 import { Variety } from '../types/variety';
 import { kesiapanPanenService } from '../services/kesiapanPanenService';
+import { jadwalTanamService } from '../services/jadwalTanamService';
+
+const FALLBACK_JADWAL_TANAM = [
+  {
+    id: 'jt-1',
+    kodeJadwalTanam: 'JT-2606-0001',
+    informasiUmum: { kodeJadwalTanam: 'JT-2606-0001' },
+    lahanKomoditas: {
+      namaLahan: 'Blok A - Petak 1',
+      namaKomoditas: 'Padi',
+      namaVarietas: 'Inpari 32',
+    },
+    rencanaTanam: {
+      tanggalTanam: '01/03/2026',
+      perkiraanPanen: '15/06/2026',
+    },
+  },
+  {
+    id: 'jt-2',
+    kodeJadwalTanam: 'JT-2606-0002',
+    informasiUmum: { kodeJadwalTanam: 'JT-2606-0002' },
+    lahanKomoditas: {
+      namaLahan: 'Blok A - Petak 2',
+      namaKomoditas: 'Jagung',
+      namaVarietas: 'Pioneer 21',
+    },
+    rencanaTanam: {
+      tanggalTanam: '05/03/2026',
+      perkiraanPanen: '18/06/2026',
+    },
+  },
+  {
+    id: 'jt-3',
+    kodeJadwalTanam: 'JT-2606-0003',
+    informasiUmum: { kodeJadwalTanam: 'JT-2606-0003' },
+    lahanKomoditas: {
+      namaLahan: 'Blok B - Petak 1',
+      namaKomoditas: 'Kedelai',
+      namaVarietas: 'Anjasmoro',
+    },
+    rencanaTanam: {
+      tanggalTanam: '10/03/2026',
+      perkiraanPanen: '20/06/2026',
+    },
+  },
+  {
+    id: 'jt-4',
+    kodeJadwalTanam: 'JT-2606-0004',
+    informasiUmum: { kodeJadwalTanam: 'JT-2606-0004' },
+    lahanKomoditas: {
+      namaLahan: 'Blok C - Petak 1',
+      namaKomoditas: 'Padi',
+      namaVarietas: 'Inpari 42',
+    },
+    rencanaTanam: {
+      tanggalTanam: '15/03/2026',
+      perkiraanPanen: '25/06/2026',
+    },
+  },
+];
 
 export const INITIAL_KESIAPAN_PANEN_LIST: KesiapanPanenItem[] = [
   {
@@ -20,7 +80,8 @@ export const INITIAL_KESIAPAN_PANEN_LIST: KesiapanPanenItem[] = [
     umurHst: 102,
     prediksiPanen: '12/06/2026',
     statusKesiapan: 'Siap Panen',
-    yieldEst: 6800
+    yieldEst: 6800,
+    luasHa: 5.0
   },
   {
     no: 2,
@@ -32,7 +93,8 @@ export const INITIAL_KESIAPAN_PANEN_LIST: KesiapanPanenItem[] = [
     umurHst: 98,
     prediksiPanen: '14/06/2026',
     statusKesiapan: 'Siap Panen',
-    yieldEst: 7200
+    yieldEst: 7200,
+    luasHa: 4.5
   },
   {
     no: 3,
@@ -44,7 +106,8 @@ export const INITIAL_KESIAPAN_PANEN_LIST: KesiapanPanenItem[] = [
     umurHst: 95,
     prediksiPanen: '16/06/2026',
     statusKesiapan: 'Akan Siap (3-7 Hari)',
-    yieldEst: 3100
+    yieldEst: 3100,
+    luasHa: 3.8
   },
   {
     no: 4,
@@ -56,7 +119,8 @@ export const INITIAL_KESIAPAN_PANEN_LIST: KesiapanPanenItem[] = [
     umurHst: 101,
     prediksiPanen: '13/06/2026',
     statusKesiapan: 'Siap Panen',
-    yieldEst: 6500
+    yieldEst: 6500,
+    luasHa: 5.2
   },
   {
     no: 5,
@@ -137,7 +201,7 @@ export function useKesiapanPanen() {
   const { commodities } = useKomoditas();
   const { varieties } = useVarietas();
 
-  const [kesiapanList, setKesiapanList] = useState<KesiapanPanenItem[]>(INITIAL_KESIAPAN_PANEN_LIST);
+  const [kesiapanList, setKesiapanList] = useState<KesiapanPanenItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [apiStats, setApiStats] = useState<any>(null);
 
@@ -151,8 +215,8 @@ export function useKesiapanPanen() {
   // Pagination states
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
-  const [totalRecords, setTotalRecords] = useState(28);
-  const [totalPages, setTotalPages] = useState(3);
+  const [totalRecords, setTotalRecords] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
 
   // Modal states
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -174,18 +238,34 @@ export function useKesiapanPanen() {
       });
 
       const list = res?.data || [];
-      if (list.length > 0) {
-        setKesiapanList(list);
-        setTotalRecords(res?.meta?.total || list.length);
-        setTotalPages(res?.meta?.totalPages || 1);
-        if (res?.stats) setApiStats(res.stats);
-      }
+      setKesiapanList(list);
+      setTotalRecords(res?.meta?.total ?? list.length);
+      setTotalPages(res?.meta?.totalPages ?? 1);
+      if (res?.stats) setApiStats(res.stats);
     } catch (err: any) {
       console.error('Error fetching Kesiapan Panen:', err);
+      toast.error(err.response?.data?.message || 'Gagal memuat data kesiapan panen dari server');
     } finally {
       setLoading(false);
     }
   }, [currentPage, pageSize, filterKomoditas, filterVarietas, filterLokasi, filterStatus]);
+
+  const [jadwalTanamOptions, setJadwalTanamOptions] = useState<any[]>(FALLBACK_JADWAL_TANAM);
+
+  useEffect(() => {
+    const fetchJadwalTanamList = async () => {
+      try {
+        const res = await jadwalTanamService.getJadwalTanamList({ pageSize: 1000 });
+        const list = res?.data || (res as any)?.data?.data || [];
+        if (list && list.length > 0) {
+          setJadwalTanamOptions(list);
+        }
+      } catch (err) {
+        console.error('Error fetching jadwal tanam list:', err);
+      }
+    };
+    fetchJadwalTanamList();
+  }, []);
 
   useEffect(() => {
     fetchKesiapanPanen();
@@ -238,56 +318,74 @@ export function useKesiapanPanen() {
     toast.info('Filter berhasil direset');
   };
 
-  const statItems = useMemo(() => [
-    {
-      title: 'Total Lahan',
-      value: apiStats?.totalLahan !== undefined ? `${apiStats.totalLahan} Lahan` : '86,45 Ha',
-      subtitle: 'Luas Terdaftar',
-      icon: 'ri-seedling-line',
-      bgColor: 'bg-emerald-100/80',
-      textColor: 'text-emerald-700'
-    },
-    {
-      title: 'Siap Panen',
-      value: apiStats?.siapPanen !== undefined ? `${apiStats.siapPanen} Lahan` : '28,32 Ha',
-      subtitle: 'Siap Dipanen',
-      icon: 'ri-time-line',
-      bgColor: 'bg-blue-100/80',
-      textColor: 'text-blue-700'
-    },
-    {
-      title: 'Akan Siap (3-7 Hari)',
-      value: apiStats?.akanSiap3_7 !== undefined ? `${apiStats.akanSiap3_7} Lahan` : '21,15 Ha',
-      subtitle: 'Tingkat Kematangan Tinggi',
-      icon: 'ri-hourglass-line',
-      bgColor: 'bg-amber-100/80',
-      textColor: 'text-amber-700'
-    },
-    {
-      title: 'Akan Siap (8-14 Hari)',
-      value: apiStats?.akanSiap8_14 !== undefined ? `${apiStats.akanSiap8_14} Lahan` : '18,60 Ha',
-      subtitle: 'Fase Akhir Pengisian',
-      icon: 'ri-hourglass-fill',
-      bgColor: 'bg-purple-100/80',
-      textColor: 'text-purple-700'
-    },
-    {
-      title: 'Belum Siap',
-      value: apiStats?.belumSiap !== undefined ? `${apiStats.belumSiap} Lahan` : '15,38 Ha',
-      subtitle: 'Fase Vegetatif/Generatif',
-      icon: 'ri-error-warning-line',
-      bgColor: 'bg-rose-100/80',
-      textColor: 'text-rose-700'
-    },
-    {
-      title: 'Rata-rata Yield Est.',
-      value: apiStats?.avgYield !== undefined ? `${apiStats.avgYield.toLocaleString('id-ID')} Kg/Ha` : '6.450 Kg/Ha',
-      subtitle: 'Hasil Panen Per Hektar',
-      icon: 'ri-bar-chart-fill',
-      bgColor: 'bg-teal-100/80',
-      textColor: 'text-teal-700'
-    },
-  ], [apiStats]);
+  const statItems = useMemo(() => {
+    const totalCount = kesiapanList.length;
+    const siapCount = kesiapanList.filter((i) => i.statusKesiapan === 'Siap Panen').length;
+    const akan3_7Count = kesiapanList.filter((i) => i.statusKesiapan === 'Akan Siap (3-7 Hari)').length;
+    const akan8_14Count = kesiapanList.filter((i) => i.statusKesiapan === 'Akan Siap (8-14 Hari)').length;
+    const belumCount = kesiapanList.filter((i) => i.statusKesiapan === 'Belum Siap').length;
+
+    const totalYieldSum = kesiapanList.reduce((acc, i) => acc + (i.yieldEst || 0), 0);
+    const avgYieldVal = totalCount > 0 ? Math.round(totalYieldSum / totalCount) : 0;
+
+    const totalVal = apiStats?.totalLahan !== undefined ? `${apiStats.totalLahan} Lahan` : `${totalCount} Lahan`;
+    const siapVal = apiStats?.siapPanen !== undefined ? `${apiStats.siapPanen} Lahan` : `${siapCount} Lahan`;
+    const akan3_7Val = apiStats?.akanSiap3_7 !== undefined ? `${apiStats.akanSiap3_7} Lahan` : `${akan3_7Count} Lahan`;
+    const akan8_14Val = apiStats?.akanSiap8_14 !== undefined ? `${apiStats.akanSiap8_14} Lahan` : `${akan8_14Count} Lahan`;
+    const belumVal = apiStats?.belumSiap !== undefined ? `${apiStats.belumSiap} Lahan` : `${belumCount} Lahan`;
+    const yieldVal = apiStats?.avgYield !== undefined ? `${apiStats.avgYield.toLocaleString('id-ID')} Kg/Ha` : `${avgYieldVal.toLocaleString('id-ID')} Kg/Ha`;
+
+    return [
+      {
+        title: 'Total Lahan',
+        value: totalVal,
+        subtitle: 'Luas Terdaftar',
+        icon: 'ri-seedling-line',
+        bgColor: 'bg-emerald-100/80',
+        textColor: 'text-emerald-700'
+      },
+      {
+        title: 'Siap Panen',
+        value: siapVal,
+        subtitle: 'Siap Dipanen',
+        icon: 'ri-time-line',
+        bgColor: 'bg-blue-100/80',
+        textColor: 'text-blue-700'
+      },
+      {
+        title: 'Akan Siap (3-7 Hari)',
+        value: akan3_7Val,
+        subtitle: 'Tingkat Kematangan Tinggi',
+        icon: 'ri-hourglass-line',
+        bgColor: 'bg-amber-100/80',
+        textColor: 'text-amber-700'
+      },
+      {
+        title: 'Akan Siap (8-14 Hari)',
+        value: akan8_14Val,
+        subtitle: 'Fase Akhir Pengisian',
+        icon: 'ri-hourglass-fill',
+        bgColor: 'bg-purple-100/80',
+        textColor: 'text-purple-700'
+      },
+      {
+        title: 'Belum Siap',
+        value: belumVal,
+        subtitle: 'Fase Vegetatif/Generatif',
+        icon: 'ri-error-warning-line',
+        bgColor: 'bg-rose-100/80',
+        textColor: 'text-rose-700'
+      },
+      {
+        title: 'Rata-rata Yield Est.',
+        value: yieldVal,
+        subtitle: 'Hasil Panen Per Hektar',
+        icon: 'ri-bar-chart-fill',
+        bgColor: 'bg-teal-100/80',
+        textColor: 'text-teal-700'
+      }
+    ];
+  }, [kesiapanList, apiStats]);
 
   // Modal Handlers
   const handleOpenAddModal = () => {
@@ -322,26 +420,11 @@ export function useKesiapanPanen() {
     try {
       const res = await kesiapanPanenService.createKesiapanPanen(data);
       toast.success(res?.message || 'Data kesiapan panen berhasil ditambahkan');
+      handleCloseModals();
       fetchKesiapanPanen();
     } catch (err: any) {
       console.error('Error creating kesiapan panen:', err);
-      toast.success('Berhasil menambahkan data kesiapan panen (mode lokal)');
-      setKesiapanList((prev) => [
-        {
-          no: prev.length + 1,
-          kodeLahan: data.kodeLahan || `LA-2605-${String(prev.length + 1).padStart(4, '0')}`,
-          lokasi: data.lokasi || 'Blok A - Petak 1',
-          komoditas: data.komoditas || 'Padi',
-          varietas: data.varietas || 'Inpari 32',
-          tanggalTanam: data.tanggalTanam || '01/03/2026',
-          umurHst: Number(data.umurHst) || 105,
-          prediksiPanen: data.prediksiPanen || '15/06/2026',
-          statusKesiapan: (data.statusKesiapan as any) || 'Siap Panen',
-          yieldEst: Number(data.yieldEst) || 6800,
-          catatan: data.catatan || '',
-        },
-        ...prev,
-      ]);
+      toast.error(err.response?.data?.message || 'Gagal menambahkan data kesiapan panen');
     }
   };
 
@@ -350,17 +433,11 @@ export function useKesiapanPanen() {
     try {
       const res = await kesiapanPanenService.updateKesiapanPanen(idOrKode, data);
       toast.success(res?.message || 'Data kesiapan panen berhasil diperbarui');
+      handleCloseModals();
       fetchKesiapanPanen();
     } catch (err: any) {
       console.error('Error updating kesiapan panen:', err);
-      toast.success('Data kesiapan panen berhasil diperbarui');
-      setKesiapanList((prev) =>
-        prev.map((item) =>
-          item.kodeLahan === selectedItem?.kodeLahan || (selectedItem?.id && item.id === selectedItem.id)
-            ? ({ ...item, ...data } as KesiapanPanenItem)
-            : item
-        )
-      );
+      toast.error(err.response?.data?.message || 'Gagal memperbarui data kesiapan panen');
     }
   };
 
@@ -369,21 +446,18 @@ export function useKesiapanPanen() {
     try {
       const res = await kesiapanPanenService.deleteKesiapanPanen(idOrKode);
       toast.success(res?.message || 'Data kesiapan panen berhasil dihapus');
+      handleCloseModals();
       fetchKesiapanPanen();
     } catch (err: any) {
       console.error('Error deleting kesiapan panen:', err);
-      toast.success('Data kesiapan panen berhasil dihapus');
-      setKesiapanList((prev) =>
-        prev.filter(
-          (item) => item.kodeLahan !== selectedItem?.kodeLahan && item.id !== selectedItem?.id
-        )
-      );
+      toast.error(err.response?.data?.message || 'Gagal menghapus data kesiapan panen');
     }
   };
 
   return {
     kesiapanList,
     loading,
+    apiStats,
     filterPeriode,
     setFilterPeriode,
     filterKomoditas,
@@ -404,6 +478,7 @@ export function useKesiapanPanen() {
     varietasOptions,
     lokasiOptions,
     statusOptions,
+    jadwalTanamOptions,
     handleApplyFilters,
     handleResetFilters,
     statItems,

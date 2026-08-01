@@ -2,6 +2,8 @@ export interface PengeringanBatchItem {
   id?: string;
   no?: number;
   kodeBatch: string;
+  panenId?: string;
+  referensiPanen?: string;
   komoditas: string;
   varietas: string;
   alatPengering: string;

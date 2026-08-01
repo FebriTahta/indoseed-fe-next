@@ -80,7 +80,7 @@ export default function TreatmentPage() {
       options: komoditasOptions,
       placeholder: 'Semua Komoditas',
       title: 'Komoditas',
-      widthClass: 'sm:w-40',
+      widthClass: 'sm:w-36',
       type: 'opsi'
     },
     {
@@ -89,7 +89,7 @@ export default function TreatmentPage() {
       options: varietasOptions,
       placeholder: 'Semua Varietas',
       title: 'Varietas',
-      widthClass: 'sm:w-40',
+      widthClass: 'sm:w-36',
       type: 'opsi'
     },
     {
@@ -98,7 +98,7 @@ export default function TreatmentPage() {
       options: jenisTreatmentOptions,
       placeholder: 'Semua Treatment',
       title: 'Jenis Treatment',
-      widthClass: 'sm:w-40',
+      widthClass: 'sm:w-36',
       type: 'opsi'
     },
     {
@@ -107,7 +107,7 @@ export default function TreatmentPage() {
       options: statusOptions,
       placeholder: 'Semua Status',
       title: 'Status',
-      widthClass: 'sm:w-36',
+      widthClass: 'sm:w-32',
       type: 'opsi'
     },
     {
@@ -116,7 +116,7 @@ export default function TreatmentPage() {
       options: lokasiOptions,
       placeholder: 'Semua Lokasi',
       title: 'Lokasi',
-      widthClass: 'sm:w-36',
+      widthClass: 'sm:w-32',
       type: 'opsi'
     },
   ];

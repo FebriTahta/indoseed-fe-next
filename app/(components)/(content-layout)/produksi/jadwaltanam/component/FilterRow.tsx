@@ -15,12 +15,18 @@ export interface FilterSelectConfig {
 interface FilterRowProps {
   search?: string;
   onSearchChange?: (search: string) => void;
+  searchPlaceholder?: string;
+  searchTitle?: string;
   selectFilters: FilterSelectConfig[];
   onSearch: () => void;
   onReset: () => void;
 }
 
 export default function FilterRow({
+  search,
+  onSearchChange,
+  searchPlaceholder = 'Cari...',
+  searchTitle,
   selectFilters,
   onSearch,
   onReset,
@@ -41,6 +47,26 @@ export default function FilterRow({
       <div className="box-body p-4 flex flex-wrap items-end justify-between gap-3">
         {/* Controls Container */}
         <div className="flex flex-wrap items-end gap-3 flex-1">
+          {onSearchChange && (
+            <div className="flex flex-col gap-1 min-w-[180px] sm:w-52 flex-1 sm:flex-initial">
+              {searchTitle && (
+                <label className="text-xs text-gray-600 font-medium mb-0">
+                  {searchTitle}
+                </label>
+              )}
+              <div className="relative flex items-center">
+                <input
+                  type="text"
+                  value={search || ''}
+                  onChange={(e) => onSearchChange(e.target.value)}
+                  placeholder={searchPlaceholder}
+                  className="form-control text-xs border border-gray-300 rounded-md py-1.5 px-3 pr-8 w-full font-medium text-gray-700 bg-white"
+                />
+                <i className="ri-search-line absolute right-2.5 text-gray-400 text-xs pointer-events-none z-10"></i>
+              </div>
+            </div>
+          )}
+
           {selectFilters.map((config, index) => (
             <div key={index} className={`flex flex-col gap-1 ${config.widthClass || 'min-w-[120px]'} flex-1 sm:flex-initial`}>
               {config.title && (

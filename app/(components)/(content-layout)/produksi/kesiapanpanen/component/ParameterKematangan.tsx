@@ -1,17 +1,35 @@
-import React from 'react';
+"use client";
 
-export default function ParameterKematangan() {
+import React from 'react';
+import { KesiapanPanenItem } from '@/app/types/kesiapanPanen';
+
+interface ParameterKematanganProps {
+  items?: KesiapanPanenItem[];
+}
+
+export default function ParameterKematangan({ items = [] }: ParameterKematanganProps) {
+  const safeItems = items || [];
+  const count = safeItems.length;
+
+  const avgKadarAir = count > 0
+    ? (safeItems.reduce((acc, i) => acc + (i.kadarAir || 0), 0) / count).toFixed(1)
+    : '18,5';
+
+  const avgKuningDaun = count > 0
+    ? Math.round(safeItems.reduce((acc, i) => acc + (i.kuningDaun || 0), 0) / count)
+    : 90;
+
   const parameters = [
     {
       title: 'Kadar Air',
-      value: '18,5 %',
+      value: `${avgKadarAir} %`,
       target: 'Target 18-20%',
       icon: 'ri-drop-line',
       bgColor: 'bg-blue-100/90 text-blue-700',
     },
     {
       title: 'Warna Biji',
-      value: 'Kuning 90%',
+      value: `Kuning ${avgKuningDaun}%`,
       target: 'Target 85-95%',
       icon: 'ri-key-line',
       bgColor: 'bg-amber-100/90 text-amber-700',
@@ -42,7 +60,7 @@ export default function ParameterKematangan() {
   return (
     <div className="box border border-defaultborder/60 bg-white shadow-sm rounded-lg overflow-hidden mb-6">
       <div className="box-header p-4 border-b border-defaultborder flex justify-between items-center">
-        <h3 className="box-title text-sm font-bold text-gray-800">Parameter Kematangan (Rata-rata)</h3>
+        <h3 className="box-title text-sm font-bold text-gray-800">Parameter Kematangan (Rata-rata Real-time)</h3>
       </div>
 
       <div className="box-body p-4 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">

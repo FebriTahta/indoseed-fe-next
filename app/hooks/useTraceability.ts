@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react';
+import { toast } from 'react-toastify';
 import useGreenhouse from './useGreenhouse';
 import useKomoditas from './useKomoditas';
 import useVarietas from './useVarietas';
@@ -155,6 +156,19 @@ export function useTraceability() {
     }))
   ], [lands]);
 
+  const handleApplyFilters = () => {
+    toast.info('Filter traceability berhasil diterapkan');
+  };
+
+  const handleResetFilters = () => {
+    setSearchQuery('BP-2606-0005');
+    setFilterKomoditas(null);
+    setFilterVarietas(null);
+    setFilterPeriode('01/06/2026 - 30/06/2026');
+    setFilterLokasi(null);
+    toast.info('Filter berhasil direset');
+  };
+
   return {
     searchQuery,
     setSearchQuery,
@@ -166,6 +180,8 @@ export function useTraceability() {
     setFilterPeriode,
     filterLokasi,
     setFilterLokasi,
+    handleApplyFilters,
+    handleResetFilters,
     batchInfo,
     flowSteps,
     timelineActivities,

@@ -6,6 +6,10 @@ export interface PanenItem {
   id: string;
   kodePanen: string;
   jadwalTanamId?: string;
+  kesiapanPanenId?: string;
+  commodityId?: string;
+  varietyId?: string;
+  kesiapanLahanId?: string;
   komoditas: string;
   varietas: string;
   lahan: string;

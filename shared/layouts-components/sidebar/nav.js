@@ -90,7 +90,19 @@ export const MENUITEMS = [
     type: "sub",
     active: false,
     children: [
-      { path: "/gudang/stok-masuk", type: "link", active: false, selected: false, title: "Stok Masuk" }
+      { path: "/gudang/dashboard-stok", type: "link", active: false, selected: false, title: "Dashboard Stok" },
+      { path: "/gudang/stokbenih", type: "link", active: false, selected: false, title: "Stok Benih" },
+      { path: "/gudang/stok-packing", type: "link", active: false, selected: false, title: "Stok Packing" },
+      { path: "/gudang/stok-bahan-treatment", type: "link", active: false, selected: false, title: "Stok Bahan Treatment" },
+      { path: "/gudang/stok-masuk", type: "link", active: false, selected: false, title: "Stok Masuk" },
+      { path: "/gudang/stok-keluar", type: "link", active: false, selected: false, title: "Stok Keluar" },
+      { path: "/gudang/mutasi-stok", type: "link", active: false, selected: false, title: "Mutasi Stok" },
+      { path: "/gudang/stock-opname", type: "link", active: false, selected: false, title: "Stock Opname" },
+      { path: "/gudang/fifo-fefo", type: "link", active: false, selected: false, title: "FIFO / FEFO" },
+      { path: "/gudang/monitoring-expired", type: "link", active: false, selected: false, title: "Monitoring Expired" },
+      { path: "/gudang/barcode-qr", type: "link", active: false, selected: false, title: "Barcode / QR Code" },
+      { path: "/gudang/monitoring-suhu", type: "link", active: false, selected: false, title: "Monitoring Suhu" },
+      { path: "/gudang/laporan-stok", type: "link", active: false, selected: false, title: "Laporan Stok" },
     ]
   },
   {

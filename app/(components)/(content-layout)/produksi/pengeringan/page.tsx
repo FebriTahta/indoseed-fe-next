@@ -21,6 +21,7 @@ export default function PengeringanPage() {
     batchList,
     alatList,
     alertList,
+    panenOptions,
     loading,
     filterPeriode,
     setFilterPeriode,
@@ -292,6 +293,7 @@ export default function PengeringanPage() {
         varietasOptions={varietasOptions}
         alatOptions={alatOptions}
         lokasiOptions={lokasiOptions}
+        panenOptions={panenOptions}
       />
 
       {/* Edit Modal */}
@@ -305,6 +307,7 @@ export default function PengeringanPage() {
         varietasOptions={varietasOptions}
         alatOptions={alatOptions}
         lokasiOptions={lokasiOptions}
+        panenOptions={panenOptions}
       />
 
       {/* Detail Modal */}

@@ -29,6 +29,7 @@ export default function PanenPage() {
     currentPage,
     setCurrentPage,
     pageSize,
+    setPageSize,
     totalRecords,
     totalPages,
     statItems,
@@ -44,7 +45,11 @@ export default function PanenPage() {
     isModalOpen,
     setIsModalOpen,
     editingItem,
+    kesiapanSiapPanenList,
   } = usePanen();
+
+  // Selected Kesiapan Panen reference ID
+  const [selectedKesiapanId, setSelectedKesiapanId] = useState<string>('');
 
   // Form State for Modal
   const [formData, setFormData] = useState<Partial<PanenItem>>({
@@ -64,19 +69,49 @@ export default function PanenPage() {
     catatan: '',
   });
 
+  const handleKesiapanSelect = (idOrKode: string) => {
+    setSelectedKesiapanId(idOrKode);
+    if (!idOrKode) return;
+
+    const item = kesiapanSiapPanenList.find(
+      (k) => (k.id && k.id === idOrKode) || k.kodeLahan === idOrKode
+    );
+
+    if (item) {
+      setFormData((prev) => ({
+        ...prev,
+        kesiapanPanenId: item.id,
+        kesiapanLahanId: item.id || (item as any).greenhouseId,
+        commodityId: item.commodityId || (item as any).commodity?.id,
+        varietyId: item.varietyId || (item as any).variety?.id,
+        komoditas: item.komoditas || prev.komoditas,
+        varietas: item.varietas || prev.varietas,
+        lahan: item.lokasi || item.kodeLahan || prev.lahan,
+        luasHa: item.luasHa || (item as any).greenhouse?.luas || prev.luasHa || 5.0,
+        produksiKg: item.yieldEst ? item.yieldEst : (prev.produksiKg || 15000),
+        produksiKotorKg: item.yieldEst ? Math.round(item.yieldEst * 1.03) : (prev.produksiKotorKg || 15500),
+      }));
+    }
+  };
+
   const openCreateModal = () => {
+    setSelectedKesiapanId('');
     setFormData({
       kodePanen: `PN-2606-00${totalRecords + 1}`,
-      komoditas: 'Padi',
-      varietas: 'Inpari 32',
-      lahan: 'Lahan A1 - Blok 01',
+      kesiapanPanenId: '',
+      kesiapanLahanId: '',
+      commodityId: '',
+      varietyId: '',
+      komoditas: '',
+      varietas: '',
+      lahan: '',
       tanggalPanen: new Date().toISOString().split('T')[0],
-      luasHa: 5.0,
-      produksiKg: 15000,
+      luasHa: 0,
+      produksiKg: 0,
       status: 'Selesai',
       penanggungJawab: 'Budi Santoso',
       metodePanen: 'Combine Harvester',
-      produksiKotorKg: 15500,
+      produksiKotorKg: 0,
       kadarAir: 14,
       kebersihan: 98,
       catatan: '',
@@ -85,6 +120,7 @@ export default function PanenPage() {
   };
 
   const openEditModal = (item: PanenItem) => {
+    setSelectedKesiapanId(item.kesiapanPanenId || '');
     setFormData({
       ...item,
       tanggalPanen: item.tanggalPanen ? new Date(item.tanggalPanen).toISOString().split('T')[0] : '',
@@ -769,6 +805,36 @@ export default function PanenPage() {
 
             <form onSubmit={handleSubmitModal} className="p-6 space-y-4 text-xs">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {!editingItem && (
+                  <div className="sm:col-span-2 bg-emerald-50/70 border border-emerald-200/80 p-3.5 rounded-xl space-y-1.5">
+                    <label className="block text-emerald-900 font-bold mb-1 flex items-center justify-between text-xs">
+                      <span className="flex items-center gap-1.5">
+                        <i className="ri-file-list-3-line text-emerald-600 text-sm"></i>
+                        Referensi Kesiapan Panen (Status: Siap Panen)
+                      </span>
+                      <span className="bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full text-[10px] font-semibold">
+                        {kesiapanSiapPanenList.length} Siap Panen
+                      </span>
+                    </label>
+                    <select
+                      value={selectedKesiapanId}
+                      onChange={(e) => handleKesiapanSelect(e.target.value)}
+                      className="w-full px-3 py-2 border border-emerald-300 bg-white rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500/20 text-gray-800 text-xs font-medium shadow-xs"
+                    >
+                      <option value="">-- Pilih Referensi Kesiapan Panen --</option>
+                      {kesiapanSiapPanenList.map((item) => (
+                        <option key={item.id || item.kodeLahan} value={item.id || item.kodeLahan}>
+                          {item.kodeLahan} - {item.lokasi || 'Lahan'} ({item.komoditas} - {item.varietas} | Luas: {item.luasHa || 5.0} Ha)
+                        </option>
+                      ))}
+                    </select>
+                    <p className="text-[11px] text-emerald-700/80 italic flex items-center gap-1">
+                      <i className="ri-information-line text-xs"></i>
+                      <span>Memilih referensi akan mengisi otomatis Komoditas, Varietas, Lahan, dan Luas.</span>
+                    </p>
+                  </div>
+                )}
+
                 <div>
                   <label className="block text-gray-700 font-semibold mb-1">Kode Panen</label>
                   <input
@@ -791,14 +857,27 @@ export default function PanenPage() {
                   />
                 </div>
 
+                <div className="sm:col-span-2">
+                  <label className="block text-gray-700 font-semibold mb-1">Lahan</label>
+                  <input
+                    type="text"
+                    readOnly
+                    disabled
+                    placeholder="Otomatis terisi dari Referensi Kesiapan Panen"
+                    value={formData.lahan || ''}
+                    className="w-full px-3 py-2 border border-gray-200 bg-gray-100 text-gray-600 cursor-not-allowed rounded-lg focus:outline-none"
+                  />
+                </div>
+
                 <div>
                   <label className="block text-gray-700 font-semibold mb-1">Komoditas</label>
                   <input
                     type="text"
-                    required
+                    readOnly
+                    disabled
+                    placeholder="Otomatis terisi"
                     value={formData.komoditas || ''}
-                    onChange={(e) => setFormData({ ...formData, komoditas: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:border-emerald-500"
+                    className="w-full px-3 py-2 border border-gray-200 bg-gray-100 text-gray-600 cursor-not-allowed rounded-lg focus:outline-none"
                   />
                 </div>
 
@@ -806,21 +885,11 @@ export default function PanenPage() {
                   <label className="block text-gray-700 font-semibold mb-1">Varietas</label>
                   <input
                     type="text"
-                    required
+                    readOnly
+                    disabled
+                    placeholder="Otomatis terisi"
                     value={formData.varietas || ''}
-                    onChange={(e) => setFormData({ ...formData, varietas: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:border-emerald-500"
-                  />
-                </div>
-
-                <div className="sm:col-span-2">
-                  <label className="block text-gray-700 font-semibold mb-1">Lahan</label>
-                  <input
-                    type="text"
-                    required
-                    value={formData.lahan || ''}
-                    onChange={(e) => setFormData({ ...formData, lahan: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:border-emerald-500"
+                    className="w-full px-3 py-2 border border-gray-200 bg-gray-100 text-gray-600 cursor-not-allowed rounded-lg focus:outline-none"
                   />
                 </div>
 
