@@ -2,14 +2,14 @@ import React from 'react';
 
 export default function RingkasanKondisiLahan() {
   const summaryData = [
-    { label: 'Kondisi Baik', area: '52,25 Ha', percent: '60,47%', color: 'bg-emerald-600', strokeColor: 'text-emerald-600' },
-    { label: 'Perlu Perhatian', area: '10,05 Ha', percent: '11,63%', color: 'bg-amber-500', strokeColor: 'text-amber-500' },
-    { label: 'Kondisi Buruk', area: '2,00 Ha', percent: '2,33%', color: 'bg-rose-600', strokeColor: 'text-rose-600' },
-    { label: 'Belum Tanam', area: '22,15 Ha', percent: '25,57%', color: 'bg-gray-300', strokeColor: 'text-gray-300' },
+    { label: 'Kondisi Baik', area: '52,25 Ha', percent: '60,47%', color: 'bg-emerald-600' },
+    { label: 'Perlu Perhatian', area: '10,05 Ha', percent: '11,63%', color: 'bg-amber-500' },
+    { label: 'Kondisi Buruk', area: '2,00 Ha', percent: '2,33%', color: 'bg-rose-600' },
+    { label: 'Belum Tanam', area: '22,15 Ha', percent: '25,57%', color: 'bg-blue-600' },
   ];
 
   return (
-    <div className="box border border-defaultborder/60 bg-white shadow-sm rounded-lg overflow-hidden mb-6">
+    <div className="box border border-defaultborder/60 bg-white shadow-xs rounded-lg overflow-hidden mb-6">
       <div className="box-header p-4 border-b border-defaultborder flex justify-between items-center">
         <div>
           <h3 className="box-title text-sm font-bold text-gray-800">Ringkasan Kondisi Lahan</h3>
@@ -57,7 +57,7 @@ export default function RingkasanKondisiLahan() {
             />
             {/* Belum Tanam 25.57% */}
             <path
-              className="text-gray-300 stroke-current"
+              className="text-blue-600 stroke-current"
               strokeWidth="4.5"
               strokeDasharray="25.57, 100"
               strokeDashoffset="-74.43"
@@ -68,9 +68,9 @@ export default function RingkasanKondisiLahan() {
 
           {/* Center Donut Text */}
           <div className="absolute text-center flex flex-col items-center justify-center">
-            <span className="text-[10px] text-gray-400 font-medium">Total Lahan</span>
-            <span className="text-xs font-extrabold text-gray-800 leading-tight">86,45</span>
-            <span className="text-[9px] text-gray-500 font-semibold">Ha</span>
+            <span className="text-[10px] text-gray-400 font-medium leading-none">Total Lahan</span>
+            <span className="text-sm font-extrabold text-gray-800 leading-tight mt-0.5">86,45</span>
+            <span className="text-[9px] text-gray-500 font-semibold leading-none">Ha</span>
           </div>
         </div>
 

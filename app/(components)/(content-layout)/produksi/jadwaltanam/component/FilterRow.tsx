@@ -42,7 +42,7 @@ export default function FilterRow({
         {/* Controls Container */}
         <div className="flex flex-wrap items-end gap-3 flex-1">
           {selectFilters.map((config, index) => (
-            <div key={index} className="flex flex-col gap-1 min-w-[140px] flex-1 sm:flex-none">
+            <div key={index} className={`flex flex-col gap-1 ${config.widthClass || 'min-w-[120px]'} flex-1 sm:flex-initial`}>
               {config.title && (
                 <label className="text-xs text-gray-600 font-medium mb-0">
                   {config.title}
@@ -85,17 +85,17 @@ export default function FilterRow({
         {/* Filter & Reset Buttons */}
         <div className="flex items-center gap-2 mt-2 sm:mt-0">
           <button
-            onClick={onSearch}
-            className="px-4 py-1.5 rounded-md bg-[#078836] hover:bg-[#06732d] text-white text-xs font-semibold flex items-center gap-1.5 shadow-sm transition-colors"
-          >
-            <i className="ri-filter-3-line text-sm"></i> Terapkan
-          </button>
-
-          <button
             onClick={handleReset}
             className="px-4 py-1.5 rounded-md bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 text-xs font-semibold flex items-center gap-1.5 transition-colors"
           >
             Reset
+          </button>
+
+          <button
+            onClick={onSearch}
+            className="px-4 py-1.5 rounded-md bg-[#078836] hover:bg-[#06732d] text-white text-xs font-semibold flex items-center gap-1.5 shadow-sm transition-colors"
+          >
+            <i className="ri-filter-3-line text-sm"></i> Terapkan
           </button>
         </div>
       </div>

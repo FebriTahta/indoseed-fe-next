@@ -10,6 +10,9 @@ import ParameterKematangan from './component/ParameterKematangan';
 import RingkasanKesiapanPanen from './component/RingkasanKesiapanPanen';
 import PrediksiPanenChart from './component/PrediksiPanenChart';
 import LahanMendekatiSiapPanen from './component/LahanMendekatiSiapPanen';
+import KesiapanPanenFormModal from './component/KesiapanPanenFormModal';
+import KesiapanPanenDetailModal from './component/KesiapanPanenDetailModal';
+import KesiapanPanenDeleteModal from './component/KesiapanPanenDeleteModal';
 import { KesiapanPanenItem } from '@/app/types/kesiapanPanen';
 
 export default function KesiapanPanenPage() {
@@ -38,7 +41,21 @@ export default function KesiapanPanenPage() {
     statusOptions,
     handleApplyFilters,
     handleResetFilters,
-    statItems
+    statItems,
+    // Modal & CRUD actions
+    isAddModalOpen,
+    isEditModalOpen,
+    isDetailModalOpen,
+    isDeleteModalOpen,
+    selectedItem,
+    handleOpenAddModal,
+    handleOpenEditModal,
+    handleOpenDetailModal,
+    handleOpenDeleteModal,
+    handleCloseModals,
+    handleSubmitCreate,
+    handleSubmitUpdate,
+    handleSubmitDelete,
   } = useKesiapanPanen();
 
   // Filters Configuration
@@ -138,25 +155,42 @@ export default function KesiapanPanenPage() {
 
     return (
       <tr className="border-b border-defaultborder hover:bg-slate-50/60 transition-colors text-xs" key={item.kodeLahan || index}>
-        <td className="p-3 text-gray-700 font-medium">{item.no}</td>
-        <td className="p-3 font-semibold text-emerald-700 hover:underline cursor-pointer">{item.kodeLahan}</td>
+        <td className="p-3 text-gray-700 font-medium">{item.no || index + 1}</td>
+        <td
+          onClick={() => handleOpenDetailModal(item)}
+          className="p-3 font-semibold text-emerald-700 hover:underline cursor-pointer"
+        >
+          {item.kodeLahan}
+        </td>
         <td className="p-3 text-gray-700">{item.komoditas}</td>
         <td className="p-3 text-gray-700">{item.varietas}</td>
         <td className="p-3 text-gray-700">{item.tanggalTanam}</td>
-        <td className="p-3 text-gray-700 font-medium">{item.umurHst}</td>
+        <td className="p-3 text-gray-700 font-medium">{item.umurHst} HST</td>
         <td className="p-3 text-gray-700 font-medium">{item.prediksiPanen}</td>
         <td className="p-3">{renderStatusBadge(item.statusKesiapan)}</td>
-        <td className="p-3 text-gray-700 font-semibold">{item.yieldEst.toLocaleString('id-ID')}</td>
+        <td className="p-3 text-gray-700 font-semibold">{item.yieldEst ? item.yieldEst.toLocaleString('id-ID') : '-'}</td>
         <td className="p-3">
           <div className="flex items-center gap-1.5">
-            <button className="p-1 text-gray-500 hover:text-emerald-700" title="Lihat Detail">
+            <button
+              onClick={() => handleOpenDetailModal(item)}
+              className="p-1 text-gray-500 hover:text-emerald-700 transition-colors"
+              title="Lihat Detail"
+            >
               <i className="ri-eye-line text-sm"></i>
             </button>
-            <button className="p-1 text-gray-500 hover:text-emerald-700" title="Edit">
+            <button
+              onClick={() => handleOpenEditModal(item)}
+              className="p-1 text-gray-500 hover:text-blue-600 transition-colors"
+              title="Edit Data"
+            >
               <i className="ri-pencil-line text-sm"></i>
             </button>
-            <button className="p-1 text-gray-500 hover:text-emerald-700" title="Grafik Analytics">
-              <i className="ri-bar-chart-line text-sm"></i>
+            <button
+              onClick={() => handleOpenDeleteModal(item)}
+              className="p-1 text-gray-500 hover:text-rose-600 transition-colors"
+              title="Hapus Data"
+            >
+              <i className="ri-delete-bin-line text-sm"></i>
             </button>
           </div>
         </td>
@@ -174,7 +208,10 @@ export default function KesiapanPanenPage() {
         description="Monitor kesiapan panen berdasarkan umur tanaman, parameter kualitas, dan perkiraan hasil untuk memastikan panen tepat waktu."
         customButton={
           <div className="flex items-center gap-2">
-            <button className="bg-[#078836] hover:bg-[#06732d] text-white px-3.5 py-1.5 rounded-md font-semibold text-xs flex items-center gap-1.5 shadow-sm transition-colors">
+            <button
+              onClick={handleOpenAddModal}
+              className="bg-[#078836] hover:bg-[#06732d] text-white px-3.5 py-1.5 rounded-md font-semibold text-xs flex items-center gap-1.5 shadow-sm transition-colors"
+            >
               <i className="ri-add-line text-sm"></i> Tambah Kesiapan Panen Baru
             </button>
             <button className="bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 px-3.5 py-1.5 rounded-md font-semibold text-xs flex items-center gap-1.5 shadow-sm transition-colors">
@@ -245,6 +282,44 @@ export default function KesiapanPanenPage() {
           <LahanMendekatiSiapPanen />
         </div>
       </div>
+
+      {/* Create Modal */}
+      <KesiapanPanenFormModal
+        isOpen={isAddModalOpen}
+        onClose={handleCloseModals}
+        onSubmit={handleSubmitCreate}
+        mode="add"
+        komoditasOptions={komoditasOptions}
+        varietasOptions={varietasOptions}
+        lokasiOptions={lokasiOptions}
+      />
+
+      {/* Edit Modal */}
+      <KesiapanPanenFormModal
+        isOpen={isEditModalOpen}
+        onClose={handleCloseModals}
+        onSubmit={handleSubmitUpdate}
+        initialData={selectedItem}
+        mode="edit"
+        komoditasOptions={komoditasOptions}
+        varietasOptions={varietasOptions}
+        lokasiOptions={lokasiOptions}
+      />
+
+      {/* Detail Modal */}
+      <KesiapanPanenDetailModal
+        isOpen={isDetailModalOpen}
+        onClose={handleCloseModals}
+        item={selectedItem}
+      />
+
+      {/* Delete Confirmation Modal */}
+      <KesiapanPanenDeleteModal
+        isOpen={isDeleteModalOpen}
+        onClose={handleCloseModals}
+        onConfirm={handleSubmitDelete}
+        item={selectedItem}
+      />
     </Fragment>
   );
 }

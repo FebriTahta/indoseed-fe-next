@@ -1,13 +1,19 @@
 export interface MonitoringGreenhouseItem {
-  no: number;
+  id?: string;
+  no?: number;
   kodeGreenhouse: string;
   lokasi: string;
   komoditas: string;
   varietas: string;
   luas: number;
-  status: 'Aktif' | 'Tidak Aktif' | 'Rencana';
-  kondisi: 'Baik' | 'Perlu Perhatian' | 'Buruk' | 'Tidak Aktif';
-  aktivitasTerakhir: string;
+  status: 'Aktif' | 'Tidak Aktif' | 'Rencana' | 'Maintenance' | string;
+  kondisi: 'Baik' | 'Perlu Perhatian' | 'Buruk' | 'Tidak Aktif' | string;
+  aktivitasTerakhir?: string;
+  suhuRataRata?: number;
+  kelembapanRata?: number;
+  intensitasCahaya?: number;
+  phAirIrigasi?: number;
+  catatan?: string;
 }
 
 export interface GreenhousePlotItem {

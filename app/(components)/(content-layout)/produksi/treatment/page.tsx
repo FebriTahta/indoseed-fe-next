@@ -11,6 +11,9 @@ import RingkasanHariIniTreatment from './component/RingkasanHariIniTreatment';
 import ParameterTreatment from './component/ParameterTreatment';
 import KomposisiTreatmentHariIni from './component/KomposisiTreatmentHariIni';
 import DokumentasiTerbaruTreatment from './component/DokumentasiTerbaruTreatment';
+import TreatmentFormModal from './component/TreatmentFormModal';
+import TreatmentDetailModal from './component/TreatmentDetailModal';
+import TreatmentDeleteModal from './component/TreatmentDeleteModal';
 import { TreatmentBatchItem } from '@/app/types/treatment';
 
 export default function TreatmentPage() {
@@ -43,7 +46,21 @@ export default function TreatmentPage() {
     lokasiOptions,
     handleApplyFilters,
     handleResetFilters,
-    statItems
+    statItems,
+    // Modal & CRUD actions
+    isAddModalOpen,
+    isEditModalOpen,
+    isDetailModalOpen,
+    isDeleteModalOpen,
+    selectedItem,
+    handleOpenAddModal,
+    handleOpenEditModal,
+    handleOpenDetailModal,
+    handleOpenDeleteModal,
+    handleCloseModals,
+    handleSubmitCreate,
+    handleSubmitUpdate,
+    handleSubmitDelete,
   } = useTreatment();
 
   // Filters Configuration
@@ -126,16 +143,21 @@ export default function TreatmentPage() {
   const renderTableRow = (item: TreatmentBatchItem, index: number) => {
     return (
       <tr className="border-b border-defaultborder hover:bg-slate-50/60 transition-colors text-xs" key={item.kodeBatch || index}>
-        <td className="p-3 text-gray-700 font-medium">{item.no}</td>
-        <td className="p-3 font-semibold text-emerald-700 hover:underline cursor-pointer">{item.kodeBatch}</td>
+        <td className="p-3 text-gray-700 font-medium">{item.no || index + 1}</td>
+        <td
+          onClick={() => handleOpenDetailModal(item)}
+          className="p-3 font-semibold text-emerald-700 hover:underline cursor-pointer"
+        >
+          {item.kodeBatch}
+        </td>
         <td className="p-3 text-gray-700">{item.komoditas}</td>
         <td className="p-3 text-gray-700">{item.varietas}</td>
         <td className="p-3 text-gray-800 font-medium">{item.treatment}</td>
         <td className="p-3 text-gray-600">{item.dosis}</td>
         <td className="p-3 text-gray-600">{item.operator}</td>
-        <td className="p-3 text-gray-800 font-bold">{item.beratAwal.toLocaleString('id-ID')}</td>
-        <td className="p-3 text-emerald-700 font-bold">{item.beratAkhir.toLocaleString('id-ID')}</td>
-        <td className="p-3 text-rose-600 font-semibold">{item.loss.toFixed(2).replace('.', ',')}%</td>
+        <td className="p-3 text-gray-800 font-bold">{item.beratAwal ? item.beratAwal.toLocaleString('id-ID') : '-'}</td>
+        <td className="p-3 text-emerald-700 font-bold">{item.beratAkhir ? item.beratAkhir.toLocaleString('id-ID') : '-'}</td>
+        <td className="p-3 text-rose-600 font-semibold">{item.loss ? `${item.loss.toFixed(2).replace('.', ',')}%` : '-'}</td>
         <td className="p-3 text-gray-700">{item.tanggalSelesai}</td>
         <td className="p-3">
           <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
@@ -143,14 +165,38 @@ export default function TreatmentPage() {
           </span>
         </td>
         <td className="p-3 text-center">
-          <button className="p-1 text-gray-500 hover:text-emerald-700" title="Sertifikat">
+          <button
+            onClick={() => handleOpenDetailModal(item)}
+            className="p-1 text-gray-500 hover:text-emerald-700 transition-colors"
+            title="Sertifikat"
+          >
             <i className="ri-article-line text-sm"></i>
           </button>
         </td>
         <td className="p-3">
-          <button className="p-1 text-gray-500 hover:text-emerald-700" title="Lihat Detail">
-            <i className="ri-eye-line text-sm"></i>
-          </button>
+          <div className="flex items-center gap-1.5">
+            <button
+              onClick={() => handleOpenDetailModal(item)}
+              className="p-1 text-gray-500 hover:text-emerald-700 transition-colors"
+              title="Lihat Detail"
+            >
+              <i className="ri-eye-line text-sm"></i>
+            </button>
+            <button
+              onClick={() => handleOpenEditModal(item)}
+              className="p-1 text-gray-500 hover:text-blue-600 transition-colors"
+              title="Edit Data"
+            >
+              <i className="ri-pencil-line text-sm"></i>
+            </button>
+            <button
+              onClick={() => handleOpenDeleteModal(item)}
+              className="p-1 text-gray-500 hover:text-rose-600 transition-colors"
+              title="Hapus Data"
+            >
+              <i className="ri-delete-bin-line text-sm"></i>
+            </button>
+          </div>
         </td>
       </tr>
     );
@@ -166,7 +212,10 @@ export default function TreatmentPage() {
         description="Kelola proses treatment benih untuk melindungi benih dari hama, penyakit, dan meningkatkan kualitas benih."
         customButton={
           <div className="flex items-center gap-2">
-            <button className="bg-[#078836] hover:bg-[#06732d] text-white px-3.5 py-1.5 rounded-md font-semibold text-xs flex items-center gap-1.5 shadow-sm transition-colors">
+            <button
+              onClick={handleOpenAddModal}
+              className="bg-[#078836] hover:bg-[#06732d] text-white px-3.5 py-1.5 rounded-md font-semibold text-xs flex items-center gap-1.5 shadow-sm transition-colors"
+            >
               <i className="ri-add-line text-sm"></i> Mulai Treatment Baru
             </button>
             <button className="bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 px-3.5 py-1.5 rounded-md font-semibold text-xs flex items-center gap-1.5 shadow-sm transition-colors">
@@ -240,6 +289,46 @@ export default function TreatmentPage() {
           <DokumentasiTerbaruTreatment />
         </div>
       </div>
+
+      {/* Create Modal */}
+      <TreatmentFormModal
+        isOpen={isAddModalOpen}
+        onClose={handleCloseModals}
+        onSubmit={handleSubmitCreate}
+        mode="add"
+        komoditasOptions={komoditasOptions}
+        varietasOptions={varietasOptions}
+        jenisTreatmentOptions={jenisTreatmentOptions}
+        lokasiOptions={lokasiOptions}
+      />
+
+      {/* Edit Modal */}
+      <TreatmentFormModal
+        isOpen={isEditModalOpen}
+        onClose={handleCloseModals}
+        onSubmit={handleSubmitUpdate}
+        initialData={selectedItem}
+        mode="edit"
+        komoditasOptions={komoditasOptions}
+        varietasOptions={varietasOptions}
+        jenisTreatmentOptions={jenisTreatmentOptions}
+        lokasiOptions={lokasiOptions}
+      />
+
+      {/* Detail Modal */}
+      <TreatmentDetailModal
+        isOpen={isDetailModalOpen}
+        onClose={handleCloseModals}
+        item={selectedItem}
+      />
+
+      {/* Delete Confirmation Modal */}
+      <TreatmentDeleteModal
+        isOpen={isDeleteModalOpen}
+        onClose={handleCloseModals}
+        onConfirm={handleSubmitDelete}
+        item={selectedItem}
+      />
     </Fragment>
   );
 }

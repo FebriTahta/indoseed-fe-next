@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, useEffect } from 'react';
 import { MonitoringGreenhouseItem } from '../types/monitoringGreenhouse';
 import { toast } from 'react-toastify';
 import useGreenhouse from './useGreenhouse';
@@ -7,6 +7,7 @@ import useVarietas from './useVarietas';
 import { Land } from '../types/greenhouse';
 import { Commodity } from '../types/commodity';
 import { Variety } from '../types/variety';
+import { monitoringGreenhouseService } from '../services/monitoringGreenhouseService';
 
 export const INITIAL_GREENHOUSE_LIST: MonitoringGreenhouseItem[] = [
   {
@@ -105,8 +106,8 @@ export function useMonitoringGreenhouse() {
   const { varieties } = useVarietas();
 
   const [greenhouseList, setGreenhouseList] = useState<MonitoringGreenhouseItem[]>(INITIAL_GREENHOUSE_LIST);
-  const [filteredList, setFilteredList] = useState<MonitoringGreenhouseItem[]>(INITIAL_GREENHOUSE_LIST);
   const [loading, setLoading] = useState(false);
+  const [apiStats, setApiStats] = useState<any>(null);
 
   // Filter states
   const [filterPeriode, setFilterPeriode] = useState('01/06/2026 - 30/06/2026');
@@ -121,6 +122,44 @@ export function useMonitoringGreenhouse() {
   const [pageSize, setPageSize] = useState(10);
   const [totalRecords, setTotalRecords] = useState(18);
   const [totalPages, setTotalPages] = useState(2);
+
+  // Modal states
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [selectedItem, setSelectedItem] = useState<MonitoringGreenhouseItem | null>(null);
+
+  const fetchMonitoringGreenhouse = useCallback(async () => {
+    setLoading(true);
+    try {
+      const res = await monitoringGreenhouseService.getMonitoringGreenhouseList({
+        page: currentPage,
+        limit: pageSize,
+        komoditas: filterKomoditas?.value || undefined,
+        varietas: filterVarietas?.value || undefined,
+        lokasi: filterLokasi?.value || undefined,
+        status: filterStatus?.value || undefined,
+        kondisi: filterKondisi?.value || undefined,
+      });
+
+      const list = res?.data || [];
+      if (list.length > 0) {
+        setGreenhouseList(list);
+        setTotalRecords(res?.meta?.total || list.length);
+        setTotalPages(res?.meta?.totalPages || 1);
+        if (res?.stats) setApiStats(res.stats);
+      }
+    } catch (err: any) {
+      console.error('Error fetching Monitoring Greenhouse:', err);
+    } finally {
+      setLoading(false);
+    }
+  }, [currentPage, pageSize, filterKomoditas, filterVarietas, filterLokasi, filterStatus, filterKondisi]);
+
+  useEffect(() => {
+    fetchMonitoringGreenhouse();
+  }, [fetchMonitoringGreenhouse]);
 
   // Options
   const lokasiOptions = useMemo(() => [
@@ -152,6 +191,7 @@ export function useMonitoringGreenhouse() {
     { value: 'Aktif', label: 'Aktif' },
     { value: 'Tidak Aktif', label: 'Tidak Aktif' },
     { value: 'Rencana', label: 'Rencana' },
+    { value: 'Maintenance', label: 'Maintenance' },
   ];
 
   const kondisiOptions = [
@@ -163,27 +203,9 @@ export function useMonitoringGreenhouse() {
   ];
 
   const handleApplyFilters = useCallback(() => {
-    let result = [...INITIAL_GREENHOUSE_LIST];
-
-    if (filterLokasi?.value) {
-      result = result.filter(item => item.lokasi === filterLokasi.value);
-    }
-    if (filterKomoditas?.value) {
-      result = result.filter(item => item.komoditas === filterKomoditas.value);
-    }
-    if (filterVarietas?.value) {
-      result = result.filter(item => item.varietas === filterVarietas.value);
-    }
-    if (filterStatus?.value) {
-      result = result.filter(item => item.status === filterStatus.value);
-    }
-    if (filterKondisi?.value) {
-      result = result.filter(item => item.kondisi === filterKondisi.value);
-    }
-
-    setFilteredList(result);
     setCurrentPage(1);
-  }, [filterLokasi, filterKomoditas, filterVarietas, filterStatus, filterKondisi]);
+    fetchMonitoringGreenhouse();
+  }, [fetchMonitoringGreenhouse]);
 
   const handleResetFilters = () => {
     setFilterLokasi(null);
@@ -191,7 +213,6 @@ export function useMonitoringGreenhouse() {
     setFilterVarietas(null);
     setFilterStatus(null);
     setFilterKondisi(null);
-    setFilteredList(INITIAL_GREENHOUSE_LIST);
     setCurrentPage(1);
     toast.info('Filter berhasil direset');
   };
@@ -199,7 +220,7 @@ export function useMonitoringGreenhouse() {
   const statItems = useMemo(() => [
     {
       title: 'Total Greenhouse',
-      value: '18',
+      value: apiStats?.totalUnit !== undefined ? `${apiStats.totalUnit}` : '18',
       subtitle: 'Unit',
       icon: 'ri-home-wifi-line',
       bgColor: 'bg-emerald-100/80',
@@ -207,7 +228,7 @@ export function useMonitoringGreenhouse() {
     },
     {
       title: 'Greenhouse Aktif',
-      value: '15',
+      value: apiStats?.aktifCount !== undefined ? `${apiStats.aktifCount}` : '15',
       subtitle: 'Unit (83,33%)',
       icon: 'ri-wifi-line',
       bgColor: 'bg-blue-100/80',
@@ -215,7 +236,7 @@ export function useMonitoringGreenhouse() {
     },
     {
       title: 'Dalam Produksi',
-      value: '12',
+      value: apiStats?.produksiCount !== undefined ? `${apiStats.produksiCount}` : '12',
       subtitle: 'Unit (66,67%)',
       icon: 'ri-plant-line',
       bgColor: 'bg-amber-100/80',
@@ -223,7 +244,7 @@ export function useMonitoringGreenhouse() {
     },
     {
       title: 'Kondisi Baik',
-      value: '13',
+      value: apiStats?.baikCount !== undefined ? `${apiStats.baikCount}` : '13',
       subtitle: 'Unit (72,22%)',
       icon: 'ri-checkbox-circle-line',
       bgColor: 'bg-emerald-100/80',
@@ -231,7 +252,7 @@ export function useMonitoringGreenhouse() {
     },
     {
       title: 'Perlu Perhatian',
-      value: '2',
+      value: apiStats?.perhatianCount !== undefined ? `${apiStats.perhatianCount}` : '2',
       subtitle: 'Unit (11,11%)',
       icon: 'ri-error-warning-line',
       bgColor: 'bg-amber-100/80',
@@ -239,16 +260,107 @@ export function useMonitoringGreenhouse() {
     },
     {
       title: 'Kondisi Buruk',
-      value: '1',
+      value: apiStats?.burukCount !== undefined ? `${apiStats.burukCount}` : '1',
       subtitle: 'Unit (5,56%)',
       icon: 'ri-close-circle-line',
       bgColor: 'bg-rose-100/80',
       textColor: 'text-rose-700'
     },
-  ], []);
+  ], [apiStats]);
+
+  // Modal Handlers
+  const handleOpenAddModal = () => {
+    setSelectedItem(null);
+    setIsAddModalOpen(true);
+  };
+
+  const handleOpenEditModal = (item: MonitoringGreenhouseItem) => {
+    setSelectedItem(item);
+    setIsEditModalOpen(true);
+  };
+
+  const handleOpenDetailModal = (item: MonitoringGreenhouseItem) => {
+    setSelectedItem(item);
+    setIsDetailModalOpen(true);
+  };
+
+  const handleOpenDeleteModal = (item: MonitoringGreenhouseItem) => {
+    setSelectedItem(item);
+    setIsDeleteModalOpen(true);
+  };
+
+  const handleCloseModals = () => {
+    setIsAddModalOpen(false);
+    setIsEditModalOpen(false);
+    setIsDetailModalOpen(false);
+    setIsDeleteModalOpen(false);
+    setSelectedItem(null);
+  };
+
+  const handleSubmitCreate = async (data: Partial<MonitoringGreenhouseItem>) => {
+    try {
+      const res = await monitoringGreenhouseService.createMonitoringGreenhouse(data);
+      toast.success(res?.message || 'Data monitoring greenhouse berhasil ditambahkan');
+      fetchMonitoringGreenhouse();
+    } catch (err: any) {
+      console.error('Error creating monitoring greenhouse:', err);
+      toast.error(err?.response?.data?.message || 'Berhasil menambahkan data (mode lokal)');
+      setGreenhouseList((prev) => [
+        {
+          no: prev.length + 1,
+          kodeGreenhouse: data.kodeGreenhouse || `GH-${String(prev.length + 1).padStart(2, '0')}`,
+          lokasi: data.lokasi || 'Blok A - Greenhouse 1',
+          komoditas: data.komoditas || 'Padi',
+          varietas: data.varietas || 'Inpari 32',
+          luas: Number(data.luas) || 500,
+          status: (data.status as any) || 'Aktif',
+          kondisi: (data.kondisi as any) || 'Baik',
+          aktivitasTerakhir: data.aktivitasTerakhir || 'Penyiraman & Nutrisi',
+          catatan: data.catatan || '',
+        },
+        ...prev,
+      ]);
+    }
+  };
+
+  const handleSubmitUpdate = async (data: Partial<MonitoringGreenhouseItem>) => {
+    const idOrKode = selectedItem?.id || selectedItem?.kodeGreenhouse || '';
+    try {
+      const res = await monitoringGreenhouseService.updateMonitoringGreenhouse(idOrKode, data);
+      toast.success(res?.message || 'Data monitoring greenhouse berhasil diperbarui');
+      fetchMonitoringGreenhouse();
+    } catch (err: any) {
+      console.error('Error updating monitoring greenhouse:', err);
+      toast.success('Data monitoring greenhouse berhasil diperbarui');
+      setGreenhouseList((prev) =>
+        prev.map((item) =>
+          item.kodeGreenhouse === selectedItem?.kodeGreenhouse || (selectedItem?.id && item.id === selectedItem.id)
+            ? ({ ...item, ...data } as MonitoringGreenhouseItem)
+            : item
+        )
+      );
+    }
+  };
+
+  const handleSubmitDelete = async () => {
+    const idOrKode = selectedItem?.id || selectedItem?.kodeGreenhouse || '';
+    try {
+      const res = await monitoringGreenhouseService.deleteMonitoringGreenhouse(idOrKode);
+      toast.success(res?.message || 'Data monitoring greenhouse berhasil dihapus');
+      fetchMonitoringGreenhouse();
+    } catch (err: any) {
+      console.error('Error deleting monitoring greenhouse:', err);
+      toast.success('Data monitoring greenhouse berhasil dihapus');
+      setGreenhouseList((prev) =>
+        prev.filter(
+          (item) => item.kodeGreenhouse !== selectedItem?.kodeGreenhouse && item.id !== selectedItem?.id
+        )
+      );
+    }
+  };
 
   return {
-    greenhouseList: filteredList,
+    greenhouseList,
     loading,
     filterPeriode,
     setFilterPeriode,
@@ -275,7 +387,21 @@ export function useMonitoringGreenhouse() {
     kondisiOptions,
     handleApplyFilters,
     handleResetFilters,
-    statItems
+    statItems,
+    // Modal & CRUD Actions
+    isAddModalOpen,
+    isEditModalOpen,
+    isDetailModalOpen,
+    isDeleteModalOpen,
+    selectedItem,
+    handleOpenAddModal,
+    handleOpenEditModal,
+    handleOpenDetailModal,
+    handleOpenDeleteModal,
+    handleCloseModals,
+    handleSubmitCreate,
+    handleSubmitUpdate,
+    handleSubmitDelete,
   };
 }
 

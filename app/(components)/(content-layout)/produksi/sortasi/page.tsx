@@ -11,6 +11,9 @@ import RingkasanHariIni from './component/RingkasanHariIni';
 import ParameterSortasiStandar from './component/ParameterSortasiStandar';
 import KomposisiHasilSortasi from './component/KomposisiHasilSortasi';
 import DokumentasiTerbaru from './component/DokumentasiTerbaru';
+import SortasiFormModal from './component/SortasiFormModal';
+import SortasiDetailModal from './component/SortasiDetailModal';
+import SortasiDeleteModal from './component/SortasiDeleteModal';
 import { SortasiBatchItem } from '@/app/types/sortasi';
 
 export default function SortasiPage() {
@@ -43,7 +46,21 @@ export default function SortasiPage() {
     lokasiOptions,
     handleApplyFilters,
     handleResetFilters,
-    statItems
+    statItems,
+    // Modal & CRUD actions
+    isAddModalOpen,
+    isEditModalOpen,
+    isDetailModalOpen,
+    isDeleteModalOpen,
+    selectedItem,
+    handleOpenAddModal,
+    handleOpenEditModal,
+    handleOpenDetailModal,
+    handleOpenDeleteModal,
+    handleCloseModals,
+    handleSubmitCreate,
+    handleSubmitUpdate,
+    handleSubmitDelete,
   } = useSortasi();
 
   // Filters Configuration
@@ -124,15 +141,20 @@ export default function SortasiPage() {
   const renderTableRow = (item: SortasiBatchItem, index: number) => {
     return (
       <tr className="border-b border-defaultborder hover:bg-slate-50/60 transition-colors text-xs" key={item.kodeBatch || index}>
-        <td className="p-3 text-gray-700 font-medium">{item.no}</td>
-        <td className="p-3 font-semibold text-emerald-700 hover:underline cursor-pointer">{item.kodeBatch}</td>
+        <td className="p-3 text-gray-700 font-medium">{item.no || index + 1}</td>
+        <td
+          onClick={() => handleOpenDetailModal(item)}
+          className="p-3 font-semibold text-emerald-700 hover:underline cursor-pointer"
+        >
+          {item.kodeBatch}
+        </td>
         <td className="p-3 text-gray-700">{item.komoditas}</td>
         <td className="p-3 text-gray-700">{item.varietas}</td>
         <td className="p-3 text-gray-700 font-medium">{item.alatSortasi}</td>
-        <td className="p-3 text-gray-800 font-bold">{item.beratMasuk.toLocaleString('id-ID')}</td>
-        <td className="p-3 text-emerald-700 font-bold">{item.hasilLulus.toLocaleString('id-ID')}</td>
-        <td className="p-3 text-rose-600 font-bold">{item.hasilTolak.toLocaleString('id-ID')}</td>
-        <td className="p-3 text-gray-800 font-bold">{item.recovery.toFixed(2).replace('.', ',')}%</td>
+        <td className="p-3 text-gray-800 font-bold">{item.beratMasuk ? item.beratMasuk.toLocaleString('id-ID') : '-'}</td>
+        <td className="p-3 text-emerald-700 font-bold">{item.hasilLulus ? item.hasilLulus.toLocaleString('id-ID') : '-'}</td>
+        <td className="p-3 text-rose-600 font-bold">{item.hasilTolak ? item.hasilTolak.toLocaleString('id-ID') : '-'}</td>
+        <td className="p-3 text-gray-800 font-bold">{item.recovery ? `${item.recovery.toFixed(2).replace('.', ',')}%` : '-'}</td>
         <td className="p-3 text-gray-700">{item.tanggalSortasi}</td>
         <td className="p-3">
           <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
@@ -141,11 +163,26 @@ export default function SortasiPage() {
         </td>
         <td className="p-3">
           <div className="flex items-center gap-1.5">
-            <button className="p-1 text-gray-500 hover:text-emerald-700" title="Lihat Detail">
+            <button
+              onClick={() => handleOpenDetailModal(item)}
+              className="p-1 text-gray-500 hover:text-emerald-700 transition-colors"
+              title="Lihat Detail"
+            >
               <i className="ri-eye-line text-sm"></i>
             </button>
-            <button className="p-1 text-gray-500 hover:text-emerald-700" title="Download">
-              <i className="ri-download-line text-sm"></i>
+            <button
+              onClick={() => handleOpenEditModal(item)}
+              className="p-1 text-gray-500 hover:text-blue-600 transition-colors"
+              title="Edit Data"
+            >
+              <i className="ri-pencil-line text-sm"></i>
+            </button>
+            <button
+              onClick={() => handleOpenDeleteModal(item)}
+              className="p-1 text-gray-500 hover:text-rose-600 transition-colors"
+              title="Hapus Data"
+            >
+              <i className="ri-delete-bin-line text-sm"></i>
             </button>
           </div>
         </td>
@@ -163,7 +200,10 @@ export default function SortasiPage() {
         description="Kelola proses sortasi benih untuk memisahkan dan mengklasifikasikan benih sesuai standar mutu."
         customButton={
           <div className="flex items-center gap-2">
-            <button className="bg-[#078836] hover:bg-[#06732d] text-white px-3.5 py-1.5 rounded-md font-semibold text-xs flex items-center gap-1.5 shadow-sm transition-colors">
+            <button
+              onClick={handleOpenAddModal}
+              className="bg-[#078836] hover:bg-[#06732d] text-white px-3.5 py-1.5 rounded-md font-semibold text-xs flex items-center gap-1.5 shadow-sm transition-colors"
+            >
               <i className="ri-add-line text-sm"></i> Mulai Sortasi Baru
             </button>
             <button className="bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 px-3.5 py-1.5 rounded-md font-semibold text-xs flex items-center gap-1.5 shadow-sm transition-colors">
@@ -237,6 +277,46 @@ export default function SortasiPage() {
           <DokumentasiTerbaru />
         </div>
       </div>
+
+      {/* Create Modal */}
+      <SortasiFormModal
+        isOpen={isAddModalOpen}
+        onClose={handleCloseModals}
+        onSubmit={handleSubmitCreate}
+        mode="add"
+        komoditasOptions={komoditasOptions}
+        varietasOptions={varietasOptions}
+        alatOptions={alatOptions}
+        lokasiOptions={lokasiOptions}
+      />
+
+      {/* Edit Modal */}
+      <SortasiFormModal
+        isOpen={isEditModalOpen}
+        onClose={handleCloseModals}
+        onSubmit={handleSubmitUpdate}
+        initialData={selectedItem}
+        mode="edit"
+        komoditasOptions={komoditasOptions}
+        varietasOptions={varietasOptions}
+        alatOptions={alatOptions}
+        lokasiOptions={lokasiOptions}
+      />
+
+      {/* Detail Modal */}
+      <SortasiDetailModal
+        isOpen={isDetailModalOpen}
+        onClose={handleCloseModals}
+        item={selectedItem}
+      />
+
+      {/* Delete Confirmation Modal */}
+      <SortasiDeleteModal
+        isOpen={isDeleteModalOpen}
+        onClose={handleCloseModals}
+        onConfirm={handleSubmitDelete}
+        item={selectedItem}
+      />
     </Fragment>
   );
 }

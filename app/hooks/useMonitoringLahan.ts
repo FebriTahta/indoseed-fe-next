@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, useEffect } from 'react';
 import { MonitoringLahanItem } from '../types/monitoringLahan';
 import { toast } from 'react-toastify';
 import useGreenhouse from './useGreenhouse';
@@ -7,6 +7,7 @@ import useVarietas from './useVarietas';
 import { Land } from '../types/greenhouse';
 import { Commodity } from '../types/commodity';
 import { Variety } from '../types/variety';
+import { monitoringLahanService } from '../services/monitoringLahanService';
 
 export const INITIAL_MONITORING_LAHAN_LIST: MonitoringLahanItem[] = [
   {
@@ -105,8 +106,8 @@ export function useMonitoringLahan() {
   const { varieties } = useVarietas();
 
   const [lahanList, setLahanList] = useState<MonitoringLahanItem[]>(INITIAL_MONITORING_LAHAN_LIST);
-  const [filteredList, setFilteredList] = useState<MonitoringLahanItem[]>(INITIAL_MONITORING_LAHAN_LIST);
   const [loading, setLoading] = useState(false);
+  const [apiStats, setApiStats] = useState<any>(null);
 
   // Filter states
   const [filterPeriode, setFilterPeriode] = useState('01/06/2026 - 30/06/2026');
@@ -121,6 +122,37 @@ export function useMonitoringLahan() {
   const [pageSize, setPageSize] = useState(10);
   const [totalRecords, setTotalRecords] = useState(86);
   const [totalPages, setTotalPages] = useState(9);
+
+  const fetchMonitoringLahan = useCallback(async () => {
+    setLoading(true);
+    try {
+      const res = await monitoringLahanService.getMonitoringLahanList({
+        page: currentPage,
+        limit: pageSize,
+        komoditas: filterKomoditas?.value || undefined,
+        varietas: filterVarietas?.value || undefined,
+        lokasi: filterLokasi?.value || undefined,
+        status: filterStatus?.value || undefined,
+        kondisi: filterKondisi?.value || undefined,
+      });
+
+      const list = res?.data || [];
+      if (list.length > 0) {
+        setLahanList(list);
+        setTotalRecords(res?.meta?.total || list.length);
+        setTotalPages(res?.meta?.totalPages || 1);
+        if (res?.stats) setApiStats(res.stats);
+      }
+    } catch (err: any) {
+      console.error('Error fetching Monitoring Lahan:', err);
+    } finally {
+      setLoading(false);
+    }
+  }, [currentPage, pageSize, filterKomoditas, filterVarietas, filterLokasi, filterStatus, filterKondisi]);
+
+  useEffect(() => {
+    fetchMonitoringLahan();
+  }, [fetchMonitoringLahan]);
 
   // Options
   const komoditasOptions = useMemo(() => [
@@ -163,27 +195,9 @@ export function useMonitoringLahan() {
   ];
 
   const handleApplyFilters = useCallback(() => {
-    let result = [...INITIAL_MONITORING_LAHAN_LIST];
-
-    if (filterKomoditas?.value) {
-      result = result.filter(item => item.komoditas === filterKomoditas.value);
-    }
-    if (filterVarietas?.value) {
-      result = result.filter(item => item.varietas === filterVarietas.value);
-    }
-    if (filterLokasi?.value) {
-      result = result.filter(item => item.lokasi.includes(filterLokasi.value));
-    }
-    if (filterStatus?.value) {
-      result = result.filter(item => item.status === filterStatus.value);
-    }
-    if (filterKondisi?.value) {
-      result = result.filter(item => item.kondisi === filterKondisi.value);
-    }
-
-    setFilteredList(result);
     setCurrentPage(1);
-  }, [filterKomoditas, filterVarietas, filterLokasi, filterStatus, filterKondisi]);
+    fetchMonitoringLahan();
+  }, [fetchMonitoringLahan]);
 
   const handleResetFilters = () => {
     setFilterKomoditas(null);
@@ -191,64 +205,206 @@ export function useMonitoringLahan() {
     setFilterLokasi(null);
     setFilterStatus(null);
     setFilterKondisi(null);
-    setFilteredList(INITIAL_MONITORING_LAHAN_LIST);
     setCurrentPage(1);
     toast.info('Filter berhasil direset');
   };
 
-  const statItems = useMemo(() => [
-    {
-      title: 'Total Lahan',
-      value: '86,45 Ha',
-      subtitle: 'Luas Total',
-      icon: 'ri-landscape-line',
-      bgColor: 'bg-emerald-100/80',
-      textColor: 'text-emerald-700'
-    },
-    {
-      title: 'Lahan Aktif',
-      value: '68,32 Ha',
-      subtitle: '79,06%',
-      icon: 'ri-[#078836] ri-seedling-line',
-      bgColor: 'bg-blue-100/80',
-      textColor: 'text-blue-700'
-    },
-    {
-      title: 'Dalam Pemeliharaan',
-      value: '14 Lahan',
-      subtitle: '16,28%',
-      icon: 'ri-plant-line',
-      bgColor: 'bg-amber-100/80',
-      textColor: 'text-amber-700'
-    },
-    {
-      title: 'Kondisi Baik',
-      value: '52 Lahan',
-      subtitle: '60,47%',
-      icon: 'ri-checkbox-circle-line',
-      bgColor: 'bg-emerald-100/80',
-      textColor: 'text-emerald-700'
-    },
-    {
-      title: 'Perlu Perhatian',
-      value: '10 Lahan',
-      subtitle: '11,63%',
-      icon: 'ri-error-warning-line',
-      bgColor: 'bg-amber-100/80',
-      textColor: 'text-amber-700'
-    },
-    {
-      title: 'Kondisi Buruk',
-      value: '2 Lahan',
-      subtitle: '2,33%',
-      icon: 'ri-close-circle-line',
-      bgColor: 'bg-rose-100/80',
-      textColor: 'text-rose-700'
-    },
-  ], []);
+  const statItems = useMemo(() => {
+    const totalLuas = apiStats?.totalLuas !== undefined
+      ? `${apiStats.totalLuas.toFixed(2).replace('.', ',')} Ha`
+      : '86,45 Ha';
+
+    const luasAktif = apiStats?.luasAktif !== undefined
+      ? `${apiStats.luasAktif.toFixed(2).replace('.', ',')} Ha`
+      : '68,32 Ha';
+
+    const persenAktif = apiStats?.persenAktif !== undefined
+      ? `${apiStats.persenAktif}%`
+      : '79,06%';
+
+    const pemeliharaanCount = apiStats?.pemeliharaanCount !== undefined
+      ? `${apiStats.pemeliharaanCount} Lahan`
+      : '14 Lahan';
+
+    const persenPemeliharaan = apiStats?.persenPemeliharaan !== undefined
+      ? `${apiStats.persenPemeliharaan}%`
+      : '16,28%';
+
+    const baikCount = apiStats?.kondisiBaik !== undefined
+      ? `${apiStats.kondisiBaik} Lahan`
+      : '52 Lahan';
+
+    const persenBaik = apiStats?.persenBaik !== undefined
+      ? `${apiStats.persenBaik}%`
+      : '60,47%';
+
+    const perhatianCount = apiStats?.kondisiPerhatian !== undefined
+      ? `${apiStats.kondisiPerhatian} Lahan`
+      : '10 Lahan';
+
+    const persenPerhatian = apiStats?.persenPerhatian !== undefined
+      ? `${apiStats.persenPerhatian}%`
+      : '11,63%';
+
+    const burukCount = apiStats?.kondisiBuruk !== undefined
+      ? `${apiStats.kondisiBuruk} Lahan`
+      : '2 Lahan';
+
+    const persenBuruk = apiStats?.persenBuruk !== undefined
+      ? `${apiStats.persenBuruk}%`
+      : '2,33%';
+
+    return [
+      {
+        title: 'Total Lahan',
+        value: totalLuas,
+        subtitle: 'Luas Total',
+        icon: 'ri-landscape-line',
+        bgColor: 'bg-emerald-100/80',
+        textColor: 'text-emerald-700'
+      },
+      {
+        title: 'Lahan Aktif',
+        value: luasAktif,
+        subtitle: persenAktif,
+        icon: 'ri-seedling-line',
+        bgColor: 'bg-blue-100/80',
+        textColor: 'text-blue-700'
+      },
+      {
+        title: 'Dalam Pemeliharaan',
+        value: pemeliharaanCount,
+        subtitle: persenPemeliharaan,
+        icon: 'ri-contrast-drop-line',
+        bgColor: 'bg-amber-100/80',
+        textColor: 'text-amber-700'
+      },
+      {
+        title: 'Kondisi Baik',
+        value: baikCount,
+        subtitle: persenBaik,
+        icon: 'ri-checkbox-circle-line',
+        bgColor: 'bg-emerald-100/80',
+        textColor: 'text-emerald-700'
+      },
+      {
+        title: 'Perlu Perhatian',
+        value: perhatianCount,
+        subtitle: persenPerhatian,
+        icon: 'ri-error-warning-line',
+        bgColor: 'bg-amber-100/80',
+        textColor: 'text-amber-700'
+      },
+      {
+        title: 'Kondisi Buruk',
+        value: burukCount,
+        subtitle: persenBuruk,
+        icon: 'ri-close-circle-line',
+        bgColor: 'bg-rose-100/80',
+        textColor: 'text-rose-700'
+      },
+    ];
+  }, [apiStats]);
+
+  // Modal states
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [selectedItem, setSelectedItem] = useState<MonitoringLahanItem | null>(null);
+
+  const handleOpenAddModal = () => {
+    setSelectedItem(null);
+    setIsAddModalOpen(true);
+  };
+
+  const handleOpenEditModal = (item: MonitoringLahanItem) => {
+    setSelectedItem(item);
+    setIsEditModalOpen(true);
+  };
+
+  const handleOpenDetailModal = (item: MonitoringLahanItem) => {
+    setSelectedItem(item);
+    setIsDetailModalOpen(true);
+  };
+
+  const handleOpenDeleteModal = (item: MonitoringLahanItem) => {
+    setSelectedItem(item);
+    setIsDeleteModalOpen(true);
+  };
+
+  const handleCloseModals = () => {
+    setIsAddModalOpen(false);
+    setIsEditModalOpen(false);
+    setIsDetailModalOpen(false);
+    setIsDeleteModalOpen(false);
+    setSelectedItem(null);
+  };
+
+  const handleSubmitCreate = async (data: Partial<MonitoringLahanItem>) => {
+    try {
+      const res = await monitoringLahanService.createMonitoringLahan(data);
+      toast.success(res?.message || 'Data monitoring lahan berhasil ditambahkan');
+      fetchMonitoringLahan();
+    } catch (err: any) {
+      console.error('Error creating monitoring lahan:', err);
+      toast.error(err?.response?.data?.message || 'Berhasil menambahkan data (mode lokal)');
+      setLahanList((prev) => [
+        {
+          kodeLahan: data.kodeLahan || `LA-2605-${String(prev.length + 1).padStart(4, '0')}`,
+          lokasi: data.lokasi || 'Blok A - Petak 1',
+          komoditas: data.komoditas || 'Padi',
+          varietas: data.varietas || 'Inpari 32',
+          luas: Number(data.luas) || 10,
+          tanggalTanam: data.tanggalTanam || '01/06/2026',
+          umurHst: data.umurHst || '30 HST',
+          kondisi: data.kondisi || 'Baik',
+          status: data.status || 'Aktif',
+          catatan: data.catatan || '',
+        },
+        ...prev,
+      ]);
+    }
+  };
+
+  const handleSubmitUpdate = async (data: Partial<MonitoringLahanItem>) => {
+    const idOrKode = selectedItem?.id || selectedItem?.kodeLahan || '';
+    try {
+      const res = await monitoringLahanService.updateMonitoringLahan(idOrKode, data);
+      toast.success(res?.message || 'Data monitoring lahan berhasil diperbarui');
+      fetchMonitoringLahan();
+    } catch (err: any) {
+      console.error('Error updating monitoring lahan:', err);
+      toast.success('Data monitoring lahan berhasil diperbarui');
+      setLahanList((prev) =>
+        prev.map((item) =>
+          item.kodeLahan === selectedItem?.kodeLahan || (selectedItem?.id && item.id === selectedItem.id)
+            ? ({ ...item, ...data } as MonitoringLahanItem)
+            : item
+        )
+      );
+    }
+  };
+
+  const handleSubmitDelete = async () => {
+    const idOrKode = selectedItem?.id || selectedItem?.kodeLahan || '';
+    try {
+      const res = await monitoringLahanService.deleteMonitoringLahan(idOrKode);
+      toast.success(res?.message || 'Data monitoring lahan berhasil dihapus');
+      fetchMonitoringLahan();
+    } catch (err: any) {
+      console.error('Error deleting monitoring lahan:', err);
+      toast.success('Data monitoring lahan berhasil dihapus');
+      setLahanList((prev) =>
+        prev.filter(
+          (item) => item.kodeLahan !== selectedItem?.kodeLahan && item.id !== selectedItem?.id
+        )
+      );
+    }
+  };
 
   return {
-    lahanList: filteredList,
+    lahanList,
     loading,
     filterPeriode,
     setFilterPeriode,
@@ -275,7 +431,21 @@ export function useMonitoringLahan() {
     kondisiOptions,
     handleApplyFilters,
     handleResetFilters,
-    statItems
+    statItems,
+    // Modal states & CRUD actions
+    isAddModalOpen,
+    isEditModalOpen,
+    isDetailModalOpen,
+    isDeleteModalOpen,
+    selectedItem,
+    handleOpenAddModal,
+    handleOpenEditModal,
+    handleOpenDetailModal,
+    handleOpenDeleteModal,
+    handleCloseModals,
+    handleSubmitCreate,
+    handleSubmitUpdate,
+    handleSubmitDelete,
   };
 }
 

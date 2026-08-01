@@ -11,6 +11,9 @@ import RingkasanKondisiGreenhouse from './component/RingkasanKondisiGreenhouse';
 import ParameterLingkungan from './component/ParameterLingkungan';
 import GrafikLingkungan from './component/GrafikLingkungan';
 import AktivitasTerbaruGreenhouse from './component/AktivitasTerbaruGreenhouse';
+import MonitoringGreenhouseFormModal from './component/MonitoringGreenhouseFormModal';
+import MonitoringGreenhouseDetailModal from './component/MonitoringGreenhouseDetailModal';
+import MonitoringGreenhouseDeleteModal from './component/MonitoringGreenhouseDeleteModal';
 import { MonitoringGreenhouseItem } from '@/app/types/monitoringGreenhouse';
 
 export default function MonitoringGreenhousePage() {
@@ -42,7 +45,21 @@ export default function MonitoringGreenhousePage() {
     kondisiOptions,
     handleApplyFilters,
     handleResetFilters,
-    statItems
+    statItems,
+    // Modal & CRUD actions
+    isAddModalOpen,
+    isEditModalOpen,
+    isDetailModalOpen,
+    isDeleteModalOpen,
+    selectedItem,
+    handleOpenAddModal,
+    handleOpenEditModal,
+    handleOpenDetailModal,
+    handleOpenDeleteModal,
+    handleCloseModals,
+    handleSubmitCreate,
+    handleSubmitUpdate,
+    handleSubmitDelete,
   } = useMonitoringGreenhouse();
 
   // Filters Configuration
@@ -62,7 +79,7 @@ export default function MonitoringGreenhousePage() {
       options: lokasiOptions,
       placeholder: 'Semua Lokasi',
       title: 'Lokasi',
-      widthClass: 'sm:w-40',
+      widthClass: 'sm:w-36',
       type: 'opsi'
     },
     {
@@ -71,7 +88,7 @@ export default function MonitoringGreenhousePage() {
       options: komoditasOptions,
       placeholder: 'Semua Komoditas',
       title: 'Komoditas',
-      widthClass: 'sm:w-40',
+      widthClass: 'sm:w-36',
       type: 'opsi'
     },
     {
@@ -80,7 +97,7 @@ export default function MonitoringGreenhousePage() {
       options: varietasOptions,
       placeholder: 'Semua Varietas',
       title: 'Varietas',
-      widthClass: 'sm:w-40',
+      widthClass: 'sm:w-36',
       type: 'opsi'
     },
     {
@@ -89,7 +106,7 @@ export default function MonitoringGreenhousePage() {
       options: statusOptions,
       placeholder: 'Semua Status',
       title: 'Status',
-      widthClass: 'sm:w-36',
+      widthClass: 'sm:w-32',
       type: 'opsi'
     },
     {
@@ -98,7 +115,7 @@ export default function MonitoringGreenhousePage() {
       options: kondisiOptions,
       placeholder: 'Semua Kondisi',
       title: 'Kondisi',
-      widthClass: 'sm:w-36',
+      widthClass: 'sm:w-32',
       type: 'opsi'
     },
   ];
@@ -166,25 +183,42 @@ export default function MonitoringGreenhousePage() {
 
     return (
       <tr className="border-b border-defaultborder hover:bg-slate-50/60 transition-colors text-xs" key={item.kodeGreenhouse || index}>
-        <td className="p-3 text-gray-700 font-medium">{item.no}</td>
-        <td className="p-3 font-semibold text-emerald-700 hover:underline cursor-pointer">{item.kodeGreenhouse}</td>
+        <td className="p-3 text-gray-700 font-medium">{item.no || index + 1}</td>
+        <td
+          onClick={() => handleOpenDetailModal(item)}
+          className="p-3 font-semibold text-emerald-700 hover:underline cursor-pointer"
+        >
+          {item.kodeGreenhouse}
+        </td>
         <td className="p-3 text-gray-700 font-medium">{item.lokasi}</td>
         <td className="p-3 text-gray-700">{item.komoditas}</td>
         <td className="p-3 text-gray-700">{item.varietas}</td>
-        <td className="p-3 text-gray-700 font-medium">{item.luas.toLocaleString('id-ID')}</td>
+        <td className="p-3 text-gray-700 font-medium">{item.luas ? item.luas.toLocaleString('id-ID') : '-'}</td>
         <td className="p-3">{renderStatusBadge(item.status)}</td>
         <td className="p-3">{renderKondisiBadge(item.kondisi)}</td>
         <td className="p-3 text-gray-700">{item.aktivitasTerakhir}</td>
         <td className="p-3">
           <div className="flex items-center gap-1.5">
-            <button className="p-1 text-gray-500 hover:text-emerald-700" title="Lihat Detail">
+            <button
+              onClick={() => handleOpenDetailModal(item)}
+              className="p-1 text-gray-500 hover:text-emerald-700 transition-colors"
+              title="Lihat Detail"
+            >
               <i className="ri-eye-line text-sm"></i>
             </button>
-            <button className="p-1 text-gray-500 hover:text-emerald-700" title="Edit">
+            <button
+              onClick={() => handleOpenEditModal(item)}
+              className="p-1 text-gray-500 hover:text-blue-600 transition-colors"
+              title="Edit Data"
+            >
               <i className="ri-pencil-line text-sm"></i>
             </button>
-            <button className="p-1 text-gray-500 hover:text-emerald-700" title="Lokasi Peta">
-              <i className="ri-map-pin-line text-sm"></i>
+            <button
+              onClick={() => handleOpenDeleteModal(item)}
+              className="p-1 text-gray-500 hover:text-rose-600 transition-colors"
+              title="Hapus Data"
+            >
+              <i className="ri-delete-bin-line text-sm"></i>
             </button>
           </div>
         </td>
@@ -202,7 +236,10 @@ export default function MonitoringGreenhousePage() {
         description="Pantau kondisi dan aktivitas greenhouse secara real-time untuk menjaga kualitas benih."
         customButton={
           <div className="flex items-center gap-2">
-            <button className="bg-[#078836] hover:bg-[#06732d] text-white px-3.5 py-1.5 rounded-md font-semibold text-xs flex items-center gap-1.5 shadow-sm transition-colors">
+            <button
+              onClick={handleOpenAddModal}
+              className="bg-[#078836] hover:bg-[#06732d] text-white px-3.5 py-1.5 rounded-md font-semibold text-xs flex items-center gap-1.5 shadow-sm transition-colors"
+            >
               <i className="ri-add-line text-sm"></i> Tambah Greenhouse
             </button>
             <button className="bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 px-3.5 py-1.5 rounded-md font-semibold text-xs flex items-center gap-1.5 shadow-sm transition-colors">
@@ -276,6 +313,44 @@ export default function MonitoringGreenhousePage() {
           <AktivitasTerbaruGreenhouse />
         </div>
       </div>
+
+      {/* Create Modal */}
+      <MonitoringGreenhouseFormModal
+        isOpen={isAddModalOpen}
+        onClose={handleCloseModals}
+        onSubmit={handleSubmitCreate}
+        mode="add"
+        lokasiOptions={lokasiOptions}
+        komoditasOptions={komoditasOptions}
+        varietasOptions={varietasOptions}
+      />
+
+      {/* Edit Modal */}
+      <MonitoringGreenhouseFormModal
+        isOpen={isEditModalOpen}
+        onClose={handleCloseModals}
+        onSubmit={handleSubmitUpdate}
+        initialData={selectedItem}
+        mode="edit"
+        lokasiOptions={lokasiOptions}
+        komoditasOptions={komoditasOptions}
+        varietasOptions={varietasOptions}
+      />
+
+      {/* Detail Modal */}
+      <MonitoringGreenhouseDetailModal
+        isOpen={isDetailModalOpen}
+        onClose={handleCloseModals}
+        item={selectedItem}
+      />
+
+      {/* Delete Confirmation Modal */}
+      <MonitoringGreenhouseDeleteModal
+        isOpen={isDeleteModalOpen}
+        onClose={handleCloseModals}
+        onConfirm={handleSubmitDelete}
+        item={selectedItem}
+      />
     </Fragment>
   );
 }

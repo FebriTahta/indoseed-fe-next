@@ -1,5 +1,6 @@
 export interface SortasiBatchItem {
-  no: number;
+  id?: string;
+  no?: number;
   kodeBatch: string;
   komoditas: string;
   varietas: string;
@@ -9,7 +10,10 @@ export interface SortasiBatchItem {
   hasilTolak: number;
   recovery: number;
   tanggalSortasi: string;
-  status: 'Selesai' | 'Proses' | 'Pending';
+  status: 'Selesai' | 'Proses' | 'Pending' | string;
+  lokasi?: string;
+  operator?: string;
+  catatan?: string;
 }
 
 export interface ProsesSortasiAktifItem {

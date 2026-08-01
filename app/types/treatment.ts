@@ -1,5 +1,6 @@
 export interface TreatmentBatchItem {
-  no: number;
+  id?: string;
+  no?: number;
   kodeBatch: string;
   komoditas: string;
   varietas: string;
@@ -10,7 +11,9 @@ export interface TreatmentBatchItem {
   beratAkhir: number;
   loss: number;
   tanggalSelesai: string;
-  status: 'Selesai' | 'Proses' | 'Pending';
+  status: 'Selesai' | 'Proses' | 'Pending' | string;
+  lokasi?: string;
+  catatan?: string;
 }
 
 export interface ProsesTreatmentAktifItem {

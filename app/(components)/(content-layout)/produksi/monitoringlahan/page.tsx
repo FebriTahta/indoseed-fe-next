@@ -10,6 +10,9 @@ import PetaSebaranLahan from './component/PetaSebaranLahan';
 import RingkasanKondisiLahan from './component/RingkasanKondisiLahan';
 import ParameterMonitoring from './component/ParameterMonitoring';
 import AktivitasTerbaru from './component/AktivitasTerbaru';
+import MonitoringLahanFormModal from './component/MonitoringLahanFormModal';
+import MonitoringLahanDetailModal from './component/MonitoringLahanDetailModal';
+import MonitoringLahanDeleteModal from './component/MonitoringLahanDeleteModal';
 import { MonitoringLahanItem } from '@/app/types/monitoringLahan';
 
 export default function MonitoringLahanPage() {
@@ -41,7 +44,21 @@ export default function MonitoringLahanPage() {
     kondisiOptions,
     handleApplyFilters,
     handleResetFilters,
-    statItems
+    statItems,
+    // Modal & CRUD actions
+    isAddModalOpen,
+    isEditModalOpen,
+    isDetailModalOpen,
+    isDeleteModalOpen,
+    selectedItem,
+    handleOpenAddModal,
+    handleOpenEditModal,
+    handleOpenDetailModal,
+    handleOpenDeleteModal,
+    handleCloseModals,
+    handleSubmitCreate,
+    handleSubmitUpdate,
+    handleSubmitDelete,
   } = useMonitoringLahan();
 
   // Filters Configuration
@@ -61,7 +78,7 @@ export default function MonitoringLahanPage() {
       options: komoditasOptions,
       placeholder: 'Semua Komoditas',
       title: 'Komoditas',
-      widthClass: 'sm:w-40',
+      widthClass: 'sm:w-36',
       type: 'opsi'
     },
     {
@@ -70,7 +87,7 @@ export default function MonitoringLahanPage() {
       options: varietasOptions,
       placeholder: 'Semua Varietas',
       title: 'Varietas',
-      widthClass: 'sm:w-40',
+      widthClass: 'sm:w-36',
       type: 'opsi'
     },
     {
@@ -79,7 +96,7 @@ export default function MonitoringLahanPage() {
       options: lokasiOptions,
       placeholder: 'Semua Lokasi',
       title: 'Lokasi',
-      widthClass: 'sm:w-40',
+      widthClass: 'sm:w-36',
       type: 'opsi'
     },
     {
@@ -88,7 +105,7 @@ export default function MonitoringLahanPage() {
       options: statusOptions,
       placeholder: 'Semua Status',
       title: 'Status Lahan',
-      widthClass: 'sm:w-36',
+      widthClass: 'sm:w-32',
       type: 'opsi'
     },
     {
@@ -97,7 +114,7 @@ export default function MonitoringLahanPage() {
       options: kondisiOptions,
       placeholder: 'Semua Kondisi',
       title: 'Kondisi',
-      widthClass: 'sm:w-36',
+      widthClass: 'sm:w-32',
       type: 'opsi'
     },
   ];
@@ -165,25 +182,42 @@ export default function MonitoringLahanPage() {
 
     return (
       <tr className="border-b border-defaultborder hover:bg-slate-50/60 transition-colors text-xs" key={item.kodeLahan || index}>
-        <td className="p-3 font-semibold text-emerald-700 hover:underline cursor-pointer">{item.kodeLahan}</td>
+        <td
+          onClick={() => handleOpenDetailModal(item)}
+          className="p-3 font-semibold text-emerald-700 hover:underline cursor-pointer"
+        >
+          {item.kodeLahan}
+        </td>
         <td className="p-3 text-gray-700 font-medium">{item.lokasi}</td>
         <td className="p-3 text-gray-700">{item.komoditas}</td>
         <td className="p-3 text-gray-700">{item.varietas}</td>
-        <td className="p-3 text-gray-700 font-medium">{item.luas.toFixed(2).replace('.', ',')}</td>
+        <td className="p-3 text-gray-700 font-medium">{item.luas ? item.luas.toFixed(2).replace('.', ',') : '-'}</td>
         <td className="p-3 text-gray-700">{item.tanggalTanam}</td>
         <td className="p-3 text-gray-700">{item.umurHst}</td>
         <td className="p-3">{renderKondisiBadge(item.kondisi)}</td>
         <td className="p-3">{renderStatusBadge(item.status)}</td>
         <td className="p-3">
           <div className="flex items-center gap-1.5">
-            <button className="p-1 text-gray-500 hover:text-emerald-700" title="Lihat Detail">
+            <button
+              onClick={() => handleOpenDetailModal(item)}
+              className="p-1 text-gray-500 hover:text-emerald-700 transition-colors"
+              title="Lihat Detail"
+            >
               <i className="ri-eye-line text-sm"></i>
             </button>
-            <button className="p-1 text-gray-500 hover:text-emerald-700" title="Edit">
+            <button
+              onClick={() => handleOpenEditModal(item)}
+              className="p-1 text-gray-500 hover:text-blue-600 transition-colors"
+              title="Edit Data"
+            >
               <i className="ri-pencil-line text-sm"></i>
             </button>
-            <button className="p-1 text-gray-500 hover:text-emerald-700" title="Lokasi Peta">
-              <i className="ri-map-pin-line text-sm"></i>
+            <button
+              onClick={() => handleOpenDeleteModal(item)}
+              className="p-1 text-gray-500 hover:text-rose-600 transition-colors"
+              title="Hapus Data"
+            >
+              <i className="ri-delete-bin-line text-sm"></i>
             </button>
           </div>
         </td>
@@ -201,10 +235,13 @@ export default function MonitoringLahanPage() {
         description="Pantau kondisi dan aktivitas seluruh lahan secara real-time untuk memastikan kualitas produksi benih."
         customButton={
           <div className="flex items-center gap-2">
-            <button className="bg-[#078836] hover:bg-[#06732d] text-white px-3.5 py-1.5 rounded-md font-semibold text-xs flex items-center gap-1.5 shadow-sm transition-colors">
+            <button
+              onClick={handleOpenAddModal}
+              className="bg-[#078836] hover:bg-[#06732d] text-white px-3.5 py-1.5 rounded-md font-semibold text-xs flex items-center gap-1.5 shadow-xs transition-colors"
+            >
               <i className="ri-add-line text-sm"></i> Tambah Monitoring Baru
             </button>
-            <button className="bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 px-3.5 py-1.5 rounded-md font-semibold text-xs flex items-center gap-1.5 shadow-sm transition-colors">
+            <button className="bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 px-3.5 py-1.5 rounded-md font-semibold text-xs flex items-center gap-1.5 shadow-xs transition-colors">
               <i className="ri-download-line text-xs"></i> Export Laporan <i className="ri-arrow-down-s-line text-xs"></i>
             </button>
           </div>
@@ -229,7 +266,7 @@ export default function MonitoringLahanPage() {
           <PetaSebaranLahan />
 
           {/* Daftar Lahan Table */}
-          <div className="box border border-defaultborder/60 bg-white shadow-sm rounded-lg overflow-hidden mb-6">
+          <div className="box border border-defaultborder/60 bg-white shadow-xs rounded-lg overflow-hidden mb-6">
             <div className="box-header p-4 border-b border-defaultborder flex justify-between items-center">
               <h3 className="box-title text-sm font-bold text-gray-800">Daftar Lahan</h3>
             </div>
@@ -272,6 +309,44 @@ export default function MonitoringLahanPage() {
           <AktivitasTerbaru />
         </div>
       </div>
+
+      {/* Create Modal */}
+      <MonitoringLahanFormModal
+        isOpen={isAddModalOpen}
+        onClose={handleCloseModals}
+        onSubmit={handleSubmitCreate}
+        mode="add"
+        komoditasOptions={komoditasOptions}
+        varietasOptions={varietasOptions}
+        lokasiOptions={lokasiOptions}
+      />
+
+      {/* Edit Modal */}
+      <MonitoringLahanFormModal
+        isOpen={isEditModalOpen}
+        onClose={handleCloseModals}
+        onSubmit={handleSubmitUpdate}
+        initialData={selectedItem}
+        mode="edit"
+        komoditasOptions={komoditasOptions}
+        varietasOptions={varietasOptions}
+        lokasiOptions={lokasiOptions}
+      />
+
+      {/* Detail Modal */}
+      <MonitoringLahanDetailModal
+        isOpen={isDetailModalOpen}
+        onClose={handleCloseModals}
+        item={selectedItem}
+      />
+
+      {/* Delete Confirmation Modal */}
+      <MonitoringLahanDeleteModal
+        isOpen={isDeleteModalOpen}
+        onClose={handleCloseModals}
+        onConfirm={handleSubmitDelete}
+        item={selectedItem}
+      />
     </Fragment>
   );
 }

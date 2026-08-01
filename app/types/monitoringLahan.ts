@@ -1,4 +1,5 @@
 export interface MonitoringLahanItem {
+  id?: string;
   kodeLahan: string;
   lokasi: string;
   komoditas: string;
@@ -8,6 +9,9 @@ export interface MonitoringLahanItem {
   umurHst: string;
   kondisi: 'Baik' | 'Perlu Perhatian' | 'Buruk' | 'Belum Tanam';
   status: 'Aktif' | 'Rencana' | 'Pemeliharaan';
+  latitude?: number;
+  longitude?: number;
+  catatan?: string;
 }
 
 export interface ActivityItem {

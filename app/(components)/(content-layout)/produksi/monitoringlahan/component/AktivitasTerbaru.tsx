@@ -41,7 +41,7 @@ export default function AktivitasTerbaru() {
   ];
 
   return (
-    <div className="box border border-defaultborder/60 bg-white shadow-sm rounded-lg overflow-hidden mb-6">
+    <div className="box border border-defaultborder/60 bg-white shadow-xs rounded-lg overflow-hidden mb-6">
       <div className="box-header p-4 border-b border-defaultborder flex justify-between items-center">
         <h3 className="box-title text-sm font-bold text-gray-800">Aktivitas Terbaru</h3>
         <a href="#" className="text-xs text-emerald-700 font-semibold hover:underline">Lihat Semua</a>
@@ -49,7 +49,7 @@ export default function AktivitasTerbaru() {
 
       <div className="box-body p-4 space-y-3">
         {activities.map((act) => (
-          <div key={act.id} className="flex items-center justify-between p-2 rounded-lg border border-gray-100 hover:bg-gray-50/80 transition-colors">
+          <div key={act.id} className="flex items-center justify-between p-2.5 rounded-lg border border-gray-100 hover:bg-gray-50/80 transition-colors">
             <div className="flex items-center gap-3">
               <div className={`w-8 h-8 rounded-lg ${act.bgColor} ${act.iconColor} flex items-center justify-center font-bold text-sm shrink-0`}>
                 <i className={act.icon}></i>
