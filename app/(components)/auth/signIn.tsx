@@ -28,9 +28,9 @@ export default function SignIn() {
 
     const router = useRouter();
     const RouteChange = (role?: string) => {
-        let path = "/dashboard/sales";
+        let path = "/dashboard/qc";
         if (role === 'superadmin' || role === 'admin') {
-            path = "/master/greenhouse";
+            path = "/dashboard/qc";
         }
         router.push(path);
     };

@@ -18,28 +18,55 @@ export const MENUITEMS = [
   {
     title: "Dashboard",
     icon: DashboardIcon,
-    type: "link",
-    path: "/dashboard",
+    type: "sub",
     active: false,
     selected: false,
+    children: [
+      { path: "/dashboard", type: "link", active: false, selected: false, title: "Dashboard Utama" },
+      { path: "/dashboard/qc", type: "link", active: false, selected: false, title: "Dashboard QC" }
+    ]
   },
+  { menutitle: "MASTER DATA" },
   {
-    title: "Master Data",
+    title: "Varietas",
     icon: MasterDataIcon,
     type: "sub",
     active: false,
     children: [
-      { path: "/master/komoditas", type: "link", active: false, selected: false, title: "Komoditas" },
-      { path: "/master/varietas", type: "link", active: false, selected: false, title: "Varietas" },
-      { path: "/master/greenhouse", type: "link", active: false, selected: false, title: "Greenhouse" },
-      { path: "/master/petani-mitra", type: "link", active: false, selected: false, title: "Petani Mitra" },
-      { path: "/master/customer", type: "link", active: false, selected: false, title: "Customer" },
-      { path: "/master/gudang", type: "link", active: false, selected: false, title: "Gudang" },
-      { path: "/master/supplier", type: "link", active: false, selected: false, title: "Supplier" }
+      { path: "/master/varietas", type: "link", active: false, selected: false, title: "Daftar Varietas" }
     ]
   },
   {
-    title: "Produksi",
+    title: "Lahan & Produksi",
+    icon: ProduksiIcon,
+    type: "sub",
+    active: false,
+    children: [
+      { path: "/master/greenhouse", type: "link", active: false, selected: false, title: "Greenhouse" },
+      { path: "/master/petani-mitra", type: "link", active: false, selected: false, title: "Petani Mitra" }
+    ]
+  },
+  {
+    title: "Supplier",
+    icon: PembelianIcon,
+    type: "sub",
+    active: false,
+    children: [
+      { path: "/master/supplier", type: "link", active: false, selected: false, title: "Daftar Supplier" }
+    ]
+  },
+  {
+    title: "Pelanggan",
+    icon: CRMIcon,
+    type: "sub",
+    active: false,
+    children: [
+      { path: "/master/customer", type: "link", active: false, selected: false, title: "Daftar Pelanggan" }
+    ]
+  },
+  { menutitle: "PROSES BISNIS" },
+  {
+    title: "Produksi Benih",
     icon: ProduksiIcon,
     type: "sub",
     active: false,
@@ -62,20 +89,21 @@ export const MENUITEMS = [
       { path: "/qc/sertifikat-qc", type: "link", active: false, selected: false, title: "Sertifikat QC" },
       { path: "/qc/status-lulus-reject", type: "link", active: false, selected: false, title: "Status Lulus / Reject" },
       { path: "/qc/audit-trail", type: "link", active: false, selected: false, title: "Audit Trail" },
-      { path: "/qc/standar-metode-uji", type: "link", active: false, selected: false, title: "Standar Metode Uji" } // Keep this for existing pages, though it is not in the image explicitly under QC (it might be in Pengaturan or somewhere else, but I'll add the ones from the image. Actually I'll append it at the end just in case).
+      { path: "/qc/standar-metode-uji", type: "link", active: false, selected: false, title: "Standar Metode Uji" }
     ]
   },
   {
-    title: "Gudang & Inventory",
+    title: "Gudang & Inventori",
     icon: WarehouseIcon,
     type: "sub",
     active: false,
     children: [
-      { path: "/gudang/stok-masuk", type: "link", active: false, selected: false, title: "Stok Masuk" }
+      { path: "/gudang/stok-masuk", type: "link", active: false, selected: false, title: "Stok Masuk" },
+      { path: "/master/gudang", type: "link", active: false, selected: false, title: "Master Gudang" }
     ]
   },
   {
-    title: "Penjualan",
+    title: "Penjualan & Distribusi",
     icon: PenjualanIcon,
     type: "sub",
     active: false,
@@ -83,24 +111,7 @@ export const MENUITEMS = [
       { path: "/penjualan/order", type: "link", active: false, selected: false, title: "Order Penjualan" }
     ]
   },
-  {
-    title: "CRM Pelanggan",
-    icon: CRMIcon,
-    type: "sub",
-    active: false,
-    children: [
-      { path: "/crm/pelanggan", type: "link", active: false, selected: false, title: "Daftar Pelanggan" }
-    ]
-  },
-  {
-    title: "Pembelian",
-    icon: PembelianIcon,
-    type: "sub",
-    active: false,
-    children: [
-      { path: "/pembelian/po", type: "link", active: false, selected: false, title: "Purchase Order" }
-    ]
-  },
+  { menutitle: "MANAJEMEN" },
   {
     title: "Keuangan",
     icon: KeuanganIcon,
@@ -111,7 +122,7 @@ export const MENUITEMS = [
     ]
   },
   {
-    title: "HRD & Kepegawaian",
+    title: "SDM / HRD",
     icon: HRDIcon,
     type: "sub",
     active: false,
@@ -120,35 +131,41 @@ export const MENUITEMS = [
     ]
   },
   {
+    title: "Aset",
+    icon: MasterDataIcon,
+    type: "sub",
+    active: false,
+    children: [
+      { path: "/aset/daftar", type: "link", active: false, selected: false, title: "Daftar Aset" }
+    ]
+  },
+  { menutitle: "SISTEM" },
+  {
     title: "Audit ISO",
     icon: AuditISOIcon,
-    type: "link",
-    path: "/audit-iso",
+    type: "sub",
     active: false,
-    selected: false,
+    children: [
+      { path: "/audit-iso/jadwal", type: "link", active: false, selected: false, title: "Jadwal Audit" }
+    ]
   },
   {
-    title: "Dokumen ISO",
+    title: "Dokumen & Rekaman",
     icon: DokumenISOIcon,
-    type: "link",
-    path: "/dokumen-iso",
+    type: "sub",
     active: false,
-    selected: false,
-  },
-  {
-    title: "Laporan & Analytics",
-    icon: LaporanIcon,
-    type: "link",
-    path: "/laporan-analytics",
-    active: false,
-    selected: false,
+    children: [
+      { path: "/dokumen-iso/daftar", type: "link", active: false, selected: false, title: "Daftar Dokumen" }
+    ]
   },
   {
     title: "Pengaturan",
     icon: PengaturanIcon,
-    type: "link",
-    path: "/pengaturan",
+    type: "sub",
     active: false,
-    selected: false,
+    children: [
+      { path: "/pengaturan/sistem", type: "link", active: false, selected: false, title: "Pengaturan Sistem" }
+    ]
   }
 ];
+

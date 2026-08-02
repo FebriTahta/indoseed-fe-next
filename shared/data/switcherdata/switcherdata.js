@@ -21,7 +21,7 @@ export const updateTheme = (themeType, clicked) => {
     const newState = {
         class: themeType === "dark" ? "dark" : "light",
         dataHeaderStyles: themeType === "dark" ? "dark" : "light",
-        dataMenuStyles: "dark",
+        dataMenuStyles: themeType === "dark" ? "dark" : "light",
         bodyBg: "",
         darkBg: "",
         inputBorder: "",
