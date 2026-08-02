@@ -71,7 +71,17 @@ export const MENUITEMS = [
     type: "sub",
     active: false,
     children: [
-      { path: "/produksi/rencana", type: "link", active: false, selected: false, title: "Rencana Produksi" }
+      { path: "/produksi/rencana", type: "link", active: false, selected: false, title: "Rencana Produksi" },
+      { path: "/produksi/jadwaltanam", type: "link", active: false, selected: false, title: "Jadwal Tanam" },
+      { path: "/produksi/monitoringlahan", type: "link", active: false, selected: false, title: "Monitoring Lahan" },
+      { path: "/produksi/monitoringgreenhouse", type: "link", active: false, selected: false, title: "Monitoring Greenhouse" },
+      { path: "/produksi/kesiapanpanen", type: "link", active: false, selected: false, title: "Kesiapan Panen" },
+      { path: "/produksi/panen", type: "link", active: false, selected: false, title: "Panen" },
+      { path: "/produksi/pengeringan", type: "link", active: false, selected: false, title: "Pengeringan" },
+      { path: "/produksi/sortasi", type: "link", active: false, selected: false, title: "Sortasi" },
+      { path: "/produksi/treatment", type: "link", active: false, selected: false, title: "Treatment" },
+      { path: "/produksi/batchproduksi", type: "link", active: false, selected: false, title: "Batch Produksi" },
+      { path: "/produksi/traceability", type: "link", active: false, selected: false, title: "Traceability" },
     ]
   },
   {
