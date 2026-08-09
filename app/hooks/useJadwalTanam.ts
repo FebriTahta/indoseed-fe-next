@@ -79,14 +79,7 @@ const mapBackendToJadwalTanam = (item: any): JadwalTanam => {
     id: item.id,
     personil: item.personil || [],
     peralatan: item.peralatan || [],
-    dokumen: (item.dokumen && item.dokumen.length > 0) ? item.dokumen : [
-      {
-        nama: 'Dokumen SOP Tanam & Standar ISO 9001:2015.pdf',
-        fileUrl: '/sample-sop.pdf',
-        fileSize: 245000,
-        fileType: 'application/pdf'
-      }
-    ],
+    dokumen: (item.dokumen && item.dokumen.length > 0) ? item.dokumen : [],
     detailLahan: item.detailLahan || [],
   };
 };
@@ -128,6 +121,7 @@ export function useJadwalTanams() {
   const fetchJadwalTanams = useCallback(async () => {
     setIsTableLoading(true);
     setLoading(true);
+    setError('');
     try {
       const res = await jadwalTanamService.getJadwalTanamList({
         page: currentPage,
@@ -146,10 +140,17 @@ export function useJadwalTanams() {
           setTotalRecords(res.pagination.total);
           setTotalPages(res.pagination.totalPages);
         }
+      } else {
+        setJadwalTanams([]);
+        setTotalRecords(0);
+        setTotalPages(1);
       }
     } catch (err: any) {
       console.error('Error fetching Jadwal Tanam:', err);
-      setError('Gagal mengambil data jadwal tanam');
+      setError(err.response?.data?.message || 'Gagal mengambil data jadwal tanam');
+      setJadwalTanams([]);
+      setTotalRecords(0);
+      setTotalPages(1);
     } finally {
       setIsTableLoading(false);
       setLoading(false);

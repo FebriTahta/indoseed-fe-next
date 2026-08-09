@@ -36,6 +36,7 @@ export function useJadwalTanamAdd() {
 
   const [informasiUmum, setInformasiUmum] = useState<InformasiUmum>({
     kodeJadwalTanam: "",
+    periodeTanam: `${defaultPeriodeMulai} - ${defaultPeriodeSelesai}`,
     periodeTanamMulai: defaultPeriodeMulai,
     periodeTanamSelesai: defaultPeriodeSelesai,
     musimTanam: "Musim Kemarau",

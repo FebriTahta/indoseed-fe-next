@@ -5,6 +5,8 @@ import dynamic from 'next/dynamic';
 import Pageheader from '@/shared/layouts-components/page-header/pageheader';
 import usePanen from '@/app/hooks/usePanen';
 import { PanenItem } from '@/app/services/panenService';
+import StatsWidgets from '../../shared/StatsWidgets';
+import FilterRow, { FilterSelectConfig } from '../jadwaltanam/component/FilterRow';
 
 const ReactApexChart = dynamic(() => import('react-apexcharts'), { ssr: false });
 
@@ -16,16 +18,14 @@ export default function PanenPage() {
     setSelectedPanen,
     search,
     setSearch,
+    filterPeriode,
+    setFilterPeriode,
     filterKomoditas,
     setFilterKomoditas,
     filterVarietas,
     setFilterVarietas,
     filterStatus,
     setFilterStatus,
-    periodeStart,
-    setPeriodeStart,
-    periodeEnd,
-    setPeriodeEnd,
     currentPage,
     setCurrentPage,
     pageSize,
@@ -47,6 +47,46 @@ export default function PanenPage() {
     editingItem,
     kesiapanSiapPanenList,
   } = usePanen();
+
+  // Filter Configuration for FilterRow
+  const filterConfig: FilterSelectConfig[] = [
+    {
+      value: filterPeriode,
+      onChange: (val: any) => setFilterPeriode(val),
+      options: [],
+      placeholder: 'Periode',
+      title: 'Periode',
+      widthClass: 'sm:w-52',
+      type: 'date'
+    },
+    {
+      value: filterKomoditas,
+      onChange: (val: any) => setFilterKomoditas(val),
+      options: komoditasOptions,
+      placeholder: 'Semua Komoditas',
+      title: 'Komoditas',
+      widthClass: 'sm:w-44',
+      type: 'opsi'
+    },
+    {
+      value: filterVarietas,
+      onChange: (val: any) => setFilterVarietas(val),
+      options: varietasOptions,
+      placeholder: 'Semua Varietas',
+      title: 'Varietas',
+      widthClass: 'sm:w-44',
+      type: 'opsi'
+    },
+    {
+      value: filterStatus,
+      onChange: (val: any) => setFilterStatus(val),
+      options: statusOptions,
+      placeholder: 'Semua Status',
+      title: 'Status Panen',
+      widthClass: 'sm:w-44',
+      type: 'opsi'
+    },
+  ];
 
   // Selected Kesiapan Panen reference ID
   const [selectedKesiapanId, setSelectedKesiapanId] = useState<string>('');
@@ -218,7 +258,7 @@ export default function PanenPage() {
     try {
       const parsed = typeof activePanen.dokumen === 'string' ? JSON.parse(activePanen.dokumen) : activePanen.dokumen;
       if (Array.isArray(parsed) && parsed.length > 0) return parsed;
-    } catch (e) {}
+    } catch (e) { }
     return [
       { nama: `Berita Acara Panen_${activePanen.kodePanen}.pdf`, url: '#', size: '245 KB', type: 'pdf' },
       { nama: 'Foto Panen_1.jpg', url: '#', size: '1.2 MB', type: 'img' },
@@ -228,217 +268,44 @@ export default function PanenPage() {
 
   return (
     <div className="space-y-6 pb-12">
-      {/* Page Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <Pageheader currentpage="Panen" activepage="Produksi" mainpage="Panen" />
-          <h1 className="text-xl font-bold text-gray-800 tracking-tight">Panen</h1>
-          <p className="text-xs text-gray-500 mt-0.5">
-            Kelola data dan aktivitas panen untuk setiap jadwal tanam.
-          </p>
-        </div>
-
-        <button
-          type="button"
-          onClick={openCreateModal}
-          className="inline-flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white font-medium text-xs px-4 py-2.5 rounded-lg transition-all shadow-sm shrink-0 self-start sm:self-auto"
-        >
-          <i className="ri-add-line text-base"></i>
-          <span>Buat Panen Baru</span>
-          <i className="ri-arrow-down-s-line text-xs ml-1 border-l border-emerald-500 pl-1.5"></i>
-        </button>
-      </div>
+      <Pageheader
+        title="Produksi"
+        currentpage="Panen"
+        activepage="Panen"
+        mainpage="Produksi"
+        description="Kelola data dan aktivitas panen untuk setiap jadwal tanam."
+        customButton={
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={openCreateModal}
+              className="bg-[#078836] hover:bg-[#06732d] text-white px-3.5 py-1.5 rounded-md font-semibold text-xs flex items-center gap-1.5 shadow-sm transition-colors"
+            >
+              <i className="ri-add-line text-sm"></i> Buat Panen Baru
+            </button>
+            <button
+              type="button"
+              className="bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 px-3.5 py-1.5 rounded-md font-semibold text-xs flex items-center gap-1.5 shadow-sm transition-colors"
+            >
+              <i className="ri-download-line text-xs"></i> Export Data <i className="ri-arrow-down-s-line text-xs"></i>
+            </button>
+          </div>
+        }
+      />
 
       {/* Stat Cards (7 Indicators) */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-7 gap-3">
-        {/* Total Panen (Periode) */}
-        <div className="box border border-defaultborder/60 bg-white shadow-xs rounded-lg p-3 flex flex-col justify-between">
-          <div className="flex items-center gap-2.5 mb-2">
-            <div className="w-8 h-8 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center text-sm font-bold shrink-0">
-              <i className="ri-plant-line"></i>
-            </div>
-            <div>
-              <span className="text-[10px] text-gray-500 font-semibold block leading-tight">Total Panen (Periode)</span>
-              <h4 className="text-base font-bold text-gray-900 leading-tight mb-0">{statItems.totalPanen}</h4>
-            </div>
-          </div>
-          <span className="text-[9px] text-gray-400">Kegiatan panen</span>
-        </div>
+      <StatsWidgets items={statItems} columns={7} />
 
-        {/* Total Luas Dipanen */}
-        <div className="box border border-defaultborder/60 bg-white shadow-xs rounded-lg p-3 flex flex-col justify-between">
-          <div className="flex items-center gap-2.5 mb-2">
-            <div className="w-8 h-8 rounded-full bg-purple-100 text-purple-700 flex items-center justify-center text-sm font-bold shrink-0">
-              <i className="ri-[shopping-bag-3-line] ri-landscape-line"></i>
-            </div>
-            <div>
-              <span className="text-[10px] text-gray-500 font-semibold block leading-tight">Total Luas Dipanen</span>
-              <h4 className="text-base font-bold text-gray-900 leading-tight mb-0">{statItems.totalLuas}</h4>
-            </div>
-          </div>
-          <span className="text-[9px] text-gray-400">Dari 28 lahan</span>
-        </div>
-
-        {/* Total Produksi */}
-        <div className="box border border-defaultborder/60 bg-white shadow-xs rounded-lg p-3 flex flex-col justify-between">
-          <div className="flex items-center gap-2.5 mb-2">
-            <div className="w-8 h-8 rounded-full bg-orange-100 text-orange-700 flex items-center justify-center text-sm font-bold shrink-0">
-              <i className="ri-inbox-archive-line"></i>
-            </div>
-            <div>
-              <span className="text-[10px] text-gray-500 font-semibold block leading-tight">Total Produksi</span>
-              <h4 className="text-base font-bold text-gray-900 leading-tight mb-0">{statItems.totalProduksi}</h4>
-            </div>
-          </div>
-          <span className="text-[9px] text-gray-400">Berat bersih</span>
-        </div>
-
-        {/* Rata-rata Hasil */}
-        <div className="box border border-defaultborder/60 bg-white shadow-xs rounded-lg p-3 flex flex-col justify-between">
-          <div className="flex items-center gap-2.5 mb-2">
-            <div className="w-8 h-8 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center text-sm font-bold shrink-0">
-              <i className="ri-leaf-line"></i>
-            </div>
-            <div>
-              <span className="text-[10px] text-gray-500 font-semibold block leading-tight">Rata-rata Hasil</span>
-              <h4 className="text-base font-bold text-gray-900 leading-tight mb-0">{statItems.rataHasil}</h4>
-            </div>
-          </div>
-          <span className="text-[9px] text-gray-400">Produktivitas rata-rata</span>
-        </div>
-
-        {/* Selesai */}
-        <div className="box border border-defaultborder/60 bg-white shadow-xs rounded-lg p-3 flex flex-col justify-between">
-          <div className="flex items-center gap-2.5 mb-2">
-            <div className="w-8 h-8 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center text-sm font-bold shrink-0">
-              <i className="ri-checkbox-circle-line"></i>
-            </div>
-            <div>
-              <span className="text-[10px] text-gray-500 font-semibold block leading-tight">Selesai</span>
-              <h4 className="text-base font-bold text-gray-900 leading-tight mb-0">{statItems.selesaiCount}</h4>
-            </div>
-          </div>
-          <span className="text-[9px] text-gray-400">Kegiatan selesai</span>
-        </div>
-
-        {/* Berlangsung */}
-        <div className="box border border-defaultborder/60 bg-white shadow-xs rounded-lg p-3 flex flex-col justify-between">
-          <div className="flex items-center gap-2.5 mb-2">
-            <div className="w-8 h-8 rounded-full bg-red-100 text-red-700 flex items-center justify-center text-sm font-bold shrink-0">
-              <i className="ri-time-line"></i>
-            </div>
-            <div>
-              <span className="text-[10px] text-gray-500 font-semibold block leading-tight">Berlangsung</span>
-              <h4 className="text-base font-bold text-gray-900 leading-tight mb-0">{statItems.berlangsungCount}</h4>
-            </div>
-          </div>
-          <span className="text-[9px] text-gray-400">Sedang berlangsung</span>
-        </div>
-
-        {/* Belum Mulai */}
-        <div className="box border border-defaultborder/60 bg-white shadow-xs rounded-lg p-3 flex flex-col justify-between">
-          <div className="flex items-center gap-2.5 mb-2">
-            <div className="w-8 h-8 rounded-full bg-gray-100 text-gray-600 flex items-center justify-center text-sm font-bold shrink-0">
-              <i className="ri-history-line"></i>
-            </div>
-            <div>
-              <span className="text-[10px] text-gray-500 font-semibold block leading-tight">Belum Mulai</span>
-              <h4 className="text-base font-bold text-gray-900 leading-tight mb-0">{statItems.belumMulaiCount}</h4>
-            </div>
-          </div>
-          <span className="text-[9px] text-gray-400">Belum dilaksanakan</span>
-        </div>
-      </div>
-
-      {/* Filter Bar */}
-      <div className="box border border-defaultborder/60 bg-white shadow-xs rounded-lg p-4">
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-12 gap-3 items-center text-xs">
-          {/* Search Bar (4 cols) */}
-          <div className="md:col-span-4 relative">
-            <i className="ri-search-line absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
-            <input
-              type="text"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Cari kode panen, komoditas, lahan, varietas..."
-              className="w-full pl-9 pr-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:border-emerald-500 text-xs bg-slate-50/50"
-            />
-          </div>
-
-          {/* Periode Date Picker (2 cols) */}
-          <div className="md:col-span-2 relative">
-            <input
-              type="text"
-              value={`${periodeStart} - ${periodeEnd}`}
-              onChange={(e) => {
-                const parts = e.target.value.split(' - ');
-                if (parts[0]) setPeriodeStart(parts[0]);
-                if (parts[1]) setPeriodeEnd(parts[1]);
-              }}
-              placeholder="01/06/2026 - 30/06/2026"
-              className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:border-emerald-500 text-xs bg-slate-50/50 text-center font-medium text-gray-700"
-            />
-          </div>
-
-          {/* Komoditas Dropdown (2 cols) */}
-          <div className="md:col-span-2">
-            <select
-              value={filterKomoditas}
-              onChange={(e) => setFilterKomoditas(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:border-emerald-500 text-xs bg-slate-50/50"
-            >
-              {komoditasOptions.map((opt) => (
-                <option key={opt} value={opt}>{opt}</option>
-              ))}
-            </select>
-          </div>
-
-          {/* Varietas Dropdown (2 cols) */}
-          <div className="md:col-span-2">
-            <select
-              value={filterVarietas}
-              onChange={(e) => setFilterVarietas(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:border-emerald-500 text-xs bg-slate-50/50"
-            >
-              {varietasOptions.map((opt) => (
-                <option key={opt} value={opt}>{opt}</option>
-              ))}
-            </select>
-          </div>
-
-          {/* Status Dropdown (1 col) */}
-          <div className="md:col-span-1">
-            <select
-              value={filterStatus}
-              onChange={(e) => setFilterStatus(e.target.value)}
-              className="w-full px-2 py-2 border border-gray-200 rounded-lg focus:outline-none focus:border-emerald-500 text-xs bg-slate-50/50"
-            >
-              {statusOptions.map((opt) => (
-                <option key={opt} value={opt}>{opt}</option>
-              ))}
-            </select>
-          </div>
-
-          {/* Actions: Reset & Terapkan (1 col) */}
-          <div className="md:col-span-1 flex items-center justify-end gap-1.5">
-            <button
-              type="button"
-              onClick={handleResetFilters}
-              className="px-2.5 py-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg font-medium text-xs transition-colors"
-            >
-              Reset
-            </button>
-            <button
-              type="button"
-              onClick={handleApplyFilters}
-              className="px-3 py-2 bg-emerald-800 hover:bg-emerald-900 text-white rounded-lg font-medium text-xs transition-colors inline-flex items-center gap-1 shrink-0"
-            >
-              <i className="ri-filter-3-line text-xs"></i>
-              <span>Terapkan</span>
-            </button>
-          </div>
-        </div>
-      </div>
+      {/* Filter Row */}
+      <FilterRow
+        search={search}
+        onSearchChange={setSearch}
+        searchPlaceholder="Cari kode panen, komoditas, lahan, varietas..."
+        searchTitle="Cari"
+        selectFilters={filterConfig}
+        onSearch={handleApplyFilters}
+        onReset={handleResetFilters}
+      />
 
       {/* Main Grid Section: Table (8 cols) + Detail Panel (4 cols) */}
       <div className="grid grid-cols-12 gap-5 items-start">
@@ -506,9 +373,8 @@ export default function PanenPage() {
                       <tr
                         key={item.id}
                         onClick={() => setSelectedPanen(item)}
-                        className={`hover:bg-slate-50 transition-colors cursor-pointer ${
-                          isSelected ? 'bg-emerald-50/50 font-medium' : ''
-                        }`}
+                        className={`hover:bg-slate-50 transition-colors cursor-pointer ${isSelected ? 'bg-emerald-50/50 font-medium' : ''
+                          }`}
                       >
                         <td className="py-2.5 px-2 text-center text-gray-400">
                           {(currentPage - 1) * pageSize + idx + 1}
@@ -603,11 +469,10 @@ export default function PanenPage() {
                     key={p}
                     type="button"
                     onClick={() => setCurrentPage(p)}
-                    className={`w-7 h-7 flex items-center justify-center rounded font-semibold text-xs transition-colors ${
-                      currentPage === p
+                    className={`w-7 h-7 flex items-center justify-center rounded font-semibold text-xs transition-colors ${currentPage === p
                         ? 'bg-emerald-600 text-white border border-emerald-600'
                         : 'border border-gray-200 text-gray-700 hover:bg-gray-50'
-                    }`}
+                      }`}
                   >
                     {p}
                   </button>

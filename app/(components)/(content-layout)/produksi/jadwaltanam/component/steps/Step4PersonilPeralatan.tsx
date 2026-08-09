@@ -204,7 +204,9 @@ export default function Step4PersonilPeralatan({
         <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-8 gap-3 text-xs">
           <div>
             <span className="text-gray-500 block text-[10px] mb-0.5">Periode Tanam</span>
-            <span className="font-bold text-gray-800">{dataIU?.periodeTanam || 'Juni II - 2025'}</span>
+            <span className="font-bold text-gray-800">
+              {dataIU?.periodeTanam || (dataIU?.periodeTanamMulai && dataIU?.periodeTanamSelesai ? `${dataIU.periodeTanamMulai} - ${dataIU.periodeTanamSelesai}` : dataIU?.periodeTanamMulai || dataRT?.periodeTanam || '-')}
+            </span>
           </div>
           <div>
             <span className="text-gray-500 block text-[10px] mb-0.5">Tgl Mulai Tanam</span>

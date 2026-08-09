@@ -110,10 +110,15 @@ export function useJadwalTanamEdit(id: string) {
         const item = res?.data?.data || res?.data || res;
 
         if (item) {
+          const pMulai = formatDateStr(item.periodeTanamMulai || item.periodeTanam);
+          const pSelesai = formatDateStr(item.periodeTanamSelesai);
+          const pStr = pMulai && pSelesai ? `${pMulai} - ${pSelesai}` : pMulai || item.periodeTanam || '';
+
           setInformasiUmum({
             kodeJadwalTanam: item.kodeJadwalTanam || '',
-            periodeTanamMulai: formatDateStr(item.periodeTanamMulai || item.periodeTanam),
-            periodeTanamSelesai: formatDateStr(item.periodeTanamSelesai),
+            periodeTanam: pStr,
+            periodeTanamMulai: pMulai,
+            periodeTanamSelesai: pSelesai,
             musimTanam: item.musimTanam || 'Musim Kemarau',
             tujuanProduksi: item.tujuanProduksi || 'Benih Bersertifikat',
             tipeProduksi: item.tipeProduksi || 'FS (Foundation Seed)',

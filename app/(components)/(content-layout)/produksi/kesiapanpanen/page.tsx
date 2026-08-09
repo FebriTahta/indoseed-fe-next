@@ -68,8 +68,17 @@ export default function KesiapanPanenPage() {
       options: [],
       placeholder: 'Periode',
       title: 'Periode',
-      widthClass: 'sm:w-44',
+      widthClass: 'sm:w-60',
       type: 'date'
+    },
+    {
+      value: filterLokasi,
+      onChange: (val: any) => setFilterLokasi(val),
+      options: lokasiOptions,
+      placeholder: 'Semua Lokasi',
+      title: 'Lokasi / Lahan',
+      widthClass: 'sm:w-44',
+      type: 'opsi'
     },
     {
       value: filterKomoditas,
@@ -77,7 +86,7 @@ export default function KesiapanPanenPage() {
       options: komoditasOptions,
       placeholder: 'Semua Komoditas',
       title: 'Komoditas',
-      widthClass: 'sm:w-40',
+      widthClass: 'sm:w-44',
       type: 'opsi'
     },
     {
@@ -86,16 +95,7 @@ export default function KesiapanPanenPage() {
       options: varietasOptions,
       placeholder: 'Semua Varietas',
       title: 'Varietas',
-      widthClass: 'sm:w-40',
-      type: 'opsi'
-    },
-    {
-      value: filterLokasi,
-      onChange: (val: any) => setFilterLokasi(val),
-      options: lokasiOptions,
-      placeholder: 'Semua Lokasi',
-      title: 'Lokasi / Lahan',
-      widthClass: 'sm:w-40',
+      widthClass: 'sm:w-44',
       type: 'opsi'
     },
     {
@@ -104,7 +104,7 @@ export default function KesiapanPanenPage() {
       options: statusOptions,
       placeholder: 'Semua Status',
       title: 'Status Kesiapan',
-      widthClass: 'sm:w-40',
+      widthClass: 'sm:w-44',
       type: 'opsi'
     },
   ];
@@ -112,7 +112,7 @@ export default function KesiapanPanenPage() {
   // Table Headers
   const tableHeaders = [
     'No',
-    'Kode Lahan',
+    'Kode Kesiapan Panen',
     'Komoditas',
     'Varietas',
     'Tanggal Tanam',
@@ -255,7 +255,7 @@ export default function KesiapanPanenPage() {
                 setPageSize(size);
                 setCurrentPage(1);
               }}
-              emptyMessage="Tidak ada data kesiapan panen yang cocok."
+              emptyMessage="Belum ada data kesiapan panen."
               isLoading={loading}
             />
           </div>
@@ -295,6 +295,7 @@ export default function KesiapanPanenPage() {
         varietasOptions={varietasOptions}
         lokasiOptions={lokasiOptions}
         jadwalTanamOptions={jadwalTanamOptions}
+        existingCount={totalRecords || kesiapanList.length}
       />
 
       {/* Edit Modal */}
@@ -308,6 +309,7 @@ export default function KesiapanPanenPage() {
         varietasOptions={varietasOptions}
         lokasiOptions={lokasiOptions}
         jadwalTanamOptions={jadwalTanamOptions}
+        existingCount={totalRecords || kesiapanList.length}
       />
 
       {/* Detail Modal */}

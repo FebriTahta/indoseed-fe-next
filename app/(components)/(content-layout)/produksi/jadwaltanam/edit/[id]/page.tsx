@@ -199,6 +199,7 @@ export default function EditJadwalTanamPage({ params }: EditPageProps) {
         {currentStep === 3 && (
           <Step3RencanaTanam
             options={options}
+            dataIU={informasiUmum}
             dataLK={lahanKomoditas}
             dataRT={rencanaTanam}
             dataCT={catatanTambahan}

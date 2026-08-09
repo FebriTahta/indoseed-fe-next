@@ -72,7 +72,7 @@ const FALLBACK_JADWAL_TANAM = [
 export const INITIAL_KESIAPAN_PANEN_LIST: KesiapanPanenItem[] = [
   {
     no: 1,
-    kodeLahan: 'LA-2605-0001',
+    kodeLahan: 'KP-2605-0001',
     lokasi: 'Blok A - Petak 1',
     komoditas: 'Padi',
     varietas: 'Inpari 32',
@@ -85,7 +85,7 @@ export const INITIAL_KESIAPAN_PANEN_LIST: KesiapanPanenItem[] = [
   },
   {
     no: 2,
-    kodeLahan: 'LA-2605-0002',
+    kodeLahan: 'KP-2605-0002',
     lokasi: 'Blok A - Petak 2',
     komoditas: 'Jagung',
     varietas: 'Pioneer 21',
@@ -98,7 +98,7 @@ export const INITIAL_KESIAPAN_PANEN_LIST: KesiapanPanenItem[] = [
   },
   {
     no: 3,
-    kodeLahan: 'LA-2605-0003',
+    kodeLahan: 'KP-2605-0003',
     lokasi: 'Blok B - Petak 1',
     komoditas: 'Kedelai',
     varietas: 'Anjasmoro',
@@ -111,7 +111,7 @@ export const INITIAL_KESIAPAN_PANEN_LIST: KesiapanPanenItem[] = [
   },
   {
     no: 4,
-    kodeLahan: 'LA-2605-0004',
+    kodeLahan: 'KP-2605-0004',
     lokasi: 'Blok B - Petak 2',
     komoditas: 'Padi',
     varietas: 'Inpari 42',
@@ -124,7 +124,7 @@ export const INITIAL_KESIAPAN_PANEN_LIST: KesiapanPanenItem[] = [
   },
   {
     no: 5,
-    kodeLahan: 'LA-2605-0005',
+    kodeLahan: 'KP-2605-0005',
     lokasi: 'Blok C - Petak 1',
     komoditas: 'Jagung',
     varietas: 'Bisi 18',
@@ -136,7 +136,7 @@ export const INITIAL_KESIAPAN_PANEN_LIST: KesiapanPanenItem[] = [
   },
   {
     no: 6,
-    kodeLahan: 'LA-2605-0006',
+    kodeLahan: 'KP-2605-0006',
     lokasi: 'Blok C - Petak 2',
     komoditas: 'Padi',
     varietas: 'Ciherang',
@@ -148,7 +148,7 @@ export const INITIAL_KESIAPAN_PANEN_LIST: KesiapanPanenItem[] = [
   },
   {
     no: 7,
-    kodeLahan: 'LA-2605-0007',
+    kodeLahan: 'KP-2605-0007',
     lokasi: 'Blok D - Petak 1',
     komoditas: 'Kedelai',
     varietas: 'Dega 1',
@@ -160,7 +160,7 @@ export const INITIAL_KESIAPAN_PANEN_LIST: KesiapanPanenItem[] = [
   },
   {
     no: 8,
-    kodeLahan: 'LA-2605-0008',
+    kodeLahan: 'KP-2605-0008',
     lokasi: 'Blok D - Petak 2',
     komoditas: 'Jagung',
     varietas: 'Pioneer 21',
@@ -172,7 +172,7 @@ export const INITIAL_KESIAPAN_PANEN_LIST: KesiapanPanenItem[] = [
   },
   {
     no: 9,
-    kodeLahan: 'LA-2605-0009',
+    kodeLahan: 'KP-2605-0009',
     lokasi: 'Blok E - Petak 1',
     komoditas: 'Padi',
     varietas: 'Mekongga',
@@ -184,7 +184,7 @@ export const INITIAL_KESIAPAN_PANEN_LIST: KesiapanPanenItem[] = [
   },
   {
     no: 10,
-    kodeLahan: 'LA-2605-0010',
+    kodeLahan: 'KP-2605-0010',
     lokasi: 'Blok E - Petak 2',
     komoditas: 'Padi',
     varietas: 'Sintanur',
@@ -206,7 +206,15 @@ export function useKesiapanPanen() {
   const [apiStats, setApiStats] = useState<any>(null);
 
   // Filter states
-  const [filterPeriode, setFilterPeriode] = useState('01/06/2026 - 30/06/2026');
+  const getInitialPeriodStr = () => {
+    const now = new Date();
+    const start = new Date(now.getFullYear(), now.getMonth(), 1);
+    const end = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+    const fmt = (d: Date) => `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`;
+    return `${fmt(start)} - ${fmt(end)}`;
+  };
+
+  const [filterPeriode, setFilterPeriode] = useState(getInitialPeriodStr());
   const [filterKomoditas, setFilterKomoditas] = useState<any>(null);
   const [filterVarietas, setFilterVarietas] = useState<any>(null);
   const [filterLokasi, setFilterLokasi] = useState<any>(null);
@@ -245,6 +253,9 @@ export function useKesiapanPanen() {
     } catch (err: any) {
       console.error('Error fetching Kesiapan Panen:', err);
       toast.error(err.response?.data?.message || 'Gagal memuat data kesiapan panen dari server');
+      setKesiapanList([]);
+      setTotalRecords(0);
+      setTotalPages(1);
     } finally {
       setLoading(false);
     }
@@ -310,6 +321,7 @@ export function useKesiapanPanen() {
   }, [fetchKesiapanPanen]);
 
   const handleResetFilters = () => {
+    setFilterPeriode(getInitialPeriodStr());
     setFilterKomoditas(null);
     setFilterVarietas(null);
     setFilterLokasi(null);

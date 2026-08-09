@@ -77,18 +77,20 @@ export default function Step1InformasiUmum({
     setStartDate(start);
     setEndDate(end);
 
-    if (start) {
-      onChangeIU('periodeTanamMulai', formatDateStr(start));
-    } else {
-      onChangeIU('periodeTanamMulai', '');
-    }
+    const startStr = start ? formatDateStr(start) : '';
+    const endStr = end ? formatDateStr(end) : '';
 
-    if (end) {
-      onChangeIU('periodeTanamSelesai', formatDateStr(end));
+    onChangeIU('periodeTanamMulai', startStr);
+    onChangeIU('periodeTanamSelesai', endStr);
+
+    if (startStr && endStr) {
+      onChangeIU('periodeTanam', `${startStr} - ${endStr}`);
+    } else if (startStr) {
+      onChangeIU('periodeTanam', startStr);
     } else {
-      onChangeIU('periodeTanamSelesai', '');
+      onChangeIU('periodeTanam', '');
     }
-  }
+  };
 
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [isDragging, setIsDragging] = useState(false);

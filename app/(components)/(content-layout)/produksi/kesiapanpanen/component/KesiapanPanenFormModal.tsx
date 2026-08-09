@@ -86,6 +86,68 @@ const calculateHstFromDate = (dateVal: any): number => {
   return Math.floor(diffTime / (1000 * 60 * 60 * 24));
 };
 
+export const calculateStatusKesiapan = (dateVal: any): string => {
+  if (!dateVal) return 'Belum Siap';
+  let d: Date | null = null;
+  if (typeof dateVal === 'string') {
+    if (dateVal.includes('/')) {
+      const parts = dateVal.split('/');
+      if (parts.length === 3) {
+        d = new Date(parseInt(parts[2], 10), parseInt(parts[1], 10) - 1, parseInt(parts[0], 10));
+      }
+    } else if (dateVal.includes('-')) {
+      const parts = dateVal.split('T')[0].split('-');
+      if (parts.length === 3) {
+        d = new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10));
+      }
+    } else {
+      d = new Date(dateVal);
+    }
+  } else if (dateVal instanceof Date) {
+    d = dateVal;
+  }
+
+  if (!d || isNaN(d.getTime())) return 'Belum Siap';
+
+  const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const targetDate = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+
+  const diffMs = targetDate.getTime() - today.getTime();
+  const diffDays = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+
+  if (diffDays <= 2) {
+    return 'Siap Panen';
+  } else if (diffDays >= 3 && diffDays <= 7) {
+    return 'Akan Siap (3-7 Hari)';
+  } else if (diffDays >= 8 && diffDays <= 14) {
+    return 'Akan Siap (8-14 Hari)';
+  } else {
+    return 'Belum Siap';
+  }
+};
+
+export const generateKodeKP = (seqNo: number = 1): string => {
+  const now = new Date();
+  const yy = String(now.getFullYear()).slice(-2);
+  const mm = String(now.getMonth() + 1).padStart(2, '0');
+  const seqStr = String(seqNo).padStart(4, '0');
+  return `KP-${yy}${mm}-${seqStr}`;
+};
+
+interface KesiapanPanenFormModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onSubmit: (data: Partial<KesiapanPanenItem>) => Promise<void>;
+  initialData?: KesiapanPanenItem | null;
+  mode: 'add' | 'edit';
+  komoditasOptions: { value: string; label: string }[];
+  varietasOptions: { value: string; label: string }[];
+  lokasiOptions: { value: string; label: string }[];
+  jadwalTanamOptions?: any[];
+  existingCount?: number;
+}
+
 export default function KesiapanPanenFormModal({
   isOpen,
   onClose,
@@ -96,22 +158,23 @@ export default function KesiapanPanenFormModal({
   varietasOptions,
   lokasiOptions,
   jadwalTanamOptions = [],
+  existingCount = 0,
 }: KesiapanPanenFormModalProps) {
   const [selectedJadwalId, setSelectedJadwalId] = useState<string>('');
 
   const [formData, setFormData] = useState<Partial<KesiapanPanenItem>>({
-    kodeLahan: '',
-    lokasi: 'Blok A - Petak 1',
-    komoditas: 'Padi',
-    varietas: 'Inpari 32',
-    tanggalTanam: '01/03/2026',
-    umurHst: 105,
-    prediksiPanen: '15/06/2026',
-    statusKesiapan: 'Siap Panen',
-    yieldEst: 6800,
-    kadarAir: 14.0,
-    kuningDaun: 85,
-    kekerasanBiji: 'Keras',
+    kodeLahan: generateKodeKP(existingCount + 1),
+    lokasi: '',
+    komoditas: '',
+    varietas: '',
+    tanggalTanam: formatDateToStr(new Date()),
+    umurHst: 0,
+    prediksiPanen: formatDateToStr(new Date()),
+    statusKesiapan: calculateStatusKesiapan(new Date()),
+    yieldEst: 0,
+    kadarAir: 0,
+    kuningDaun: 0,
+    kekerasanBiji: '',
     catatan: '',
   });
 
@@ -121,7 +184,11 @@ export default function KesiapanPanenFormModal({
     if (!isOpen) return;
 
     if (initialData && mode === 'edit') {
-      setFormData({ ...initialData });
+      const autoStatus = calculateStatusKesiapan(initialData.prediksiPanen);
+      setFormData({
+        ...initialData,
+        statusKesiapan: autoStatus,
+      });
 
       const matchingJadwal = (jadwalTanamOptions || []).find((item: any) => {
         const itemVal = item.id || item.kodeJadwalTanam || item.informasiUmum?.kodeJadwalTanam;
@@ -143,29 +210,51 @@ export default function KesiapanPanenFormModal({
       }
     } else if (mode === 'add') {
       setSelectedJadwalId('');
+      const todayStr = formatDateToStr(new Date());
+      const nextNo = (existingCount || 0) + 1;
       setFormData({
-        kodeLahan: `LA-2605-${String(Math.floor(Math.random() * 9000) + 1000)}`,
-        lokasi: 'Blok A - Petak 1',
-        komoditas: 'Padi',
-        varietas: 'Inpari 32',
-        tanggalTanam: '01/03/2026',
-        umurHst: 105,
-        prediksiPanen: '15/06/2026',
-        statusKesiapan: 'Siap Panen',
-        yieldEst: 6800,
-        kadarAir: 14.0,
-        kuningDaun: 85,
-        kekerasanBiji: 'Keras',
+        kodeLahan: generateKodeKP(nextNo),
+        lokasi: '',
+        komoditas: '',
+        varietas: '',
+        tanggalTanam: todayStr,
+        umurHst: 0,
+        prediksiPanen: todayStr,
+        statusKesiapan: calculateStatusKesiapan(todayStr),
+        yieldEst: 0,
+        kadarAir: 0,
+        kuningDaun: 0,
+        kekerasanBiji: '',
         catatan: '',
       });
     }
-  }, [initialData, mode, isOpen, jadwalTanamOptions]);
+  }, [initialData, mode, isOpen, jadwalTanamOptions, existingCount]);
 
   if (!isOpen) return null;
 
   const handleSelectJadwalTanam = (jadwalId: string) => {
     setSelectedJadwalId(jadwalId);
-    if (!jadwalId) return;
+    if (!jadwalId) {
+      const todayStr = formatDateToStr(new Date());
+      const nextNo = (existingCount || 0) + 1;
+      setFormData((prev) => ({
+        ...prev,
+        kodeLahan: generateKodeKP(nextNo),
+        lokasi: '',
+        komoditas: '',
+        varietas: '',
+        tanggalTanam: todayStr,
+        umurHst: 0,
+        prediksiPanen: todayStr,
+        statusKesiapan: calculateStatusKesiapan(todayStr),
+        yieldEst: 0,
+        greenhouseId: undefined,
+        commodityId: undefined,
+        varietyId: undefined,
+        jadwalTanamId: undefined,
+      }));
+      return;
+    }
 
     const jt = (jadwalTanamOptions || []).find(
       (item: any) =>
@@ -176,11 +265,11 @@ export default function KesiapanPanenFormModal({
 
     if (jt) {
       const kode = jt.kodeJadwalTanam || jt.informasiUmum?.kodeJadwalTanam || formData.kodeLahan;
-      const lahan = jt.greenhouse?.namaLahan || jt.lahanKomoditas?.namaLahan || jt.lahanKomoditas?.idLahan || jt.lokasi || formData.lokasi;
-      const kom = jt.commodity?.namaKomoditas || jt.lahanKomoditas?.namaKomoditas || jt.lahanKomoditas?.komoditas || formData.komoditas;
-      const varName = jt.variety?.namaVarietas || jt.lahanKomoditas?.namaVarietas || jt.lahanKomoditas?.varietas || formData.varietas;
-      const tglTanamRaw = jt.tanggalTanam || jt.rencanaTanam?.tanggalTanam || formData.tanggalTanam;
-      const predPanenRaw = jt.perkiraanPanen || jt.rencanaTanam?.perkiraanPanen || formData.prediksiPanen;
+      const lahan = jt.greenhouse?.namaLahan || jt.lahanKomoditas?.namaLahan || jt.lahanKomoditas?.idLahan || jt.lokasi || '';
+      const kom = jt.commodity?.namaKomoditas || jt.lahanKomoditas?.namaKomoditas || jt.lahanKomoditas?.komoditas || '';
+      const varName = jt.variety?.namaVarietas || jt.lahanKomoditas?.namaVarietas || jt.lahanKomoditas?.varietas || '';
+      const tglTanamRaw = jt.tanggalTanam || jt.rencanaTanam?.tanggalTanam || formatDateToStr(new Date());
+      const predPanenRaw = jt.perkiraanPanen || jt.rencanaTanam?.perkiraanPanen || formatDateToStr(new Date());
 
       const greenhouseId = jt.greenhouseId || jt.greenhouse?.id || jt.lahanKomoditas?.idLahan;
       const commodityId = jt.commodityId || jt.commodity?.id;
@@ -190,10 +279,11 @@ export default function KesiapanPanenFormModal({
       const tglTanamFormatted = formatDateToDisplay(tglTanamRaw);
       const predPanenFormatted = formatDateToDisplay(predPanenRaw);
       const calculatedHst = calculateHstFromDate(tglTanamRaw);
+      const autoStatus = calculateStatusKesiapan(predPanenRaw);
 
       setFormData((prev) => ({
         ...prev,
-        kodeLahan: kode,
+        kodeLahan: (prev.kodeLahan && prev.kodeLahan.startsWith('KP-')) ? prev.kodeLahan : generateKodeKP(),
         lokasi: lahan,
         komoditas: kom,
         varietas: varName,
@@ -203,7 +293,8 @@ export default function KesiapanPanenFormModal({
         jadwalTanamId: jadwalTanamId || prev.jadwalTanamId,
         tanggalTanam: tglTanamFormatted,
         prediksiPanen: predPanenFormatted,
-        umurHst: calculatedHst > 0 ? calculatedHst : (prev.umurHst || 105),
+        umurHst: calculatedHst,
+        statusKesiapan: autoStatus,
       }));
 
       toast.info(`Otomatis mengadopsi data dari Jadwal Tanam: ${kode}`);
@@ -222,9 +313,11 @@ export default function KesiapanPanenFormModal({
 
   const handlePrediksiPanenChange = (dateObj: Date | null) => {
     const formatted = formatDateToStr(dateObj);
+    const autoStatus = calculateStatusKesiapan(dateObj);
     setFormData((prev) => ({
       ...prev,
       prediksiPanen: formatted,
+      statusKesiapan: autoStatus,
     }));
   };
 
@@ -297,14 +390,16 @@ export default function KesiapanPanenFormModal({
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="font-semibold text-gray-700 mb-1 block">Kode Lahan / Jadwal</label>
+              <label className="font-semibold text-gray-700 mb-1 flex items-center justify-between">
+                <span>Kode Kesiapan Panen</span>
+              </label>
               <input
                 type="text"
                 disabled
                 readOnly
                 value={formData.kodeLahan || ''}
-                className="w-full px-3 py-2 border border-gray-200 bg-gray-100 text-gray-600 cursor-not-allowed rounded-lg focus:outline-none"
-                placeholder="Otomatis dari Jadwal Tanam"
+                className="w-full px-3 py-2 border border-gray-200 bg-gray-100 text-gray-700 cursor-not-allowed rounded-lg focus:outline-none font-semibold text-xs"
+                placeholder="KP-XXXX-XXXX"
               />
             </div>
 
@@ -315,8 +410,8 @@ export default function KesiapanPanenFormModal({
                 disabled
                 readOnly
                 value={formData.lokasi || ''}
-                className="w-full px-3 py-2 border border-gray-200 bg-gray-100 text-gray-600 cursor-not-allowed rounded-lg focus:outline-none"
-                placeholder="Otomatis dari Jadwal Tanam"
+                className="w-full px-3 py-2 border border-gray-200 bg-gray-100 text-gray-600 cursor-not-allowed rounded-lg focus:outline-none placeholder:text-amber-700/70 placeholder:italic"
+                placeholder="Mohon pilih dari Jadwal Tanam"
               />
             </div>
           </div>
@@ -329,8 +424,8 @@ export default function KesiapanPanenFormModal({
                 disabled
                 readOnly
                 value={formData.komoditas || ''}
-                className="w-full px-3 py-2 border border-gray-200 bg-gray-100 text-gray-600 cursor-not-allowed rounded-lg focus:outline-none"
-                placeholder="Otomatis dari Jadwal Tanam"
+                className="w-full px-3 py-2 border border-gray-200 bg-gray-100 text-gray-600 cursor-not-allowed rounded-lg focus:outline-none placeholder:text-amber-700/70 placeholder:italic"
+                placeholder="Mohon pilih dari Jadwal Tanam"
               />
             </div>
 
@@ -341,8 +436,8 @@ export default function KesiapanPanenFormModal({
                 disabled
                 readOnly
                 value={formData.varietas || ''}
-                className="w-full px-3 py-2 border border-gray-200 bg-gray-100 text-gray-600 cursor-not-allowed rounded-lg focus:outline-none"
-                placeholder="Otomatis dari Jadwal Tanam"
+                className="w-full px-3 py-2 border border-gray-200 bg-gray-100 text-gray-600 cursor-not-allowed rounded-lg focus:outline-none placeholder:text-amber-700/70 placeholder:italic"
+                placeholder="Mohon pilih dari Jadwal Tanam"
               />
             </div>
           </div>
@@ -353,8 +448,8 @@ export default function KesiapanPanenFormModal({
               <div className="relative">
                 <SpkDatepickr
                   className="form-control text-xs border border-gray-300 rounded px-3 py-2 w-full pr-8"
-                  placeholderText="01/03/2026"
-                  selected={parseDateStr(formData.tanggalTanam)}
+                  placeholderText={formatDateToStr(new Date())}
+                  selected={parseDateStr(formData.tanggalTanam) || new Date()}
                   onChange={(date: any) => handleTanggalTanamChange(date)}
                   dateFormat="dd/MM/yyyy"
                 />
@@ -366,11 +461,10 @@ export default function KesiapanPanenFormModal({
               <label className="font-semibold text-gray-700 mb-1 block">Umur (HST)</label>
               <input
                 type="number"
-                required
-                value={formData.umurHst || ''}
+                value={formData.umurHst !== undefined && formData.umurHst !== 0 ? formData.umurHst : ''}
                 onChange={(e) => setFormData({ ...formData, umurHst: parseInt(e.target.value) || 0 })}
                 className="form-control text-xs border border-gray-300 rounded px-3 py-2 w-full font-bold text-emerald-800"
-                placeholder="105"
+                placeholder="0"
               />
             </div>
 
@@ -379,8 +473,8 @@ export default function KesiapanPanenFormModal({
               <div className="relative">
                 <SpkDatepickr
                   className="form-control text-xs border border-gray-300 rounded px-3 py-2 w-full pr-8"
-                  placeholderText="15/06/2026"
-                  selected={parseDateStr(formData.prediksiPanen)}
+                  placeholderText={formatDateToStr(new Date())}
+                  selected={parseDateStr(formData.prediksiPanen) || new Date()}
                   onChange={(date: any) => handlePrediksiPanenChange(date)}
                   dateFormat="dd/MM/yyyy"
                 />
@@ -391,28 +485,28 @@ export default function KesiapanPanenFormModal({
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="font-semibold text-gray-700 mb-1 block">Status Kesiapan</label>
-              <select
-                value={formData.statusKesiapan || 'Siap Panen'}
-                onChange={(e) => setFormData({ ...formData, statusKesiapan: e.target.value as any })}
-                className="form-select text-xs border border-gray-300 rounded px-3 py-2 w-full bg-white font-semibold"
-              >
-                <option value="Siap Panen">Siap Panen</option>
-                <option value="Akan Siap (3-7 Hari)">Akan Siap (3-7 Hari)</option>
-                <option value="Akan Siap (8-14 Hari)">Akan Siap (8-14 Hari)</option>
-                <option value="Belum Siap">Belum Siap</option>
-              </select>
+              <label className="font-semibold text-gray-700 mb-1 flex items-center justify-between">
+                <span>Status Kesiapan</span>
+                <span className="text-[10px] text-emerald-600 font-normal italic">* Otomatis dari Prediksi Panen</span>
+              </label>
+              <input
+                type="text"
+                disabled
+                readOnly
+                value={formData.statusKesiapan || calculateStatusKesiapan(formData.prediksiPanen)}
+                className="w-full px-3 py-2 border border-gray-200 bg-gray-100 font-semibold text-gray-700 cursor-not-allowed rounded-lg focus:outline-none"
+                placeholder="Otomatis dari Prediksi Panen"
+              />
             </div>
 
             <div>
               <label className="font-semibold text-gray-700 mb-1 block">Estimasi Hasil (Kg/Ha)</label>
               <input
                 type="number"
-                required
-                value={formData.yieldEst || ''}
+                value={formData.yieldEst !== undefined && formData.yieldEst !== 0 ? formData.yieldEst : ''}
                 onChange={(e) => setFormData({ ...formData, yieldEst: parseFloat(e.target.value) || 0 })}
                 className="form-control text-xs border border-gray-300 rounded px-3 py-2 w-full"
-                placeholder="6800"
+                placeholder="0"
               />
             </div>
           </div>

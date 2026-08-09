@@ -12,6 +12,7 @@ export interface JadwalTanam {
 export interface InformasiUmum {
   kodeJadwalTanam: string;
 
+  periodeTanam?: string;
   periodeTanamMulai: string;
   periodeTanamSelesai: string;
 

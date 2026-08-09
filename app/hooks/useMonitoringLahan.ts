@@ -8,6 +8,14 @@ import { Land } from '../types/greenhouse';
 import { Commodity } from '../types/commodity';
 import { Variety } from '../types/variety';
 import { monitoringLahanService } from '../services/monitoringLahanService';
+import { jadwalTanamService } from '../services/jadwalTanamService';
+
+const FALLBACK_JADWAL_TANAM = [
+  { id: '1', kodeJadwalTanam: 'JT-2605-0001', lokasi: 'Blok A - Petak 1', komoditas: 'Padi', varietas: 'Inpari 32', luas: 12.5, tanggalTanam: '01/05/2026' },
+  { id: '2', kodeJadwalTanam: 'JT-2605-0002', lokasi: 'Blok A - Petak 2', komoditas: 'Jagung', varietas: 'Pioneer 21', luas: 8.2, tanggalTanam: '05/05/2026' },
+  { id: '3', kodeJadwalTanam: 'JT-2605-0003', lokasi: 'Blok B - Petak 1', komoditas: 'Kedelai', varietas: 'Anjasmoro', luas: 10.0, tanggalTanam: '10/05/2026' },
+  { id: '4', kodeJadwalTanam: 'JT-2605-0004', lokasi: 'Blok B - Petak 2', komoditas: 'Padi', varietas: 'Inpari 42', luas: 9.75, tanggalTanam: '02/05/2026' },
+];
 
 export const INITIAL_MONITORING_LAHAN_LIST: MonitoringLahanItem[] = [
   {
@@ -122,6 +130,22 @@ export function useMonitoringLahan() {
   const [pageSize, setPageSize] = useState(10);
   const [totalRecords, setTotalRecords] = useState(86);
   const [totalPages, setTotalPages] = useState(9);
+
+  const [jadwalTanamOptions, setJadwalTanamOptions] = useState<any[]>(FALLBACK_JADWAL_TANAM);
+
+  useEffect(() => {
+    const fetchJadwalTanamList = async () => {
+      try {
+        const res = await jadwalTanamService.getJadwalTanamList({ pageSize: 1000 });
+        if (res && res.data && res.data.length > 0) {
+          setJadwalTanamOptions(res.data);
+        }
+      } catch (err) {
+        console.error('Error fetching Jadwal Tanam for options:', err);
+      }
+    };
+    fetchJadwalTanamList();
+  }, []);
 
   const fetchMonitoringLahan = useCallback(async () => {
     setLoading(true);
@@ -427,6 +451,7 @@ export function useMonitoringLahan() {
     komoditasOptions,
     varietasOptions,
     lokasiOptions,
+    jadwalTanamOptions,
     statusOptions,
     kondisiOptions,
     handleApplyFilters,

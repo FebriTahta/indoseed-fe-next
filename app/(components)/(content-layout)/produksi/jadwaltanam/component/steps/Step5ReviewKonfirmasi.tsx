@@ -148,7 +148,9 @@ export default function Step5ReviewKonfirmasi({
         <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-8 gap-3 text-xs">
           <div>
             <span className="text-gray-500 block text-[10px] mb-0.5">Periode Tanam</span>
-            <span className="font-bold text-gray-800">{dataIU?.periodeTanam || 'Juni II - 2025'}</span>
+            <span className="font-bold text-gray-800">
+              {dataIU?.periodeTanam || (dataIU?.periodeTanamMulai && dataIU?.periodeTanamSelesai ? `${dataIU.periodeTanamMulai} - ${dataIU.periodeTanamSelesai}` : dataIU?.periodeTanamMulai || dataRT?.periodeTanam || '-')}
+            </span>
           </div>
           <div>
             <span className="text-gray-500 block text-[10px] mb-0.5">Tgl Mulai Tanam</span>
@@ -390,7 +392,7 @@ export default function Step5ReviewKonfirmasi({
             <div className="flex items-center justify-between mb-3 pb-2 border-b border-gray-100">
               <h3 className="text-sm font-bold text-gray-800">E. Dokumen Pendukung</h3>
               <span className="text-[11px] text-gray-400 font-medium">
-                {dataCT?.dokumenFiles ? dataCT.dokumenFiles.length : 1} File
+                {(dataCT?.dokumenFiles || []).length} File
               </span>
             </div>
 
