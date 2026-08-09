@@ -4,6 +4,7 @@ import SpkDatepickr from '@/shared/@spk-reusable-components/spk-packages/datepic
 
 interface Step3Props {
   options?: any;
+  dataIU?: any;
   dataLK?: any;
   dataRT?: any;
   dataCT?: any;
@@ -13,7 +14,31 @@ interface Step3Props {
   setDetailList?: React.Dispatch<React.SetStateAction<any[]>>;
 }
 
-export default function Step3RencanaTanam({ options, dataLK, dataRT, dataCT, onChangeRT, onChangeCT, detailList, setDetailList }: Step3Props) {
+export default function Step3RencanaTanam({ options, dataIU, dataLK, dataRT, dataCT, onChangeRT, onChangeCT, detailList, setDetailList }: Step3Props) {
+  // Derive Periode Tanam from Step 1 (dataIU)
+  const step1Periode = useMemo(() => {
+    if (dataIU?.periodeTanam) return dataIU.periodeTanam;
+    if (dataIU?.periodeTanamMulai && dataIU?.periodeTanamSelesai) {
+      return `${dataIU.periodeTanamMulai} - ${dataIU.periodeTanamSelesai}`;
+    }
+    if (dataIU?.periodeTanamMulai) return dataIU.periodeTanamMulai;
+    return '';
+  }, [dataIU]);
+
+  // Sync Periode Tanam from Step 1 to dataRT
+  React.useEffect(() => {
+    if (step1Periode && onChangeRT) {
+      onChangeRT('periodeTanam', step1Periode);
+    }
+  }, [step1Periode, onChangeRT]);
+
+  // Sync Musim Tanam from Step 1 to dataRT
+  React.useEffect(() => {
+    if (dataIU?.musimTanam && onChangeRT) {
+      onChangeRT('musimTanam', dataIU.musimTanam);
+    }
+  }, [dataIU?.musimTanam, onChangeRT]);
+
   // Parse date helpers for dataRT sync from Step 1
   const parseDateHelper = (val: any): Date | null => {
     if (!val) return null;
@@ -39,6 +64,51 @@ export default function Step3RencanaTanam({ options, dataLK, dataRT, dataCT, onC
     const month = String(date.getMonth() + 1).padStart(2, '0');
     const year = date.getFullYear();
     return `${day}/${month}/${year}`;
+  };
+
+  const now = new Date();
+  const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+  const lastDayOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+
+  const [periodeStartDate, setPeriodeStartDate] = useState<Date | null>(() => {
+    const src = dataRT?.periodeTanamMulai || dataIU?.periodeTanamMulai;
+    return src ? parseDateHelper(src) || firstDayOfMonth : firstDayOfMonth;
+  });
+
+  const [periodeEndDate, setPeriodeEndDate] = useState<Date | null>(() => {
+    const src = dataRT?.periodeTanamSelesai || dataIU?.periodeTanamSelesai;
+    return src ? parseDateHelper(src) || lastDayOfMonth : lastDayOfMonth;
+  });
+
+  // Sync date range if Step 1 (dataIU) changes
+  React.useEffect(() => {
+    if (dataIU?.periodeTanamMulai) {
+      const parsedStart = parseDateHelper(dataIU.periodeTanamMulai);
+      if (parsedStart) setPeriodeStartDate(parsedStart);
+    }
+    if (dataIU?.periodeTanamSelesai) {
+      const parsedEnd = parseDateHelper(dataIU.periodeTanamSelesai);
+      if (parsedEnd) setPeriodeEndDate(parsedEnd);
+    }
+  }, [dataIU?.periodeTanamMulai, dataIU?.periodeTanamSelesai]);
+
+  const handlePeriodeRangeChange = (update: [Date | null, Date | null]) => {
+    const [start, end] = update;
+    setPeriodeStartDate(start);
+    setPeriodeEndDate(end);
+
+    const startStr = start ? formatDateStrHelper(start) : '';
+    const endStr = end ? formatDateStrHelper(end) : '';
+
+    if (onChangeRT) {
+      onChangeRT('periodeTanamMulai', startStr);
+      onChangeRT('periodeTanamSelesai', endStr);
+      if (startStr && endStr) {
+        onChangeRT('periodeTanam', `${startStr} - ${endStr}`);
+      } else if (startStr) {
+        onChangeRT('periodeTanam', startStr);
+      }
+    }
   };
 
   const selectedTglMulai = useMemo(() => {
@@ -310,16 +380,29 @@ export default function Step3RencanaTanam({ options, dataLK, dataRT, dataCT, onC
 
           <div>
             <label className="font-semibold text-gray-700 mb-1 block">Periode Tanam <span className="text-red-500">*</span></label>
-            <select className="form-select text-xs border border-gray-300 rounded px-3 py-2 text-gray-700 w-full bg-white">
-              <option>Juni II - 2025</option>
-            </select>
+            <div className="relative flex items-center">
+              <SpkDatepickr
+                selectsRange={true}
+                startDate={periodeStartDate}
+                endDate={periodeEndDate}
+                onChange={handlePeriodeRangeChange}
+                dateFormat="dd/MM/yyyy"
+                placeholderText="DD/MM/YYYY - DD/MM/YYYY"
+                className="form-control text-xs border border-gray-300 rounded px-3 py-2 pr-8 text-gray-700 w-full bg-white font-medium"
+              />
+              <i className="ri-calendar-line absolute right-2.5 text-gray-400 text-sm pointer-events-none z-10"></i>
+            </div>
           </div>
 
           <div>
             <label className="font-semibold text-gray-700 mb-1 block">Musim Tanam</label>
-            <select className="form-select text-xs border border-gray-300 rounded px-3 py-2 text-gray-700 w-full bg-white">
-              <option>Kemarau</option>
-              <option>Hujan</option>
+            <select
+              value={dataRT?.musimTanam || dataIU?.musimTanam || 'Musim Kemarau'}
+              onChange={(e) => onChangeRT && onChangeRT('musimTanam', e.target.value)}
+              className="form-select text-xs border border-gray-300 rounded px-3 py-2 text-gray-700 w-full bg-white"
+            >
+              <option value="Musim Kemarau">Musim Kemarau</option>
+              <option value="Musim Hujan">Musim Hujan</option>
             </select>
           </div>
 

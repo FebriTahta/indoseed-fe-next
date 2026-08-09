@@ -198,10 +198,6 @@ export default function JadwalTanamPage() {
     );
   };
 
-  if (error) {
-    return <div className="p-4 text-center text-red-500 font-semibold">{error}</div>;
-  }
-
   return (
     <Fragment>
       <Pageheader
@@ -253,7 +249,7 @@ export default function JadwalTanamPage() {
                 setPageSize(size);
                 setCurrentPage(1);
               }}
-              emptyMessage="Tidak ada data jadwal tanam yang cocok."
+              emptyMessage={error || "Tidak ada data jadwal tanam yang cocok."}
               isLoading={loading}
             />
           </div>

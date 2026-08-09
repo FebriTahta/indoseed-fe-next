@@ -44,7 +44,7 @@ export default function DataTable({
                 <td colSpan={headers.length} className="p-8 text-center text-gray-400">
                   <div className="flex flex-col items-center justify-center gap-2">
                     <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-500"></div>
-                    <span className="text-xs text-gray-400">Memuat data lahan...</span>
+                    <span className="text-xs text-gray-400">Memuat data...</span>
                   </div>
                 </td>
               </tr>

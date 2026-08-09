@@ -22,6 +22,20 @@ interface FilterRowProps {
   onReset: () => void;
 }
 
+const getInitialMonthRange = (): [Date, Date] => {
+  const now = new Date();
+  const start = new Date(now.getFullYear(), now.getMonth(), 1);
+  const end = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+  return [start, end];
+};
+
+const formatDateDDMMYYYY = (d: Date | null) => {
+  if (!d) return '';
+  const day = String(d.getDate()).padStart(2, '0');
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  return `${day}/${month}/${d.getFullYear()}`;
+};
+
 export default function FilterRow({
   search,
   onSearchChange,
@@ -31,14 +45,11 @@ export default function FilterRow({
   onSearch,
   onReset,
 }: FilterRowProps) {
-  const [dateRange, setDateRange] = useState<[Date | null, Date | null]>([
-    new Date(2026, 5, 1),
-    new Date(2026, 5, 30)
-  ]);
+  const [dateRange, setDateRange] = useState<[Date | null, Date | null]>(getInitialMonthRange());
   const [startDate, endDate] = dateRange;
 
   const handleReset = () => {
-    setDateRange([new Date(2026, 5, 1), new Date(2026, 5, 30)]);
+    setDateRange(getInitialMonthRange());
     onReset();
   };
 
@@ -75,7 +86,7 @@ export default function FilterRow({
                 </label>
               )}
               {config.type === 'date' ? (
-                <div className="relative flex items-center">
+                <div className="relative flex items-center w-full [&_.react-datepicker-wrapper]:w-full">
                   <SpkDatepickr
                     selectsRange={true}
                     startDate={startDate}
@@ -89,6 +100,7 @@ export default function FilterRow({
                     dateFormat="dd/MM/yyyy"
                     placeholderText="01/06/2026 - 30/06/2026"
                     className="form-control text-xs border border-gray-300 rounded-md py-1.5 px-3 pr-8 w-full font-medium text-gray-700 bg-white"
+                    wrapperClassName="w-full"
                   />
                   <i className="ri-calendar-line absolute right-2.5 text-gray-400 text-sm pointer-events-none z-10"></i>
                 </div>

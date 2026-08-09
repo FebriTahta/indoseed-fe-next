@@ -134,13 +134,7 @@ export default function CreateJadwalTanamPage() {
           fileType: file.type || file.fileType || 'application/pdf',
         }));
 
-        const docsToSave = uploadedDocs.length > 0 ? uploadedDocs : [
-          {
-            nama: 'Dokumen SOP Tanam & Standar ISO 9001:2015.pdf',
-            fileUrl: '/sample-sop.pdf',
-            fileType: 'application/pdf',
-          }
-        ];
+        const docsToSave = uploadedDocs;
 
         const payload = {
           kodeJadwalTanam: informasiUmum.kodeJadwalTanam,
@@ -282,6 +276,7 @@ export default function CreateJadwalTanamPage() {
         {currentStep === 3 && (
           <Step3RencanaTanam
             options={stats}
+            dataIU={informasiUmum}
             dataLK={lahanKomoditas}
             dataRT={rencanaTanam}
             dataCT={catatanTambahan}

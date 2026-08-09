@@ -4,6 +4,26 @@ import { kesiapanPanenService } from '../services/kesiapanPanenService';
 import { KesiapanPanenItem } from '../types/kesiapanPanen';
 import { INITIAL_KESIAPAN_PANEN_LIST } from './useKesiapanPanen';
 import { toast } from 'react-toastify';
+import { StatItem } from '../(components)/(content-layout)/shared/StatsWidgets';
+import commodityService from '../services/commodityService';
+import varietyService from '../services/varietyService';
+import { Commodity } from '../types/commodity';
+import { Variety } from '../types/variety';
+
+const getInitialMonthRange = (): [Date, Date] => {
+  const now = new Date();
+  const start = new Date(now.getFullYear(), now.getMonth(), 1);
+  const end = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+  return [start, end];
+};
+
+const formatDateYYYYMMDD = (d: Date | null) => {
+  if (!d) return '';
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
 
 export function usePanen() {
   const [panenList, setPanenList] = useState<PanenItem[]>([]);
@@ -13,13 +33,37 @@ export function usePanen() {
   // Kesiapan Panen list with status 'Siap Panen'
   const [kesiapanSiapPanenList, setKesiapanSiapPanenList] = useState<KesiapanPanenItem[]>([]);
 
+  // Master Data from Services
+  const [masterCommodities, setMasterCommodities] = useState<Commodity[]>([]);
+  const [masterVarieties, setMasterVarieties] = useState<Variety[]>([]);
+
+  useEffect(() => {
+    const fetchMasterData = async () => {
+      try {
+        const [commRes, varRes] = await Promise.all([
+          commodityService.getCommodities({ pageSize: 1000, status: 'Aktif' }),
+          varietyService.getVarieties({ pageSize: 1000, status: 'Aktif' }),
+        ]);
+
+        if (commRes?.status === 'success' && commRes?.data) {
+          setMasterCommodities(commRes.data);
+        }
+        if (varRes?.status === 'success' && varRes?.data) {
+          setMasterVarieties(varRes.data);
+        }
+      } catch (err) {
+        console.error('Error fetching master commodities/varieties for filter:', err);
+      }
+    };
+    fetchMasterData();
+  }, []);
+
   // Filter States
   const [search, setSearch] = useState('');
-  const [filterKomoditas, setFilterKomoditas] = useState('Semua Komoditas');
-  const [filterVarietas, setFilterVarietas] = useState('Semua Varietas');
-  const [filterStatus, setFilterStatus] = useState('Semua Status');
-  const [periodeStart, setPeriodeStart] = useState('2026-06-01');
-  const [periodeEnd, setPeriodeEnd] = useState('2026-06-30');
+  const [filterPeriode, setFilterPeriode] = useState<[Date | null, Date | null]>(getInitialMonthRange());
+  const [filterKomoditas, setFilterKomoditas] = useState<any>(null);
+  const [filterVarietas, setFilterVarietas] = useState<any>(null);
+  const [filterStatus, setFilterStatus] = useState<any>(null);
 
   // Pagination
   const [currentPage, setCurrentPage] = useState(1);
@@ -37,15 +81,21 @@ export function usePanen() {
   const fetchPanens = useCallback(async () => {
     setIsLoading(true);
     try {
+      const commVal = filterKomoditas?.value || (typeof filterKomoditas === 'string' && filterKomoditas !== 'Semua Komoditas' ? filterKomoditas : undefined);
+      const varVal = filterVarietas?.value || (typeof filterVarietas === 'string' && filterVarietas !== 'Semua Varietas' ? filterVarietas : undefined);
+      const statusVal = filterStatus?.value || (typeof filterStatus === 'string' && filterStatus !== 'Semua Status' ? filterStatus : undefined);
+      const startDateStr = formatDateYYYYMMDD(filterPeriode[0]);
+      const endDateStr = formatDateYYYYMMDD(filterPeriode[1]);
+
       const res = await panenService.getPanenList({
         page: currentPage,
         limit: pageSize,
         search: search || undefined,
-        komoditas: filterKomoditas !== 'Semua Komoditas' ? filterKomoditas : undefined,
-        varietas: filterVarietas !== 'Semua Varietas' ? filterVarietas : undefined,
-        status: filterStatus !== 'Semua Status' ? filterStatus : undefined,
-        startDate: periodeStart || undefined,
-        endDate: periodeEnd || undefined,
+        komoditas: commVal || undefined,
+        varietas: varVal || undefined,
+        status: statusVal || undefined,
+        startDate: startDateStr || undefined,
+        endDate: endDateStr || undefined,
       });
 
       const list: PanenItem[] = res?.data || [];
@@ -64,7 +114,7 @@ export function usePanen() {
     } finally {
       setIsLoading(false);
     }
-  }, [currentPage, pageSize, search, filterKomoditas, filterVarietas, filterStatus, periodeStart, periodeEnd]);
+  }, [currentPage, pageSize, search, filterKomoditas, filterVarietas, filterStatus, filterPeriode]);
 
   // Helper setter for auto-select
   const setSelectedPanSelected = (item: PanenItem | null) => {
@@ -97,6 +147,93 @@ export function usePanen() {
     fetchKesiapanSiapPanen();
   }, [fetchKesiapanSiapPanen]);
 
+  // Dynamic Options for filters based on Master Data
+  const komoditasOptions = useMemo(() => {
+    if (masterCommodities.length > 0) {
+      return [
+        { value: '', label: 'Semua Komoditas' },
+        ...masterCommodities.map((c) => ({
+          value: c.namaKomoditas,
+          label: c.namaKomoditas,
+        })),
+      ];
+    }
+    return [
+      { value: '', label: 'Semua Komoditas' },
+      { value: 'Padi', label: 'Padi' },
+      { value: 'Jagung', label: 'Jagung' },
+      { value: 'Kedelai', label: 'Kedelai' },
+      { value: 'Kacang Hijau', label: 'Kacang Hijau' },
+    ];
+  }, [masterCommodities]);
+
+  const selectedKomoditasVal = filterKomoditas?.value || (typeof filterKomoditas === 'string' ? filterKomoditas : '');
+
+  const varietasOptions = useMemo(() => {
+    let filteredVarieties = masterVarieties;
+
+    if (selectedKomoditasVal && selectedKomoditasVal !== 'Semua Komoditas') {
+      const matchedComm = masterCommodities.find(
+        (c) => c.namaKomoditas.toLowerCase() === selectedKomoditasVal.toLowerCase() || c.id === selectedKomoditasVal
+      );
+
+      filteredVarieties = masterVarieties.filter((v) => {
+        if (matchedComm && v.commodityId === matchedComm.id) return true;
+        if (v.commodity?.namaKomoditas?.toLowerCase() === selectedKomoditasVal.toLowerCase()) return true;
+        return false;
+      });
+    }
+
+    if (filteredVarieties.length > 0) {
+      return [
+        { value: '', label: 'Semua Varietas' },
+        ...filteredVarieties.map((v) => ({
+          value: v.namaVarietas,
+          label: v.namaVarietas,
+        })),
+      ];
+    }
+
+    const fallbackMap: Record<string, string[]> = {
+      Padi: ['Inpari 32', 'Inpari 42', 'Ciherang', 'Mekongga', 'Sintanur'],
+      Jagung: ['Pioneer 21', 'Bisi 18', 'P21'],
+      Kedelai: ['Anjasmoro', 'Dega 1'],
+      'Kacang Hijau': ['Vima 1'],
+    };
+
+    if (selectedKomoditasVal && fallbackMap[selectedKomoditasVal]) {
+      return [
+        { value: '', label: 'Semua Varietas' },
+        ...fallbackMap[selectedKomoditasVal].map((v) => ({ value: v, label: v })),
+      ];
+    }
+
+    return [
+      { value: '', label: 'Semua Varietas' },
+      { value: 'Inpari 32', label: 'Inpari 32' },
+      { value: 'Inpari 42', label: 'Inpari 42' },
+      { value: 'Ciherang', label: 'Ciherang' },
+      { value: 'Pioneer 21', label: 'Pioneer 21' },
+      { value: 'Bisi 18', label: 'Bisi 18' },
+      { value: 'P21', label: 'P21' },
+      { value: 'Anjasmoro', label: 'Anjasmoro' },
+      { value: 'Dega 1', label: 'Dega 1' },
+      { value: 'Vima 1', label: 'Vima 1' },
+    ];
+  }, [masterVarieties, masterCommodities, selectedKomoditasVal]);
+
+  const handleFilterKomoditasChange = (val: any) => {
+    setFilterKomoditas(val);
+    setFilterVarietas(null);
+  };
+
+  const statusOptions = [
+    { value: '', label: 'Semua Status' },
+    { value: 'Selesai', label: 'Selesai' },
+    { value: 'Berlangsung', label: 'Berlangsung' },
+    { value: 'Belum Mulai', label: 'Belum Mulai' },
+  ];
+
   // Filter actions
   const handleApplyFilters = () => {
     setCurrentPage(1);
@@ -105,11 +242,10 @@ export function usePanen() {
 
   const handleResetFilters = () => {
     setSearch('');
-    setFilterKomoditas('Semua Komoditas');
-    setFilterVarietas('Semua Varietas');
-    setFilterStatus('Semua Status');
-    setPeriodeStart('2026-06-01');
-    setPeriodeEnd('2026-06-30');
+    setFilterKomoditas(null);
+    setFilterVarietas(null);
+    setFilterStatus(null);
+    setFilterPeriode(getInitialMonthRange());
     setCurrentPage(1);
   };
 
@@ -192,7 +328,7 @@ export function usePanen() {
   };
 
   // Aggregated Stat Items matching the top 7 stat cards
-  const statItems = useMemo(() => {
+  const statItems: StatItem[] = useMemo(() => {
     const totalPanen = apiStats?.totalPanen || totalRecords || panenList.length;
     const totalLuas = apiStats?.totalLuas !== undefined 
       ? apiStats.totalLuas 
@@ -216,21 +352,65 @@ export function usePanen() {
       ? apiStats.belumMulaiCount
       : panenList.filter(i => i.status === 'Belum Mulai').length;
 
-    return {
-      totalPanen,
-      totalLuas: `${totalLuas.toFixed(2).replace('.', ',')} Ha`,
-      totalProduksi: `${totalProduksi.toLocaleString('id-ID')} Kg`,
-      rataHasil: `${rataHasil.toLocaleString('id-ID')} Kg/Ha`,
-      selesaiCount,
-      berlangsungCount,
-      belumMulaiCount,
-    };
+    return [
+      {
+        title: 'Total Panen (Periode)',
+        value: totalPanen,
+        subtitle: 'Kegiatan Panen',
+        icon: 'ri-plant-line',
+        bgColor: 'bg-emerald-100/80',
+        textColor: 'text-emerald-700'
+      },
+      {
+        title: 'Total Luas Dipanen',
+        value: `${totalLuas.toFixed(2).replace('.', ',')} Ha`,
+        subtitle: 'Luas Dipanen',
+        icon: 'ri-landscape-line',
+        bgColor: 'bg-purple-100/80',
+        textColor: 'text-purple-700'
+      },
+      {
+        title: 'Total Produksi',
+        value: `${totalProduksi.toLocaleString('id-ID')} Kg`,
+        subtitle: 'Berat Bersih',
+        icon: 'ri-inbox-archive-line',
+        bgColor: 'bg-orange-100/80',
+        textColor: 'text-orange-700'
+      },
+      {
+        title: 'Rata-rata Hasil',
+        value: `${rataHasil.toLocaleString('id-ID')} Kg/Ha`,
+        subtitle: 'Produktivitas Rata-rata',
+        icon: 'ri-leaf-line',
+        bgColor: 'bg-blue-100/80',
+        textColor: 'text-blue-700'
+      },
+      {
+        title: 'Selesai',
+        value: selesaiCount,
+        subtitle: 'Kegiatan Selesai',
+        icon: 'ri-checkbox-circle-line',
+        bgColor: 'bg-emerald-100/80',
+        textColor: 'text-emerald-700'
+      },
+      {
+        title: 'Berlangsung',
+        value: berlangsungCount,
+        subtitle: 'Sedang Berlangsung',
+        icon: 'ri-time-line',
+        bgColor: 'bg-amber-100/80',
+        textColor: 'text-amber-700'
+      },
+      {
+        title: 'Belum Mulai',
+        value: belumMulaiCount,
+        subtitle: 'Belum Dilaksanakan',
+        icon: 'ri-history-line',
+        bgColor: 'bg-rose-100/80',
+        textColor: 'text-rose-700'
+      }
+    ];
   }, [apiStats, totalRecords, panenList]);
-
-  // Dynamic Options for filters
-  const komoditasOptions = ['Semua Komoditas', 'Padi', 'Jagung', 'Kedelai', 'Kacang Hijau'];
-  const varietasOptions = ['Semua Varietas', 'Inpari 32', 'Inpari 42', 'Ciherang', 'Pioneer 21', 'Bisi 18', 'P21', 'Anjasmoro', 'Dega 1', 'Vima 1'];
-  const statusOptions = ['Semua Status', 'Selesai', 'Berlangsung', 'Belum Mulai'];
 
   return {
     panenList,
@@ -239,16 +419,14 @@ export function usePanen() {
     setSelectedPanen,
     search,
     setSearch,
+    filterPeriode,
+    setFilterPeriode,
     filterKomoditas,
-    setFilterKomoditas,
+    setFilterKomoditas: handleFilterKomoditasChange,
     filterVarietas,
     setFilterVarietas,
     filterStatus,
     setFilterStatus,
-    periodeStart,
-    setPeriodeStart,
-    periodeEnd,
-    setPeriodeEnd,
     currentPage,
     setCurrentPage,
     pageSize,

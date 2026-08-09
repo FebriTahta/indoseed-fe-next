@@ -40,6 +40,7 @@ export default function MonitoringLahanPage() {
     komoditasOptions,
     varietasOptions,
     lokasiOptions,
+    jadwalTanamOptions,
     statusOptions,
     kondisiOptions,
     handleApplyFilters,
@@ -319,6 +320,7 @@ export default function MonitoringLahanPage() {
         komoditasOptions={komoditasOptions}
         varietasOptions={varietasOptions}
         lokasiOptions={lokasiOptions}
+        jadwalTanamOptions={jadwalTanamOptions}
       />
 
       {/* Edit Modal */}
@@ -331,6 +333,7 @@ export default function MonitoringLahanPage() {
         komoditasOptions={komoditasOptions}
         varietasOptions={varietasOptions}
         lokasiOptions={lokasiOptions}
+        jadwalTanamOptions={jadwalTanamOptions}
       />
 
       {/* Detail Modal */}
