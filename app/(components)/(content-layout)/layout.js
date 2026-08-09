@@ -1,7 +1,7 @@
 "use client"
-import React, { Fragment } from 'react'
+import React, { Fragment, useEffect } from 'react'
 import { connect } from "react-redux"
-import { ThemeChanger } from "../../../shared/redux/action"
+import { ThemeChanger, setSettings } from "../../../shared/redux/action"
 import PrelineScript from "../../PrelineScript"
 import Sidebar from '../../../shared/layouts-components/sidebar/sidebar'
 import Header from '../../../shared/layouts-components/header/header'
@@ -10,7 +10,28 @@ import Footer from '@/shared/layouts-components/footer/footer';
 import Loader from '@/shared/layouts-components/loader/loader';
 import Switcher from '@/shared/layouts-components/switcher/switcher';
 
-const Layout = ({ children, }) => {
+const Layout = ({ children, local_varaiable, ThemeChanger, setSettings }) => {
+    
+    useEffect(() => {
+        const fetchSettings = async () => {
+            try {
+                const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080'}/api/settings`);
+                const data = await res.json();
+                if (data.status === 'success' && data.data) {
+                    setSettings(data.data);
+                }
+            } catch (error) {
+                console.error("Failed to fetch settings:", error);
+            }
+        };
+        fetchSettings();
+    }, [setSettings]);
+
+    useEffect(() => {
+        if (local_varaiable?.settings?.titleWebsite) {
+            document.title = local_varaiable.settings.titleWebsite;
+        }
+    }, [local_varaiable?.settings?.titleWebsite]);
 
     return (
         <Fragment>
@@ -37,4 +58,4 @@ const mapStateToProps = (state) => ({
     local_varaiable: state.reducer
 });
 
-export default connect(mapStateToProps, { ThemeChanger })(Layout);
+export default connect(mapStateToProps, { ThemeChanger, setSettings })(Layout);

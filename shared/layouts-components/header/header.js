@@ -14,6 +14,7 @@ import { basePath } from '@/next.config';
 import { data$, getState, setState } from "../services/switcherServices";
 
 const Header = () => {
+    const settings = useSelector((state) => state.reducer.settings);
     const router = useRouter();
 
     const handleLogout = async (e) => {
@@ -502,6 +503,9 @@ const Header = () => {
     setCartItemCount(updatedCart.length);
   };
 
+  const logoUrl = settings?.logoWebsite 
+    ? (settings.logoWebsite.startsWith('http') ? settings.logoWebsite : `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080'}${settings.logoWebsite}`) 
+    : null;
 
   return (
     <Fragment>
@@ -519,12 +523,70 @@ const Header = () => {
             <div className="header-element">
               <div className="horizontal-logo">
                 <Link href="/dashboard/sales" className="header-logo">
-                  <Image fill src={`${process.env.NODE_ENV === 'production' ? basePath : ''}/assets/images/brand-logos/desktop-logo.png`} alt="logo" className="desktop-logo" />
-                  <Image fill src={`${process.env.NODE_ENV === 'production' ? basePath : ''}/assets/images/brand-logos/toggle-dark.png`} alt="logo" className="toggle-dark" />
-                  <Image fill src={`${process.env.NODE_ENV === 'production' ? basePath : ''}/assets/images/brand-logos/desktop-dark.png`} alt="logo" className="desktop-dark" />
-                  <Image fill src={`${process.env.NODE_ENV === 'production' ? basePath : ''}/assets/images/brand-logos/toggle-logo.png`} alt="logo" className="toggle-logo" />
-                  <Image fill src={`${process.env.NODE_ENV === 'production' ? basePath : ''}/assets/images/brand-logos/toggle-white.png`} alt="logo" className="toggle-white" />
-                  <Image fill src={`${process.env.NODE_ENV === 'production' ? basePath : ''}/assets/images/brand-logos/desktop-white.png`} alt="logo" className="desktop-white" />
+                  {settings?.logoWebsite ? (
+                    <>
+                      <div className="relative flex desktop-logo w-48 h-14 items-center justify-center">
+                        <img src={logoUrl} alt="logo" className="!w-full !h-full object-contain opacity-0" />
+                        <div className="absolute inset-0" style={{ WebkitMaskImage: `url(${logoUrl})`, maskImage: `url(${logoUrl})`, WebkitMaskSize: 'contain', maskSize: 'contain', WebkitMaskRepeat: 'no-repeat', maskRepeat: 'no-repeat', WebkitMaskPosition: 'center', maskPosition: 'center', backgroundColor: settings.logoColor || '#11b238' }}></div>
+                      </div>
+                      <div className="relative flex toggle-dark w-28 h-14 items-center justify-center -mt-4">
+                        <img src={logoUrl} alt="logo" className="!w-full !h-full object-contain opacity-0" />
+                        <div className="absolute inset-0" style={{ WebkitMaskImage: `url(${logoUrl})`, maskImage: `url(${logoUrl})`, WebkitMaskSize: 'contain', maskSize: 'contain', WebkitMaskRepeat: 'no-repeat', maskRepeat: 'no-repeat', WebkitMaskPosition: 'center', maskPosition: 'center', backgroundColor: settings.logoColor || '#11b238' }}></div>
+                      </div>
+                      <div className="relative flex desktop-dark w-48 h-14 items-center justify-center">
+                        <img src={logoUrl} alt="logo" className="!w-full !h-full object-contain opacity-0" />
+                        <div className="absolute inset-0" style={{ WebkitMaskImage: `url(${logoUrl})`, maskImage: `url(${logoUrl})`, WebkitMaskSize: 'contain', maskSize: 'contain', WebkitMaskRepeat: 'no-repeat', maskRepeat: 'no-repeat', WebkitMaskPosition: 'center', maskPosition: 'center', backgroundColor: settings.logoColor || '#11b238' }}></div>
+                      </div>
+                      <div className="relative flex toggle-logo w-28 h-14 items-center justify-center -mt-4">
+                        <img src={logoUrl} alt="logo" className="!w-full !h-full object-contain opacity-0" />
+                        <div className="absolute inset-0" style={{ WebkitMaskImage: `url(${logoUrl})`, maskImage: `url(${logoUrl})`, WebkitMaskSize: 'contain', maskSize: 'contain', WebkitMaskRepeat: 'no-repeat', maskRepeat: 'no-repeat', WebkitMaskPosition: 'center', maskPosition: 'center', backgroundColor: settings.logoColor || '#11b238' }}></div>
+                      </div>
+                      <div className="relative flex toggle-white w-28 h-14 items-center justify-center -mt-4">
+                        <img src={logoUrl} alt="logo" className="!w-full !h-full object-contain opacity-0" />
+                        <div className="absolute inset-0" style={{ WebkitMaskImage: `url(${logoUrl})`, maskImage: `url(${logoUrl})`, WebkitMaskSize: 'contain', maskSize: 'contain', WebkitMaskRepeat: 'no-repeat', maskRepeat: 'no-repeat', WebkitMaskPosition: 'center', maskPosition: 'center', backgroundColor: settings.logoColor || '#11b238' }}></div>
+                      </div>
+                      <div className="relative flex desktop-white w-48 h-14 items-center justify-center">
+                        <img src={logoUrl} alt="logo" className="!w-full !h-full object-contain opacity-0" />
+                        <div className="absolute inset-0" style={{ WebkitMaskImage: `url(${logoUrl})`, maskImage: `url(${logoUrl})`, WebkitMaskSize: 'contain', maskSize: 'contain', WebkitMaskRepeat: 'no-repeat', maskRepeat: 'no-repeat', WebkitMaskPosition: 'center', maskPosition: 'center', backgroundColor: settings.logoColor || '#11b238' }}></div>
+                      </div>
+                    </>
+                  ) : settings?.logoColor ? (
+                    <>
+                      <div className="relative flex desktop-logo w-48 h-14 items-center justify-center">
+                        <img src={`${process.env.NODE_ENV === 'production' ? basePath : ''}/assets/images/brand-logos/desktop-logo.png`} alt="logo" className="!w-full !h-full object-contain opacity-0" />
+                        <div className="absolute inset-0" style={{ WebkitMaskImage: `url(${`${process.env.NODE_ENV === 'production' ? basePath : ''}/assets/images/brand-logos/desktop-logo.png`})`, maskImage: `url(${`${process.env.NODE_ENV === 'production' ? basePath : ''}/assets/images/brand-logos/desktop-logo.png`})`, WebkitMaskSize: 'contain', maskSize: 'contain', WebkitMaskRepeat: 'no-repeat', maskRepeat: 'no-repeat', WebkitMaskPosition: 'center', maskPosition: 'center', backgroundColor: settings.logoColor }}></div>
+                      </div>
+                      <div className="relative flex toggle-dark w-28 h-14 items-center justify-center -mt-4">
+                        <img src={`${process.env.NODE_ENV === 'production' ? basePath : ''}/assets/images/brand-logos/toggle-dark.png`} alt="logo" className="!w-full !h-full object-contain opacity-0" />
+                        <div className="absolute inset-0" style={{ WebkitMaskImage: `url(${`${process.env.NODE_ENV === 'production' ? basePath : ''}/assets/images/brand-logos/toggle-dark.png`})`, maskImage: `url(${`${process.env.NODE_ENV === 'production' ? basePath : ''}/assets/images/brand-logos/toggle-dark.png`})`, WebkitMaskSize: 'contain', maskSize: 'contain', WebkitMaskRepeat: 'no-repeat', maskRepeat: 'no-repeat', WebkitMaskPosition: 'center', maskPosition: 'center', backgroundColor: settings.logoColor }}></div>
+                      </div>
+                      <div className="relative flex desktop-dark w-48 h-14 items-center justify-center">
+                        <img src={`${process.env.NODE_ENV === 'production' ? basePath : ''}/assets/images/brand-logos/desktop-dark.png`} alt="logo" className="!w-full !h-full object-contain opacity-0" />
+                        <div className="absolute inset-0" style={{ WebkitMaskImage: `url(${`${process.env.NODE_ENV === 'production' ? basePath : ''}/assets/images/brand-logos/desktop-dark.png`})`, maskImage: `url(${`${process.env.NODE_ENV === 'production' ? basePath : ''}/assets/images/brand-logos/desktop-dark.png`})`, WebkitMaskSize: 'contain', maskSize: 'contain', WebkitMaskRepeat: 'no-repeat', maskRepeat: 'no-repeat', WebkitMaskPosition: 'center', maskPosition: 'center', backgroundColor: settings.logoColor }}></div>
+                      </div>
+                      <div className="relative flex toggle-logo w-28 h-14 items-center justify-center -mt-4">
+                        <img src={`${process.env.NODE_ENV === 'production' ? basePath : ''}/assets/images/brand-logos/toggle-logo.png`} alt="logo" className="!w-full !h-full object-contain opacity-0" />
+                        <div className="absolute inset-0" style={{ WebkitMaskImage: `url(${`${process.env.NODE_ENV === 'production' ? basePath : ''}/assets/images/brand-logos/toggle-logo.png`})`, maskImage: `url(${`${process.env.NODE_ENV === 'production' ? basePath : ''}/assets/images/brand-logos/toggle-logo.png`})`, WebkitMaskSize: 'contain', maskSize: 'contain', WebkitMaskRepeat: 'no-repeat', maskRepeat: 'no-repeat', WebkitMaskPosition: 'center', maskPosition: 'center', backgroundColor: settings.logoColor }}></div>
+                      </div>
+                      <div className="relative flex toggle-white w-28 h-14 items-center justify-center -mt-4">
+                        <img src={`${process.env.NODE_ENV === 'production' ? basePath : ''}/assets/images/brand-logos/toggle-white.png`} alt="logo" className="!w-full !h-full object-contain opacity-0" />
+                        <div className="absolute inset-0" style={{ WebkitMaskImage: `url(${`${process.env.NODE_ENV === 'production' ? basePath : ''}/assets/images/brand-logos/toggle-white.png`})`, maskImage: `url(${`${process.env.NODE_ENV === 'production' ? basePath : ''}/assets/images/brand-logos/toggle-white.png`})`, WebkitMaskSize: 'contain', maskSize: 'contain', WebkitMaskRepeat: 'no-repeat', maskRepeat: 'no-repeat', WebkitMaskPosition: 'center', maskPosition: 'center', backgroundColor: settings.logoColor }}></div>
+                      </div>
+                      <div className="relative flex desktop-white w-48 h-14 items-center justify-center">
+                        <img src={`${process.env.NODE_ENV === 'production' ? basePath : ''}/assets/images/brand-logos/desktop-white.png`} alt="logo" className="!w-full !h-full object-contain opacity-0" />
+                        <div className="absolute inset-0" style={{ WebkitMaskImage: `url(${`${process.env.NODE_ENV === 'production' ? basePath : ''}/assets/images/brand-logos/desktop-white.png`})`, maskImage: `url(${`${process.env.NODE_ENV === 'production' ? basePath : ''}/assets/images/brand-logos/desktop-white.png`})`, WebkitMaskSize: 'contain', maskSize: 'contain', WebkitMaskRepeat: 'no-repeat', maskRepeat: 'no-repeat', WebkitMaskPosition: 'center', maskPosition: 'center', backgroundColor: settings.logoColor }}></div>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <img src={`${process.env.NODE_ENV === 'production' ? basePath : ''}/assets/images/brand-logos/desktop-logo.png`} alt="logo" className="desktop-logo !w-48 !h-14 object-contain" />
+                      <img src={`${process.env.NODE_ENV === 'production' ? basePath : ''}/assets/images/brand-logos/toggle-dark.png`} alt="logo" className="toggle-dark !w-28 !h-14 -mt-4 object-contain" />
+                      <img src={`${process.env.NODE_ENV === 'production' ? basePath : ''}/assets/images/brand-logos/desktop-dark.png`} alt="logo" className="desktop-dark !w-48 !h-14 object-contain" />
+                      <img src={`${process.env.NODE_ENV === 'production' ? basePath : ''}/assets/images/brand-logos/toggle-logo.png`} alt="logo" className="toggle-logo !w-28 !h-14 -mt-4 object-contain" />
+                      <img src={`${process.env.NODE_ENV === 'production' ? basePath : ''}/assets/images/brand-logos/toggle-white.png`} alt="logo" className="toggle-white !w-28 !h-14 -mt-4 object-contain" />
+                      <img src={`${process.env.NODE_ENV === 'production' ? basePath : ''}/assets/images/brand-logos/desktop-white.png`} alt="logo" className="desktop-white !w-48 !h-14 object-contain" />
+                    </>
+                  )}
                 </Link>
               </div>
             </div>

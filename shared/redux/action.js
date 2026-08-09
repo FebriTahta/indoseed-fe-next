@@ -14,6 +14,11 @@ export const setSelectedItem = (item) => ({
     payload: item
 });
 
+export const setSettings = (settings) => ({
+    type: "SET_SETTINGS",
+    payload: settings
+});
+
 export const addToWishlist = (item, id) => ({
     type: "ADD_TO_WISHLIST",
     payload: { ...item, id }
