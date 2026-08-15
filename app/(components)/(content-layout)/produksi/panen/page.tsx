@@ -379,7 +379,7 @@ export default function PanenPage() {
                         <td className="py-2.5 px-2 text-center text-gray-400">
                           {(currentPage - 1) * pageSize + idx + 1}
                         </td>
-                        <td className="py-2.5 px-2 font-bold text-emerald-600 whitespace-nowrap">
+                        <td className="py-2.5 px-2 font-semibold text-gray-800 whitespace-nowrap">
                           {item.kodePanen}
                         </td>
                         <td className="py-2.5 px-2">{item.komoditas}</td>
@@ -653,9 +653,9 @@ export default function PanenPage() {
 
       {/* Modal Form Buat / Edit Panen */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-xs p-4 overflow-y-auto">
-          <div className="bg-white rounded-xl shadow-xl w-full max-w-2xl overflow-hidden my-8">
-            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-xs p-4">
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-2xl flex flex-col max-h-[90vh] overflow-hidden">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 shrink-0">
               <h3 className="text-sm font-bold text-gray-800">
                 {editingItem ? 'Edit Data Panen' : 'Buat Panen Baru'}
               </h3>
@@ -668,164 +668,169 @@ export default function PanenPage() {
               </button>
             </div>
 
-            <form onSubmit={handleSubmitModal} className="p-6 space-y-4 text-xs">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {!editingItem && (
-                  <div className="sm:col-span-2 bg-emerald-50/70 border border-emerald-200/80 p-3.5 rounded-xl space-y-1.5">
-                    <label className="block text-emerald-900 font-bold mb-1 flex items-center justify-between text-xs">
-                      <span className="flex items-center gap-1.5">
-                        <i className="ri-file-list-3-line text-emerald-600 text-sm"></i>
-                        Referensi Kesiapan Panen (Status: Siap Panen)
-                      </span>
-                      <span className="bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full text-[10px] font-semibold">
-                        {kesiapanSiapPanenList.length} Siap Panen
+            <form onSubmit={handleSubmitModal} className="flex flex-col flex-1 min-h-0 text-xs">
+              <div className="p-6 space-y-4 overflow-y-auto flex-1">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {!editingItem && (
+                    <div className="sm:col-span-2">
+                      <label className="font-semibold text-gray-700 mb-1 flex items-center justify-between">
+                        <span>Referensi Kesiapan Panen</span>
+                        <span className="text-[10px] text-emerald-600 font-medium flex items-center gap-1 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
+                          <i className="ri-links-line"></i> Auto-fill Komoditas & Varietas
+                        </span>
+                      </label>
+                      <select
+                        value={selectedKesiapanId}
+                        onChange={(e) => handleKesiapanSelect(e.target.value)}
+                        className="form-select text-xs border border-gray-300 rounded px-3 py-2 w-full bg-white font-medium focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500"
+                      >
+                        <option value="">-- Pilih Referensi Kesiapan Panen --</option>
+                        {kesiapanSiapPanenList.map((item) => (
+                          <option key={item.id || item.kodeLahan} value={item.id || item.kodeLahan}>
+                            {item.kodeLahan} | {item.komoditas} - {item.varietas} ({item.lokasi || 'Lahan'}) [{item.luasHa || 5.0} Ha]
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
+
+                  <div>
+                    <label className="block text-gray-700 font-semibold mb-1">Kode Panen</label>
+                    <input
+                      type="text"
+                      required
+                      value={formData.kodePanen || ''}
+                      onChange={(e) => setFormData({ ...formData, kodePanen: e.target.value })}
+                      className="form-control text-xs border border-gray-300 rounded px-3 py-2 w-full"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-gray-700 font-semibold mb-1">Tanggal Panen</label>
+                    <input
+                      type="date"
+                      required
+                      value={formData.tanggalPanen || ''}
+                      onChange={(e) => setFormData({ ...formData, tanggalPanen: e.target.value })}
+                      className="form-control text-xs border border-gray-300 rounded px-3 py-2 w-full"
+                    />
+                  </div>
+
+                  <div className="sm:col-span-2">
+                    <label className="block text-gray-700 font-semibold mb-1">Lahan</label>
+                    <input
+                      type="text"
+                      readOnly
+                      disabled
+                      placeholder="Terisi otomatis dari Kesiapan Panen"
+                      value={formData.lahan || ''}
+                      className="form-control text-xs border border-gray-200 bg-gray-100 text-gray-600 rounded px-3 py-2 w-full cursor-not-allowed font-medium select-none"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="font-semibold text-gray-700 mb-1 flex items-center justify-between">
+                      <span>Komoditas</span>
+                      <span className="text-[10px] text-gray-400 font-normal flex items-center gap-1">
+                        <i className="ri-lock-2-line"></i> Tidak dapat dipilih
                       </span>
                     </label>
-                    <select
-                      value={selectedKesiapanId}
-                      onChange={(e) => handleKesiapanSelect(e.target.value)}
-                      className="w-full px-3 py-2 border border-emerald-300 bg-white rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500/20 text-gray-800 text-xs font-medium shadow-xs"
-                    >
-                      <option value="">-- Pilih Referensi Kesiapan Panen --</option>
-                      {kesiapanSiapPanenList.map((item) => (
-                        <option key={item.id || item.kodeLahan} value={item.id || item.kodeLahan}>
-                          {item.kodeLahan} - {item.lokasi || 'Lahan'} ({item.komoditas} - {item.varietas} | Luas: {item.luasHa || 5.0} Ha)
-                        </option>
-                      ))}
-                    </select>
-                    <p className="text-[11px] text-emerald-700/80 italic flex items-center gap-1">
-                      <i className="ri-information-line text-xs"></i>
-                      <span>Memilih referensi akan mengisi otomatis Komoditas, Varietas, Lahan, dan Luas.</span>
-                    </p>
+                    <input
+                      type="text"
+                      readOnly
+                      disabled
+                      placeholder="Terisi otomatis dari Kesiapan Panen"
+                      value={formData.komoditas || ''}
+                      className="form-control text-xs border border-gray-200 bg-gray-100 text-gray-600 rounded px-3 py-2 w-full cursor-not-allowed font-medium select-none"
+                    />
                   </div>
-                )}
 
-                <div>
-                  <label className="block text-gray-700 font-semibold mb-1">Kode Panen</label>
-                  <input
-                    type="text"
-                    required
-                    value={formData.kodePanen || ''}
-                    onChange={(e) => setFormData({ ...formData, kodePanen: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:border-emerald-500"
-                  />
-                </div>
+                  <div>
+                    <label className="font-semibold text-gray-700 mb-1 flex items-center justify-between">
+                      <span>Varietas</span>
+                      <span className="text-[10px] text-gray-400 font-normal flex items-center gap-1">
+                        <i className="ri-lock-2-line"></i> Tidak dapat dipilih
+                      </span>
+                    </label>
+                    <input
+                      type="text"
+                      readOnly
+                      disabled
+                      placeholder="Terisi otomatis dari Kesiapan Panen"
+                      value={formData.varietas || ''}
+                      className="form-control text-xs border border-gray-200 bg-gray-100 text-gray-600 rounded px-3 py-2 w-full cursor-not-allowed font-medium select-none"
+                    />
+                  </div>
 
-                <div>
-                  <label className="block text-gray-700 font-semibold mb-1">Tanggal Panen</label>
-                  <input
-                    type="date"
-                    required
-                    value={formData.tanggalPanen || ''}
-                    onChange={(e) => setFormData({ ...formData, tanggalPanen: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:border-emerald-500"
-                  />
-                </div>
+                  <div>
+                    <label className="block text-gray-700 font-semibold mb-1">Luas (Ha)</label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      required
+                      value={formData.luasHa || 0}
+                      onChange={(e) => setFormData({ ...formData, luasHa: parseFloat(e.target.value) || 0 })}
+                      className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:border-emerald-500"
+                    />
+                  </div>
 
-                <div className="sm:col-span-2">
-                  <label className="block text-gray-700 font-semibold mb-1">Lahan</label>
-                  <input
-                    type="text"
-                    readOnly
-                    disabled
-                    placeholder="Otomatis terisi dari Referensi Kesiapan Panen"
-                    value={formData.lahan || ''}
-                    className="w-full px-3 py-2 border border-gray-200 bg-gray-100 text-gray-600 cursor-not-allowed rounded-lg focus:outline-none"
-                  />
-                </div>
+                  <div>
+                    <label className="block text-gray-700 font-semibold mb-1">Produksi (Kg)</label>
+                    <input
+                      type="number"
+                      required
+                      value={formData.produksiKg || 0}
+                      onChange={(e) => setFormData({ ...formData, produksiKg: parseFloat(e.target.value) || 0 })}
+                      className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:border-emerald-500"
+                    />
+                  </div>
 
-                <div>
-                  <label className="block text-gray-700 font-semibold mb-1">Komoditas</label>
-                  <input
-                    type="text"
-                    readOnly
-                    disabled
-                    placeholder="Otomatis terisi"
-                    value={formData.komoditas || ''}
-                    className="w-full px-3 py-2 border border-gray-200 bg-gray-100 text-gray-600 cursor-not-allowed rounded-lg focus:outline-none"
-                  />
-                </div>
+                  <div>
+                    <label className="block text-gray-700 font-semibold mb-1">Status Panen</label>
+                    <select
+                      value={formData.status || 'Selesai'}
+                      onChange={(e) => setFormData({ ...formData, status: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:border-emerald-500"
+                    >
+                      <option value="Selesai">Selesai</option>
+                      <option value="Berlangsung">Berlangsung</option>
+                      <option value="Belum Mulai">Belum Mulai</option>
+                    </select>
+                  </div>
 
-                <div>
-                  <label className="block text-gray-700 font-semibold mb-1">Varietas</label>
-                  <input
-                    type="text"
-                    readOnly
-                    disabled
-                    placeholder="Otomatis terisi"
-                    value={formData.varietas || ''}
-                    className="w-full px-3 py-2 border border-gray-200 bg-gray-100 text-gray-600 cursor-not-allowed rounded-lg focus:outline-none"
-                  />
-                </div>
+                  <div>
+                    <label className="block text-gray-700 font-semibold mb-1">Penanggung Jawab</label>
+                    <input
+                      type="text"
+                      value={formData.penanggungJawab || ''}
+                      onChange={(e) => setFormData({ ...formData, penanggungJawab: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:border-emerald-500"
+                    />
+                  </div>
 
-                <div>
-                  <label className="block text-gray-700 font-semibold mb-1">Luas (Ha)</label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    required
-                    value={formData.luasHa || 0}
-                    onChange={(e) => setFormData({ ...formData, luasHa: parseFloat(e.target.value) || 0 })}
-                    className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:border-emerald-500"
-                  />
-                </div>
+                  <div>
+                    <label className="block text-gray-700 font-semibold mb-1">Produksi Kotor (Kg)</label>
+                    <input
+                      type="number"
+                      value={formData.produksiKotorKg || 0}
+                      onChange={(e) => setFormData({ ...formData, produksiKotorKg: parseFloat(e.target.value) || 0 })}
+                      className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:border-emerald-500"
+                    />
+                  </div>
 
-                <div>
-                  <label className="block text-gray-700 font-semibold mb-1">Produksi (Kg)</label>
-                  <input
-                    type="number"
-                    required
-                    value={formData.produksiKg || 0}
-                    onChange={(e) => setFormData({ ...formData, produksiKg: parseFloat(e.target.value) || 0 })}
-                    className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:border-emerald-500"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-gray-700 font-semibold mb-1">Status Panen</label>
-                  <select
-                    value={formData.status || 'Selesai'}
-                    onChange={(e) => setFormData({ ...formData, status: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:border-emerald-500"
-                  >
-                    <option value="Selesai">Selesai</option>
-                    <option value="Berlangsung">Berlangsung</option>
-                    <option value="Belum Mulai">Belum Mulai</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-gray-700 font-semibold mb-1">Penanggung Jawab</label>
-                  <input
-                    type="text"
-                    value={formData.penanggungJawab || ''}
-                    onChange={(e) => setFormData({ ...formData, penanggungJawab: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:border-emerald-500"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-gray-700 font-semibold mb-1">Produksi Kotor (Kg)</label>
-                  <input
-                    type="number"
-                    value={formData.produksiKotorKg || 0}
-                    onChange={(e) => setFormData({ ...formData, produksiKotorKg: parseFloat(e.target.value) || 0 })}
-                    className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:border-emerald-500"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-gray-700 font-semibold mb-1">Metode Panen</label>
-                  <input
-                    type="text"
-                    value={formData.metodePanen || ''}
-                    onChange={(e) => setFormData({ ...formData, metodePanen: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:border-emerald-500"
-                  />
+                  <div>
+                    <label className="block text-gray-700 font-semibold mb-1">Metode Panen</label>
+                    <input
+                      type="text"
+                      value={formData.metodePanen || ''}
+                      onChange={(e) => setFormData({ ...formData, metodePanen: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:border-emerald-500"
+                    />
+                  </div>
                 </div>
               </div>
 
-              <div className="flex justify-end gap-2 pt-4 border-t border-gray-100">
+              <div className="flex justify-end gap-2 px-6 py-4 border-t border-gray-100 shrink-0 bg-white">
                 <button
                   type="button"
                   onClick={() => setIsModalOpen(false)}

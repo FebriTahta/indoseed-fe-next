@@ -44,6 +44,7 @@ export default function TreatmentPage() {
     jenisTreatmentOptions,
     statusOptions,
     lokasiOptions,
+    sortasiOptions,
     handleApplyFilters,
     handleResetFilters,
     statItems,
@@ -300,6 +301,7 @@ export default function TreatmentPage() {
         varietasOptions={varietasOptions}
         jenisTreatmentOptions={jenisTreatmentOptions}
         lokasiOptions={lokasiOptions}
+        sortasiOptions={sortasiOptions}
       />
 
       {/* Edit Modal */}
@@ -313,6 +315,7 @@ export default function TreatmentPage() {
         varietasOptions={varietasOptions}
         jenisTreatmentOptions={jenisTreatmentOptions}
         lokasiOptions={lokasiOptions}
+        sortasiOptions={sortasiOptions}
       />
 
       {/* Detail Modal */}

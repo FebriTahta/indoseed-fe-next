@@ -44,6 +44,7 @@ export default function SortasiPage() {
     alatOptions,
     statusOptions,
     lokasiOptions,
+    pengeringanOptions,
     handleApplyFilters,
     handleResetFilters,
     statItems,
@@ -288,6 +289,7 @@ export default function SortasiPage() {
         varietasOptions={varietasOptions}
         alatOptions={alatOptions}
         lokasiOptions={lokasiOptions}
+        pengeringanOptions={pengeringanOptions}
       />
 
       {/* Edit Modal */}
@@ -301,6 +303,7 @@ export default function SortasiPage() {
         varietasOptions={varietasOptions}
         alatOptions={alatOptions}
         lokasiOptions={lokasiOptions}
+        pengeringanOptions={pengeringanOptions}
       />
 
       {/* Detail Modal */}

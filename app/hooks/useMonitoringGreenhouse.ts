@@ -8,6 +8,15 @@ import { Land } from '../types/greenhouse';
 import { Commodity } from '../types/commodity';
 import { Variety } from '../types/variety';
 import { monitoringGreenhouseService } from '../services/monitoringGreenhouseService';
+import { monitoringLahanService } from '../services/monitoringLahanService';
+import { MonitoringLahanItem } from '../types/monitoringLahan';
+
+export const DEFAULT_LAHAN_OPTIONS: MonitoringLahanItem[] = [
+  { id: 'la-1', kodeLahan: 'LA-2605-0001', lokasi: 'Blok A - Petak 1', komoditas: 'Padi', varietas: 'Inpari 32', luas: 12.50, tanggalTanam: '01/05/2026', umurHst: '41 HST', kondisi: 'Baik', status: 'Aktif' },
+  { id: 'la-2', kodeLahan: 'LA-2605-0002', lokasi: 'Blok A - Petak 2', komoditas: 'Jagung', varietas: 'Pioneer 21', luas: 8.20, tanggalTanam: '05/05/2026', umurHst: '37 HST', kondisi: 'Baik', status: 'Aktif' },
+  { id: 'la-3', kodeLahan: 'LA-2605-0003', lokasi: 'Blok B - Petak 1', komoditas: 'Kedelai', varietas: 'Anjasmoro', luas: 10.00, tanggalTanam: '10/05/2026', umurHst: '32 HST', kondisi: 'Perlu Perhatian', status: 'Aktif' },
+  { id: 'la-4', kodeLahan: 'LA-2605-0004', lokasi: 'Blok B - Petak 2', komoditas: 'Padi', varietas: 'Inpari 42', luas: 9.75, tanggalTanam: '02/05/2026', umurHst: '40 HST', kondisi: 'Baik', status: 'Aktif' },
+];
 
 export const INITIAL_GREENHOUSE_LIST: MonitoringGreenhouseItem[] = [
   {
@@ -106,8 +115,26 @@ export function useMonitoringGreenhouse() {
   const { varieties } = useVarietas();
 
   const [greenhouseList, setGreenhouseList] = useState<MonitoringGreenhouseItem[]>(INITIAL_GREENHOUSE_LIST);
+  const [lahanOptions, setLahanOptions] = useState<MonitoringLahanItem[]>(DEFAULT_LAHAN_OPTIONS);
   const [loading, setLoading] = useState(false);
   const [apiStats, setApiStats] = useState<any>(null);
+
+  // Fetch Monitoring Lahan List for Reference Dropdown
+  const fetchLahanOptions = useCallback(async () => {
+    try {
+      const res = await monitoringLahanService.getMonitoringLahanList({ limit: 100 });
+      const list = res?.data || [];
+      if (list.length > 0) {
+        setLahanOptions(list);
+      }
+    } catch (err) {
+      console.error('Error fetching Monitoring Lahan options:', err);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchLahanOptions();
+  }, [fetchLahanOptions]);
 
   // Filter states
   const [filterPeriode, setFilterPeriode] = useState('01/06/2026 - 30/06/2026');
@@ -385,6 +412,7 @@ export function useMonitoringGreenhouse() {
     varietasOptions,
     statusOptions,
     kondisiOptions,
+    lahanOptions,
     handleApplyFilters,
     handleResetFilters,
     statItems,

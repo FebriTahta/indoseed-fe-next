@@ -2,6 +2,8 @@ export interface BatchProduksiItem {
   id?: string;
   no?: number;
   kodeBatch: string;
+  treatmentId?: string;
+  referensiTreatment?: string;
   komoditas: string;
   varietas: string;
   sumberBahan: string;

@@ -2,6 +2,8 @@ export interface MonitoringGreenhouseItem {
   id?: string;
   no?: number;
   kodeGreenhouse: string;
+  lahanId?: string;
+  referensiLahan?: string;
   lokasi: string;
   komoditas: string;
   varietas: string;

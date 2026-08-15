@@ -8,6 +8,16 @@ import { Land } from '../types/greenhouse';
 import { Commodity } from '../types/commodity';
 import { Variety } from '../types/variety';
 import { sortasiService } from '../services/sortasiService';
+import { pengeringanService } from '../services/pengeringanService';
+import { PengeringanBatchItem } from '../types/pengeringan';
+
+export const DEFAULT_PENGERINGAN_OPTIONS: PengeringanBatchItem[] = [
+  { id: 'png-1', kodeBatch: 'PN-2606-0001', komoditas: 'Padi', varietas: 'Inpari 32', alatPengering: 'DR-01', beratMasuk: 10000, kadarAirMasuk: 19.8, kadarAirTarget: 12.0, kadarAirSaatIni: 12.3, beratKeluar: 9650, status: 'Selesai', selesai: '09/06/2026 15:30' },
+  { id: 'png-2', kodeBatch: 'PN-2606-0002', komoditas: 'Jagung', varietas: 'Pioneer 21', alatPengering: 'DR-02', beratMasuk: 8000, kadarAirMasuk: 18.5, kadarAirTarget: 13.0, kadarAirSaatIni: 13.1, beratKeluar: 7720, status: 'Selesai', selesai: '09/06/2026 17:45' },
+  { id: 'png-3', kodeBatch: 'PN-2606-0003', komoditas: 'Padi', varietas: 'Ciliwung', alatPengering: 'DR-01', beratMasuk: 10500, kadarAirMasuk: 21.2, kadarAirTarget: 12.0, kadarAirSaatIni: 13.8, beratKeluar: 9800, status: 'Selesai', selesai: '10/06/2026 11:20' },
+  { id: 'png-4', kodeBatch: 'PN-2606-0004', komoditas: 'Kedelai', varietas: 'Anjasmoro', alatPengering: 'DR-03', beratMasuk: 6000, kadarAirMasuk: 17.6, kadarAirTarget: 11.5, kadarAirSaatIni: 11.5, beratKeluar: 5050, status: 'Selesai', selesai: '10/06/2026 14:00' },
+  { id: 'png-5', kodeBatch: 'PN-2606-0005', komoditas: 'Padi', varietas: 'Inpari 42', alatPengering: 'DR-02', beratMasuk: 9000, kadarAirMasuk: 20.1, kadarAirTarget: 12.0, kadarAirSaatIni: 12.0, beratKeluar: 7960, status: 'Selesai', selesai: '10/06/2026 16:30' },
+];
 
 export const INITIAL_SORTASI_BATCH_LIST: SortasiBatchItem[] = [
   {
@@ -131,8 +141,26 @@ export function useSortasi() {
   const { varieties } = useVarietas();
 
   const [batchList, setBatchList] = useState<SortasiBatchItem[]>(INITIAL_SORTASI_BATCH_LIST);
+  const [pengeringanOptions, setPengeringanOptions] = useState<PengeringanBatchItem[]>(DEFAULT_PENGERINGAN_OPTIONS);
   const [loading, setLoading] = useState(false);
   const [apiStats, setApiStats] = useState<any>(null);
+
+  // Fetch Pengeringan List for Reference Dropdown
+  const fetchPengeringanOptions = useCallback(async () => {
+    try {
+      const res = await pengeringanService.getPengeringanList({ limit: 100 });
+      const list = res?.data || [];
+      if (list.length > 0) {
+        setPengeringanOptions(list);
+      }
+    } catch (err) {
+      console.error('Error fetching Pengeringan options:', err);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchPengeringanOptions();
+  }, [fetchPengeringanOptions]);
 
   // Filter states
   const [filterPeriode, setFilterPeriode] = useState('01/06/2026 - 30/06/2026');
@@ -414,6 +442,7 @@ export function useSortasi() {
     alatOptions,
     statusOptions,
     lokasiOptions,
+    pengeringanOptions,
     handleApplyFilters,
     handleResetFilters,
     statItems,

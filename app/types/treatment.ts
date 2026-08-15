@@ -2,6 +2,8 @@ export interface TreatmentBatchItem {
   id?: string;
   no?: number;
   kodeBatch: string;
+  sortasiId?: string;
+  referensiSortasi?: string;
   komoditas: string;
   varietas: string;
   treatment: string;

@@ -43,6 +43,7 @@ export default function MonitoringGreenhousePage() {
     varietasOptions,
     statusOptions,
     kondisiOptions,
+    lahanOptions,
     handleApplyFilters,
     handleResetFilters,
     statItems,
@@ -323,6 +324,7 @@ export default function MonitoringGreenhousePage() {
         lokasiOptions={lokasiOptions}
         komoditasOptions={komoditasOptions}
         varietasOptions={varietasOptions}
+        lahanOptions={lahanOptions}
       />
 
       {/* Edit Modal */}
@@ -335,6 +337,7 @@ export default function MonitoringGreenhousePage() {
         lokasiOptions={lokasiOptions}
         komoditasOptions={komoditasOptions}
         varietasOptions={varietasOptions}
+        lahanOptions={lahanOptions}
       />
 
       {/* Detail Modal */}
