@@ -10,6 +10,9 @@ import 'react-toastify/dist/ReactToastify.css';
 import { useDispatch } from 'react-redux';
 import { setSettings } from '@/shared/redux/action';
 
+import api from '@/app/lib/axios';
+import uploadService from '@/app/services/uploadService';
+
 // FilePond
 import { FilePond, registerPlugin } from 'react-filepond';
 import 'filepond/dist/filepond.min.css';
@@ -42,13 +45,8 @@ export default function SistemPengaturanPage() {
   const fetchSettings = async () => {
     try {
       setInitialLoading(true);
-      const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080'}/api/settings`, {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
-      const data = await res.json();
+      const res = await api.get('/settings');
+      const data = res.data;
       if (data.status === 'success') {
         setFormData({
           namaWebsite: data.data.namaWebsite || '',
@@ -73,24 +71,11 @@ export default function SistemPengaturanPage() {
   const uploadLogo = async (): Promise<string | null> => {
     if (!selectedFile) return formData.logoWebsite;
 
-    const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
-    const uploadData = new FormData();
-    uploadData.append('file', selectedFile);
-    uploadData.append('folder', 'settings');
-
-    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080'}/api/upload`, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${token}`
-      },
-      body: uploadData
-    });
-
-    const data = await res.json();
-    if (data.success) {
-      return data.data.fileUrl;
+    const res = await uploadService.uploadFile(selectedFile, 'settings');
+    if (res.success) {
+      return res.data.fileUrl;
     }
-    throw new Error(data.message || 'Gagal mengupload logo');
+    throw new Error('Gagal mengupload logo');
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -110,16 +95,9 @@ export default function SistemPengaturanPage() {
         logoWebsite: finalLogoUrl
       };
 
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080'}/api/settings`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify(payload)
-      });
+      const res = await api.put('/settings', payload);
 
-      const data = await res.json();
+      const data = res.data;
       if (data.status === 'success') {
         toast.success('Pengaturan berhasil disimpan');
         // Update local state to match response
@@ -218,7 +196,7 @@ export default function SistemPengaturanPage() {
                                 <div 
                                     className="h-16 w-full max-w-[200px]"
                                     style={{
-                                        WebkitMaskImage: `url(${previewLogo.startsWith('http') ? previewLogo : `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080'}${previewLogo}`})`,
+                                        WebkitMaskImage: `url(${previewLogo.startsWith('http') ? previewLogo : `${process.env.NEXT_PUBLIC_API_BASE_URL?.replace('/api', '') || 'http://localhost:8080'}${previewLogo}`})`,
                                         WebkitMaskSize: 'contain',
                                         WebkitMaskRepeat: 'no-repeat',
                                         WebkitMaskPosition: 'center',
