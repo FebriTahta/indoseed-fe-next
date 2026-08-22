@@ -1,7 +1,8 @@
 import Select from 'react-select';
 import { useId } from 'react';
 
-const SpkSelect = ({ option, menuplacement, id, autofocus, noOptionsmessage, classNameprefix, defaultvalue, mainClass="", onfunchange, disabled, name, getValue, clearable, multi, searchable, placeholder, ...rest }) => {
+const SpkSelect = (props) => {
+    const { option, menuplacement, id, autofocus, noOptionsmessage, classNameprefix, defaultvalue, mainClass="", onfunchange, disabled, name, getValue, clearable, multi, searchable, placeholder, ...rest } = props;
     const defaultId = useId();
     const instanceId = id || name || defaultId;
 
