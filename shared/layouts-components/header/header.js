@@ -14,194 +14,195 @@ import { basePath } from '@/next.config';
 import { data$, getState, setState } from "../services/switcherServices";
 
 const Header = () => {
-    const router = useRouter();
+  const settings = useSelector((state) => state.reducer.settings);
+  const router = useRouter();
 
-    const handleLogout = async (e) => {
-        e.preventDefault();
-        try {
-            const token = localStorage.getItem('token');
-            const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8080/api';
-            if (token) {
-                await fetch(`${baseUrl}/auth/logout`, {
-                    method: 'POST',
-                    headers: {
-                        'Authorization': `Bearer ${token}`,
-                        'Content-Type': 'application/json'
-                    }
-                });
-            }
-        } catch (error) {
-            console.error("Logout error:", error);
-        } finally {
-            localStorage.removeItem('token');
-            router.push('/');
-        }
-    };
-
-    //Menu-Close
-    let [variable, setVariable] = useState(getState());
-
-    useEffect(() => {
-        const subscription = data$.subscribe((e) => {
-            // No need to manually update component state, the UI will re-render automatically
-            setVariable(e);
-        });
-
-        return () => subscription.unsubscribe(); // Clean up the subscription
-    }, []);
-  //MenuClose
-    function menuClose() {
-      const theme = variable;
-
-      if (window.innerWidth <= 992) {
-          const newState = {
-              toggled: "close"
+  const handleLogout = async (e) => {
+    e.preventDefault();
+    try {
+      const token = localStorage.getItem('token');
+      const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8080/api';
+      if (token) {
+        await fetch(`${baseUrl}/auth/logout`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
           }
-          setState(newState);
+        });
       }
+    } catch (error) {
+      console.error("Logout error:", error);
+    } finally {
+      localStorage.removeItem('token');
+      router.push('/');
+    }
+  };
 
-      if (window.innerWidth >= 992) {
-          const local_varaiable = theme;
-          const newToggledValue = local_varaiable.toggled ? local_varaiable.toggled : '';
+  //Menu-Close
+  let [variable, setVariable] = useState(getState());
 
-          setState({ toggled: newToggledValue });
+  useEffect(() => {
+    const subscription = data$.subscribe((e) => {
+      // No need to manually update component state, the UI will re-render automatically
+      setVariable(e);
+    });
+
+    return () => subscription.unsubscribe(); // Clean up the subscription
+  }, []);
+  //MenuClose
+  function menuClose() {
+    const theme = variable;
+
+    if (window.innerWidth <= 992) {
+      const newState = {
+        toggled: "close"
       }
+      setState(newState);
+    }
+
+    if (window.innerWidth >= 992) {
+      const local_varaiable = theme;
+      const newToggledValue = local_varaiable.toggled ? local_varaiable.toggled : '';
+
+      setState({ toggled: newToggledValue });
+    }
   }
 
   const overlayRef = useRef(null);
- //Toggle-Function
+  //Toggle-Function
   const toggleSidebar = () => {
-      const theme = variable;
-      const sidemenuType = theme.dataNavLayout;
+    const theme = variable;
+    const sidemenuType = theme.dataNavLayout;
 
-      if (window.innerWidth >= 992) {
-          if (sidemenuType === "vertical") {
-              const verticalStyle = theme.dataVerticalStyle;
-              const navStyle = theme.dataNavStyle;
-              // Handle vertical styles
-              switch (verticalStyle) {
-                  case "closed":
-                      // Toggle between open/close state for "closed" vertical style
-                      setState({
-                          dataNavStyle: "",
-                          toggled: theme.toggled === "close-menu-close" ? "" : "close-menu-close"
-                      });
-                      break;
-                  case "overlay":
-                      // Handle icon-overlay state with window width check
-                      setState({
-                          dataNavStyle: "",
-                          toggled: theme.toggled === "icon-overlay-close" ? "" : "icon-overlay-close",
-                          iconOverlay: ""
-                      });
+    if (window.innerWidth >= 992) {
+      if (sidemenuType === "vertical") {
+        const verticalStyle = theme.dataVerticalStyle;
+        const navStyle = theme.dataNavStyle;
+        // Handle vertical styles
+        switch (verticalStyle) {
+          case "closed":
+            // Toggle between open/close state for "closed" vertical style
+            setState({
+              dataNavStyle: "",
+              toggled: theme.toggled === "close-menu-close" ? "" : "close-menu-close"
+            });
+            break;
+          case "overlay":
+            // Handle icon-overlay state with window width check
+            setState({
+              dataNavStyle: "",
+              toggled: theme.toggled === "icon-overlay-close" ? "" : "icon-overlay-close",
+              iconOverlay: ""
+            });
 
-                      if (theme.toggled !== "icon-overlay-close" && window.innerWidth >= 992) {
-                          setState({
-                              toggled: "icon-overlay-close",
-                              iconOverlay: "",
-                          });
-                      }
-                      break;
-                  case "icontext":
-                      // Handle icon-text state
-                      setState({
-                          dataNavStyle: "",
-                          toggled: theme.toggled === "icon-text-close" ? "" : "icon-text-close"
-                      });
-                      break;
-                  case "doublemenu":
-                      // Handle double menu state
-                      setState({ dataNavStyle: "" });
-                      if (theme.toggled === "double-menu-open") {
-                          setState({ toggled: "double-menu-close" });
-                      } else {
-                          if (theme.activeMenuItem) {
-                              const activeIndex = theme.menuItems.findIndex((item) => item.id === theme.activeMenuItem);
+            if (theme.toggled !== "icon-overlay-close" && window.innerWidth >= 992) {
+              setState({
+                toggled: "icon-overlay-close",
+                iconOverlay: "",
+              });
+            }
+            break;
+          case "icontext":
+            // Handle icon-text state
+            setState({
+              dataNavStyle: "",
+              toggled: theme.toggled === "icon-text-close" ? "" : "icon-text-close"
+            });
+            break;
+          case "doublemenu":
+            // Handle double menu state
+            setState({ dataNavStyle: "" });
+            if (theme.toggled === "double-menu-open") {
+              setState({ toggled: "double-menu-close" });
+            } else {
+              if (theme.activeMenuItem) {
+                const activeIndex = theme.menuItems.findIndex((item) => item.id === theme.activeMenuItem);
 
-                              if (activeIndex !== -1 && theme.menuItems[activeIndex].next) {
-                                  const newState = {
-                                      toggled: 'double-menu-open',
-                                      activeMenuItem: theme.menuItems[activeIndex].next.id,
-                                  }
-                                  setState(newState)
-                              }
-                              else {
-                                  const newState = {
-                                      toggled: 'double-menu-close'
-                                  }
-                                  setState(newState)
-                              }
-                          }
-                      }
-                      break;
-                  case "detached":
-                      // Handle detached menu state
-                      setState({
-                          toggled: theme.toggled === "detached-close" ? "" : "detached-close",
-                          iconOverlay: ""
-                      });
-                      break;
-                  default:
-                      setState({ toggled: "" });
-                      break;
-              }
-
-              // Handle navStyle changes
-              switch (navStyle) {
-                  case "menu-click":
-                      setState({
-                          toggled: theme.toggled === "menu-click-closed" ? "" : "menu-click-closed"
-                      });
-                      break;
-                  case "menu-hover":
-                      setState({
-                          toggled: theme.toggled === "menu-hover-closed" ? "" : "menu-hover-closed"
-                      });
-                      break;
-                  case "icon-click":
-                      setState({
-                          toggled: theme.toggled === "icon-click-closed" ? "" : "icon-click-closed"
-                      });
-                      break;
-                  case "icon-hover":
-                      setState({
-                          toggled: theme.toggled === "icon-hover-closed" ? "" : "icon-hover-closed"
-                      });
-                      break;
-              }
-          }
-      } else {
-          // For mobile view (screen width < 992px)
-          if (theme.toggled === "close") {
-              setState({ toggled: "open" });
-              setTimeout(() => {
-                  if (theme.toggled === "open") {
-                      const overlay = overlayRef.current
-                      if (overlay) {
-                          overlay.classList.add("active");
-                          overlay.addEventListener("click", () => {
-                              const overlay = overlayRef.current
-                              if (overlay) {
-                                  overlay.classList.remove("active");
-                                  menuClose();
-                              }
-                          });
-                      }
+                if (activeIndex !== -1 && theme.menuItems[activeIndex].next) {
+                  const newState = {
+                    toggled: 'double-menu-open',
+                    activeMenuItem: theme.menuItems[activeIndex].next.id,
                   }
+                  setState(newState)
+                }
+                else {
+                  const newState = {
+                    toggled: 'double-menu-close'
+                  }
+                  setState(newState)
+                }
+              }
+            }
+            break;
+          case "detached":
+            // Handle detached menu state
+            setState({
+              toggled: theme.toggled === "detached-close" ? "" : "detached-close",
+              iconOverlay: ""
+            });
+            break;
+          default:
+            setState({ toggled: "" });
+            break;
+        }
 
-                  window.addEventListener("resize", () => {
-                      if (window.innerWidth >= 992) {
-                          const overlay = overlayRef.current
-                          if (overlay) {
-                              overlay.classList.remove("active");
-                          }
-                      }
-                  });
-              }, 100);
-          } else {
-              setState({ toggled: "close" });
-          }
+        // Handle navStyle changes
+        switch (navStyle) {
+          case "menu-click":
+            setState({
+              toggled: theme.toggled === "menu-click-closed" ? "" : "menu-click-closed"
+            });
+            break;
+          case "menu-hover":
+            setState({
+              toggled: theme.toggled === "menu-hover-closed" ? "" : "menu-hover-closed"
+            });
+            break;
+          case "icon-click":
+            setState({
+              toggled: theme.toggled === "icon-click-closed" ? "" : "icon-click-closed"
+            });
+            break;
+          case "icon-hover":
+            setState({
+              toggled: theme.toggled === "icon-hover-closed" ? "" : "icon-hover-closed"
+            });
+            break;
+        }
       }
+    } else {
+      // For mobile view (screen width < 992px)
+      if (theme.toggled === "close") {
+        setState({ toggled: "open" });
+        setTimeout(() => {
+          if (theme.toggled === "open") {
+            const overlay = overlayRef.current
+            if (overlay) {
+              overlay.classList.add("active");
+              overlay.addEventListener("click", () => {
+                const overlay = overlayRef.current
+                if (overlay) {
+                  overlay.classList.remove("active");
+                  menuClose();
+                }
+              });
+            }
+          }
+
+          window.addEventListener("resize", () => {
+            if (window.innerWidth >= 992) {
+              const overlay = overlayRef.current
+              if (overlay) {
+                overlay.classList.remove("active");
+              }
+            }
+          });
+        }, 100);
+      } else {
+        setState({ toggled: "close" });
+      }
+    }
   };
 
   //full screen
@@ -216,49 +217,49 @@ const Header = () => {
       document.exitFullscreen().then(() => setFullScreen(false));
     }
   };
- 
+
 
 
   //Dark Model
 
-    //Dark-Theme
-    const toggleTheme = () => {
-      const currentTheme = getState();
+  //Dark-Theme
+  const toggleTheme = () => {
+    const currentTheme = getState();
+    const newState = {
+      class: currentTheme.class === 'dark' ? 'light' : 'dark',
+      dataHeaderStyles: currentTheme.class === 'dark' ? 'light' : 'dark',
+      dataMenuStyles: currentTheme.class === 'dark' ? 'light' : 'dark',
+    }
+    setState(newState)
+    if (newState.class != 'dark') {
       const newState = {
-          class: currentTheme.class === 'dark' ? 'light' : 'dark',
-          dataHeaderStyles: currentTheme.class === 'dark' ? 'light' : 'dark',
-          dataMenuStyles: 'dark',
+        bodyBg: '',
+        lightRgb: '',
+        darkBg: '',
+        inputBorder: '',
+        gray: '',
       }
       setState(newState)
-      if (newState.class != 'dark') {
-          const newState = {
-              bodyBg: '',
-              lightRgb: '',
-              darkBg: '',
-              inputBorder: '',
-              gray: '',
-          }
-          setState(newState)
-          localStorage.setItem("xintralightTheme", "light");
-          localStorage.removeItem("xintradarkTheme");
-          localStorage.removeItem("xintramenu");
-          localStorage.removeItem("xintraheader");
-          localStorage.removeItem("bodyBg");
-          localStorage.removeItem("darkBg");
-          localStorage.removeItem("bgImg");
-          localStorage.removeItem("lightRgb");
-      }
-      else {
-          localStorage.setItem("xintradarkTheme", "dark");
-          localStorage.removeItem("xintralightTheme");
-          localStorage.removeItem("xintramenu");
-          localStorage.removeItem("xintraheader");
-          localStorage.removeItem("bodyBg");
-          localStorage.removeItem("darkBg");
-          localStorage.removeItem("inputBorder");
-          localStorage.removeItem("lightRgb");
-          localStorage.removeItem("gray");
-      }
+      localStorage.setItem("xintralightTheme", "light");
+      localStorage.removeItem("xintradarkTheme");
+      localStorage.removeItem("xintramenu");
+      localStorage.removeItem("xintraheader");
+      localStorage.removeItem("bodyBg");
+      localStorage.removeItem("darkBg");
+      localStorage.removeItem("bgImg");
+      localStorage.removeItem("lightRgb");
+    }
+    else {
+      localStorage.setItem("xintradarkTheme", "dark");
+      localStorage.removeItem("xintralightTheme");
+      localStorage.removeItem("xintramenu");
+      localStorage.removeItem("xintraheader");
+      localStorage.removeItem("bodyBg");
+      localStorage.removeItem("darkBg");
+      localStorage.removeItem("inputBorder");
+      localStorage.removeItem("lightRgb");
+      localStorage.removeItem("gray");
+    }
   }
 
   //Switcher-Icon
@@ -502,16 +503,19 @@ const Header = () => {
     setCartItemCount(updatedCart.length);
   };
 
+  const logoUrl = settings?.logoWebsite
+    ? (settings.logoWebsite.startsWith('http') ? settings.logoWebsite : `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080'}${settings.logoWebsite}`)
+    : null;
 
   return (
     <Fragment>
       <header className="app-header" id="header">
         {/* <!-- Start::main-header-container --> */}
         <div className="main-header-container container-fluid">
-        {variable.toggled === "open" && (
+          {variable.toggled === "open" && (
 
-<div ref={overlayRef} id="responsive-overlay"></div>
-)}
+            <div ref={overlayRef} id="responsive-overlay"></div>
+          )}
 
           {/* <!-- Start::header-content-left --> */}
           <div className="header-content-left">
@@ -519,12 +523,70 @@ const Header = () => {
             <div className="header-element">
               <div className="horizontal-logo">
                 <Link href="/dashboard/sales" className="header-logo">
-                  <Image fill src={`${process.env.NODE_ENV === 'production' ? basePath : ''}/assets/images/brand-logos/desktop-logo.png`} alt="logo" className="desktop-logo" />
-                  <Image fill src={`${process.env.NODE_ENV === 'production' ? basePath : ''}/assets/images/brand-logos/toggle-dark.png`} alt="logo" className="toggle-dark" />
-                  <Image fill src={`${process.env.NODE_ENV === 'production' ? basePath : ''}/assets/images/brand-logos/desktop-dark.png`} alt="logo" className="desktop-dark" />
-                  <Image fill src={`${process.env.NODE_ENV === 'production' ? basePath : ''}/assets/images/brand-logos/toggle-logo.png`} alt="logo" className="toggle-logo" />
-                  <Image fill src={`${process.env.NODE_ENV === 'production' ? basePath : ''}/assets/images/brand-logos/toggle-white.png`} alt="logo" className="toggle-white" />
-                  <Image fill src={`${process.env.NODE_ENV === 'production' ? basePath : ''}/assets/images/brand-logos/desktop-white.png`} alt="logo" className="desktop-white" />
+                  {settings?.logoWebsite ? (
+                    <>
+                      <div className="relative flex desktop-logo w-48 h-14 items-center justify-center">
+                        <img src={logoUrl} alt="logo" className="!w-full !h-full object-contain opacity-0" />
+                        <div className="absolute inset-0" style={{ WebkitMaskImage: `url(${logoUrl})`, maskImage: `url(${logoUrl})`, WebkitMaskSize: 'contain', maskSize: 'contain', WebkitMaskRepeat: 'no-repeat', maskRepeat: 'no-repeat', WebkitMaskPosition: 'center', maskPosition: 'center', backgroundColor: settings.logoColor || '#11b238' }}></div>
+                      </div>
+                      <div className="relative flex toggle-dark w-28 h-14 items-center justify-center -mt-4">
+                        <img src={logoUrl} alt="logo" className="!w-full !h-full object-contain opacity-0" />
+                        <div className="absolute inset-0" style={{ WebkitMaskImage: `url(${logoUrl})`, maskImage: `url(${logoUrl})`, WebkitMaskSize: 'contain', maskSize: 'contain', WebkitMaskRepeat: 'no-repeat', maskRepeat: 'no-repeat', WebkitMaskPosition: 'center', maskPosition: 'center', backgroundColor: settings.logoColor || '#11b238' }}></div>
+                      </div>
+                      <div className="relative flex desktop-dark w-48 h-14 items-center justify-center">
+                        <img src={logoUrl} alt="logo" className="!w-full !h-full object-contain opacity-0" />
+                        <div className="absolute inset-0" style={{ WebkitMaskImage: `url(${logoUrl})`, maskImage: `url(${logoUrl})`, WebkitMaskSize: 'contain', maskSize: 'contain', WebkitMaskRepeat: 'no-repeat', maskRepeat: 'no-repeat', WebkitMaskPosition: 'center', maskPosition: 'center', backgroundColor: settings.logoColor || '#11b238' }}></div>
+                      </div>
+                      <div className="relative flex toggle-logo w-28 h-14 items-center justify-center -mt-4">
+                        <img src={logoUrl} alt="logo" className="!w-full !h-full object-contain opacity-0" />
+                        <div className="absolute inset-0" style={{ WebkitMaskImage: `url(${logoUrl})`, maskImage: `url(${logoUrl})`, WebkitMaskSize: 'contain', maskSize: 'contain', WebkitMaskRepeat: 'no-repeat', maskRepeat: 'no-repeat', WebkitMaskPosition: 'center', maskPosition: 'center', backgroundColor: settings.logoColor || '#11b238' }}></div>
+                      </div>
+                      <div className="relative flex toggle-white w-28 h-14 items-center justify-center -mt-4">
+                        <img src={logoUrl} alt="logo" className="!w-full !h-full object-contain opacity-0" />
+                        <div className="absolute inset-0" style={{ WebkitMaskImage: `url(${logoUrl})`, maskImage: `url(${logoUrl})`, WebkitMaskSize: 'contain', maskSize: 'contain', WebkitMaskRepeat: 'no-repeat', maskRepeat: 'no-repeat', WebkitMaskPosition: 'center', maskPosition: 'center', backgroundColor: settings.logoColor || '#11b238' }}></div>
+                      </div>
+                      <div className="relative flex desktop-white w-48 h-14 items-center justify-center">
+                        <img src={logoUrl} alt="logo" className="!w-full !h-full object-contain opacity-0" />
+                        <div className="absolute inset-0" style={{ WebkitMaskImage: `url(${logoUrl})`, maskImage: `url(${logoUrl})`, WebkitMaskSize: 'contain', maskSize: 'contain', WebkitMaskRepeat: 'no-repeat', maskRepeat: 'no-repeat', WebkitMaskPosition: 'center', maskPosition: 'center', backgroundColor: settings.logoColor || '#11b238' }}></div>
+                      </div>
+                    </>
+                  ) : settings?.logoColor ? (
+                    <>
+                      <div className="relative flex desktop-logo w-48 h-14 items-center justify-center">
+                        <img src={`${process.env.NODE_ENV === 'production' ? basePath : ''}/assets/images/brand-logos/desktop-logo.png`} alt="logo" className="!w-full !h-full object-contain opacity-0" />
+                        <div className="absolute inset-0" style={{ WebkitMaskImage: `url(${`${process.env.NODE_ENV === 'production' ? basePath : ''}/assets/images/brand-logos/desktop-logo.png`})`, maskImage: `url(${`${process.env.NODE_ENV === 'production' ? basePath : ''}/assets/images/brand-logos/desktop-logo.png`})`, WebkitMaskSize: 'contain', maskSize: 'contain', WebkitMaskRepeat: 'no-repeat', maskRepeat: 'no-repeat', WebkitMaskPosition: 'center', maskPosition: 'center', backgroundColor: settings.logoColor }}></div>
+                      </div>
+                      <div className="relative flex toggle-dark w-28 h-14 items-center justify-center -mt-4">
+                        <img src={`${process.env.NODE_ENV === 'production' ? basePath : ''}/assets/images/brand-logos/toggle-dark.png`} alt="logo" className="!w-full !h-full object-contain opacity-0" />
+                        <div className="absolute inset-0" style={{ WebkitMaskImage: `url(${`${process.env.NODE_ENV === 'production' ? basePath : ''}/assets/images/brand-logos/toggle-dark.png`})`, maskImage: `url(${`${process.env.NODE_ENV === 'production' ? basePath : ''}/assets/images/brand-logos/toggle-dark.png`})`, WebkitMaskSize: 'contain', maskSize: 'contain', WebkitMaskRepeat: 'no-repeat', maskRepeat: 'no-repeat', WebkitMaskPosition: 'center', maskPosition: 'center', backgroundColor: settings.logoColor }}></div>
+                      </div>
+                      <div className="relative flex desktop-dark w-48 h-14 items-center justify-center">
+                        <img src={`${process.env.NODE_ENV === 'production' ? basePath : ''}/assets/images/brand-logos/desktop-dark.png`} alt="logo" className="!w-full !h-full object-contain opacity-0" />
+                        <div className="absolute inset-0" style={{ WebkitMaskImage: `url(${`${process.env.NODE_ENV === 'production' ? basePath : ''}/assets/images/brand-logos/desktop-dark.png`})`, maskImage: `url(${`${process.env.NODE_ENV === 'production' ? basePath : ''}/assets/images/brand-logos/desktop-dark.png`})`, WebkitMaskSize: 'contain', maskSize: 'contain', WebkitMaskRepeat: 'no-repeat', maskRepeat: 'no-repeat', WebkitMaskPosition: 'center', maskPosition: 'center', backgroundColor: settings.logoColor }}></div>
+                      </div>
+                      <div className="relative flex toggle-logo w-28 h-14 items-center justify-center -mt-4">
+                        <img src={`${process.env.NODE_ENV === 'production' ? basePath : ''}/assets/images/brand-logos/toggle-logo.png`} alt="logo" className="!w-full !h-full object-contain opacity-0" />
+                        <div className="absolute inset-0" style={{ WebkitMaskImage: `url(${`${process.env.NODE_ENV === 'production' ? basePath : ''}/assets/images/brand-logos/toggle-logo.png`})`, maskImage: `url(${`${process.env.NODE_ENV === 'production' ? basePath : ''}/assets/images/brand-logos/toggle-logo.png`})`, WebkitMaskSize: 'contain', maskSize: 'contain', WebkitMaskRepeat: 'no-repeat', maskRepeat: 'no-repeat', WebkitMaskPosition: 'center', maskPosition: 'center', backgroundColor: settings.logoColor }}></div>
+                      </div>
+                      <div className="relative flex toggle-white w-28 h-14 items-center justify-center -mt-4">
+                        <img src={`${process.env.NODE_ENV === 'production' ? basePath : ''}/assets/images/brand-logos/toggle-white.png`} alt="logo" className="!w-full !h-full object-contain opacity-0" />
+                        <div className="absolute inset-0" style={{ WebkitMaskImage: `url(${`${process.env.NODE_ENV === 'production' ? basePath : ''}/assets/images/brand-logos/toggle-white.png`})`, maskImage: `url(${`${process.env.NODE_ENV === 'production' ? basePath : ''}/assets/images/brand-logos/toggle-white.png`})`, WebkitMaskSize: 'contain', maskSize: 'contain', WebkitMaskRepeat: 'no-repeat', maskRepeat: 'no-repeat', WebkitMaskPosition: 'center', maskPosition: 'center', backgroundColor: settings.logoColor }}></div>
+                      </div>
+                      <div className="relative flex desktop-white w-48 h-14 items-center justify-center">
+                        <img src={`${process.env.NODE_ENV === 'production' ? basePath : ''}/assets/images/brand-logos/desktop-white.png`} alt="logo" className="!w-full !h-full object-contain opacity-0" />
+                        <div className="absolute inset-0" style={{ WebkitMaskImage: `url(${`${process.env.NODE_ENV === 'production' ? basePath : ''}/assets/images/brand-logos/desktop-white.png`})`, maskImage: `url(${`${process.env.NODE_ENV === 'production' ? basePath : ''}/assets/images/brand-logos/desktop-white.png`})`, WebkitMaskSize: 'contain', maskSize: 'contain', WebkitMaskRepeat: 'no-repeat', maskRepeat: 'no-repeat', WebkitMaskPosition: 'center', maskPosition: 'center', backgroundColor: settings.logoColor }}></div>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <img src={`${process.env.NODE_ENV === 'production' ? basePath : ''}/assets/images/brand-logos/desktop-logo.png`} alt="logo" className="desktop-logo !w-48 !h-14 object-contain" />
+                      <img src={`${process.env.NODE_ENV === 'production' ? basePath : ''}/assets/images/brand-logos/toggle-dark.png`} alt="logo" className="toggle-dark !w-28 !h-14 -mt-4 object-contain" />
+                      <img src={`${process.env.NODE_ENV === 'production' ? basePath : ''}/assets/images/brand-logos/desktop-dark.png`} alt="logo" className="desktop-dark !w-48 !h-14 object-contain" />
+                      <img src={`${process.env.NODE_ENV === 'production' ? basePath : ''}/assets/images/brand-logos/toggle-logo.png`} alt="logo" className="toggle-logo !w-28 !h-14 -mt-4 object-contain" />
+                      <img src={`${process.env.NODE_ENV === 'production' ? basePath : ''}/assets/images/brand-logos/toggle-white.png`} alt="logo" className="toggle-white !w-28 !h-14 -mt-4 object-contain" />
+                      <img src={`${process.env.NODE_ENV === 'production' ? basePath : ''}/assets/images/brand-logos/desktop-white.png`} alt="logo" className="desktop-white !w-48 !h-14 object-contain" />
+                    </>
+                  )}
                 </Link>
               </div>
             </div>
@@ -757,7 +819,7 @@ const Header = () => {
                 aria-label="anchor"
                 className="hs-dark-mode-active:hidden flex hs-dark-mode group flex-shrink-0 justify-center items-center gap-2  rounded-full font-medium transition-all text-xs dark:bg-bgdark dark:hover:bg-black/20 text-textmuted dark:text-textmuted/50 dark:hover:text-white dark:focus:ring-white/10 dark:focus:ring-offset-white/10"
                 href="#!"
-                
+
               >
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
@@ -778,7 +840,7 @@ const Header = () => {
                 aria-label="anchor"
                 className="hs-dark-mode-active:flex hidden hs-dark-mode group flex-shrink-0 justify-center items-center gap-2  rounded-full font-medium text-defaulttextcolor  transition-all text-xs dark:bg-bodybg dark:bg-bgdark dark:hover:bg-black/20  dark:hover:text-white dark:focus:ring-white/10 dark:focus:ring-offset-white/10"
                 href="#!"
-                
+
               >
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
@@ -1143,7 +1205,7 @@ const Header = () => {
                   />
                 </svg>
               </Link>
-              
+
               {/* <!-- End::header-link|switcher-icon --> */}
             </li>
             {/* <!-- End::header-element --> */}

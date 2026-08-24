@@ -57,21 +57,94 @@
 }
 
 /* Custom Active Link Color for Sidebar */
-.side-menu__item.active {
+html[data-menu-styles] .app-sidebar .side-menu__item.active,
+html[data-menu-styles] .app-sidebar .side-menu__item.active:hover {
     background-color: rgba(10, 143, 62, 0.1) !important;
     color: #0A8F3E !important;
     border-right: 3px solid #0A8F3E !important;
 }
-.side-menu__item.active .side-menu__icon {
+
+html[data-menu-styles] .app-sidebar .side-menu__item.active .side-menu__icon,
+html[data-menu-styles] .app-sidebar .side-menu__item.active .side-menu__label,
+html[data-menu-styles] .app-sidebar .side-menu__item.active .side-menu__angle {
     color: #0A8F3E !important;
     fill: #0A8F3E !important;
 }
 
 /* Submenu active item */
-.slide-menu .side-menu__item.active {
+html[data-menu-styles] .app-sidebar .slide-menu.child1 .side-menu__item.active,
+html[data-menu-styles] .app-sidebar .slide-menu.child2 .side-menu__item.active,
+html[data-menu-styles] .app-sidebar .slide-menu.child3 .side-menu__item.active {
     background-color: rgba(10, 143, 62, 0.1) !important;
     color: #0A8F3E !important;
     font-weight: 600 !important;
     border-right: 0 !important; /* Remove border for submenu to keep it clean */
     border-radius: 4px;
 }
+
+html[data-menu-styles] .app-sidebar .slide-menu.child1 .side-menu__item.active::before,
+html[data-menu-styles] .app-sidebar .slide-menu.child2 .side-menu__item.active::before,
+html[data-menu-styles] .app-sidebar .slide-menu.child3 .side-menu__item.active::before {
+    color: #0A8F3E !important;
+}
+
+html[data-menu-styles] .app-sidebar .slide-menu.child1 .side-menu__item.active .side-menu__label,
+html[data-menu-styles] .app-sidebar .slide-menu.child1 .side-menu__item.active .side-menu__angle,
+html[data-menu-styles] .app-sidebar .slide-menu.child1 .side-menu__item.active .side-menu__icon,
+html[data-menu-styles] .app-sidebar .slide-menu.child2 .side-menu__item.active .side-menu__label,
+html[data-menu-styles] .app-sidebar .slide-menu.child2 .side-menu__item.active .side-menu__angle,
+html[data-menu-styles] .app-sidebar .slide-menu.child2 .side-menu__item.active .side-menu__icon,
+html[data-menu-styles] .app-sidebar .slide-menu.child3 .side-menu__item.active .side-menu__label,
+html[data-menu-styles] .app-sidebar .slide-menu.child3 .side-menu__item.active .side-menu__angle,
+html[data-menu-styles] .app-sidebar .slide-menu.child3 .side-menu__item.active .side-menu__icon {
+    color: #0A8F3E !important;
+    fill: #0A8F3E !important;
+}
+
+/* Hover States for Menu Items */
+html[data-menu-styles] .app-sidebar .side-menu__item:hover {
+    color: #0A8F3E !important;
+}
+html[data-menu-styles] .app-sidebar .side-menu__item:hover .side-menu__icon,
+html[data-menu-styles] .app-sidebar .side-menu__item:hover .side-menu__label,
+html[data-menu-styles] .app-sidebar .side-menu__item:hover .side-menu__angle {
+    color: #0A8F3E !important;
+    fill: #0A8F3E !important;
+}
+
+html[data-menu-styles] .app-sidebar .slide-menu.child1 .side-menu__item:hover,
+html[data-menu-styles] .app-sidebar .slide-menu.child2 .side-menu__item:hover,
+html[data-menu-styles] .app-sidebar .slide-menu.child3 .side-menu__item:hover {
+    color: #0A8F3E !important;
+}
+
+html[data-menu-styles] .app-sidebar .slide-menu.child1 .side-menu__item:hover::before,
+html[data-menu-styles] .app-sidebar .slide-menu.child2 .side-menu__item:hover::before,
+html[data-menu-styles] .app-sidebar .slide-menu.child3 .side-menu__item:hover::before {
+    color: #0A8F3E !important;
+}
+
+html[data-menu-styles] .app-sidebar .slide-menu.child1 .side-menu__item:hover .side-menu__label,
+html[data-menu-styles] .app-sidebar .slide-menu.child1 .side-menu__item:hover .side-menu__angle,
+html[data-menu-styles] .app-sidebar .slide-menu.child1 .side-menu__item:hover .side-menu__icon,
+html[data-menu-styles] .app-sidebar .slide-menu.child2 .side-menu__item:hover .side-menu__label,
+html[data-menu-styles] .app-sidebar .slide-menu.child2 .side-menu__item:hover .side-menu__angle,
+html[data-menu-styles] .app-sidebar .slide-menu.child2 .side-menu__item:hover .side-menu__icon,
+html[data-menu-styles] .app-sidebar .slide-menu.child3 .side-menu__item:hover .side-menu__label,
+html[data-menu-styles] .app-sidebar .slide-menu.child3 .side-menu__item:hover .side-menu__angle,
+html[data-menu-styles] .app-sidebar .slide-menu.child3 .side-menu__item:hover .side-menu__icon {
+    color: #0A8F3E !important;
+    fill: #0A8F3E !important;
+}
+
+/* Custom Font Size for Menu */
+html[data-menu-styles] .app-sidebar .side-menu__item,
+html[data-menu-styles] .app-sidebar .side-menu__label {
+    font-size: 0.75rem !important;
+}
+
+html[data-menu-styles] .app-sidebar .slide-menu .side-menu__item,
+html[data-menu-styles] .app-sidebar .slide-menu .side-menu__label {
+    font-size: 0.7rem !important;
+}
+

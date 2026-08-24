@@ -24,16 +24,35 @@ export default function DayaTumbuhPage() {
   const [commodities, setCommodities] = useState<any[]>([]);
   const [varieties, setVarieties] = useState<any[]>([]);
   const [tests, setTests] = useState<any[]>([]);
+  const [filters, setFilters] = useState<any>({});
+  
+  // Pagination State
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+  const [total, setTotal] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
 
   const fetchData = () => {
-    qcDayaTumbuhService.getDayaTumbuh().then(res => setTests(res.data || [])).catch(console.error);
+    qcDayaTumbuhService.getDayaTumbuh({ page, pageSize, ...filters }).then(res => {
+      if (res?.data && !Array.isArray(res)) {
+        setTests(res.data);
+        setTotal(res.pagination?.totalItems || 0);
+        setTotalPages(res.pagination?.totalPages || 1);
+        if (res.pagination?.currentPage) setPage(res.pagination.currentPage);
+      } else {
+        setTests(Array.isArray(res) ? res : []);
+      }
+    }).catch(console.error);
   };
 
   useEffect(() => {
-    qcService.getMethods().then(res => setMethods(res.data || [])).catch(console.error);
-    commodityService.getCommodities({}).then(res => setCommodities(res.data || [])).catch(console.error);
-    varietyService.getVarieties({}).then(res => setVarieties(res.data || [])).catch(console.error);
     fetchData();
+  }, [page, pageSize, filters]);
+
+  useEffect(() => {
+    qcService.getMethods().then(res => setMethods(Array.isArray(res) ? res : res?.data || [])).catch(console.error);
+    commodityService.getCommodities({}).then(res => setCommodities(Array.isArray(res) ? res : res?.data || [])).catch(console.error);
+    varietyService.getVarieties({}).then(res => setVarieties(Array.isArray(res) ? res : res?.data || [])).catch(console.error);
   }, []);
 
   const statItems: StatItem[] = [
@@ -156,7 +175,19 @@ export default function DayaTumbuhPage() {
       <StatsWidgets items={statItems} columns={6} />
 
       {/* Filter Row */}
-      <FilterSection methods={methods} commodities={commodities} varieties={varieties} />
+      <FilterSection 
+        methods={methods} 
+        commodities={commodities} 
+        varieties={varieties} 
+        onFilter={(newFilters) => {
+          setFilters(newFilters);
+          setPage(1);
+        }}
+        onReset={() => {
+          setFilters({});
+          setPage(1);
+        }}
+      />
 
       {/* Main Content Grid */}
       <div className="grid grid-cols-12 gap-6">
@@ -190,10 +221,9 @@ export default function DayaTumbuhPage() {
                   </thead>
                   <tbody>
                     {tests.map((row, idx) => {
-                      const detail = row.detailPengujian || {};
-                      const dayaTumbuh = detail.jumlahBenihDitanam ? (detail.jumlahBerkecambah / detail.jumlahBenihDitanam) * 100 : 0;
-                      const batasMinimal = 85; 
-                      const status = dayaTumbuh >= batasMinimal ? 'Lulus' : 'Tidak Lulus';
+                      const dayaTumbuh = row.dayaTumbuh ?? (row.jumlahBenihDitanam ? (row.jumlahBerkecambah / row.jumlahBenihDitanam) * 100 : 0);
+                      const batasMinimal = row.batasMinimal ?? 85; 
+                      const status = row.status || (dayaTumbuh >= batasMinimal ? 'Lulus' : 'Tidak Lulus');
 
                       return (
                       <tr key={idx} onClick={() => handleSelectRow(row)} className={`border-b border-gray-50 hover:bg-gray-50/50 cursor-pointer ${selectedTest?.id === row.id ? 'bg-primary/5' : ''}`}>
@@ -207,7 +237,7 @@ export default function DayaTumbuhPage() {
                         <td className="text-sm py-2 px-4 font-semibold">{dayaTumbuh.toFixed(2).replace('.',',')}</td>
                         <td className="text-sm py-2 px-4">{batasMinimal}</td>
                         <td className="py-2 px-4">
-                          <span className={`badge ${status === 'Lulus' ? 'bg-success/10 text-success' : 'bg-danger/10 text-danger'}`}>
+                          <span className={`badge ${status === 'Lulus' ? 'bg-success/10 text-success' : status === 'Tidak Lulus' ? 'bg-danger/10 text-danger' : 'bg-gray-100 text-gray-500'}`}>
                             {status}
                           </span>
                         </td>
@@ -222,17 +252,48 @@ export default function DayaTumbuhPage() {
               </div>
             </div>
             <div className="box-footer border-t border-gray-100 p-3 flex justify-between items-center">
-              <span className="text-sm text-gray-500">Menampilkan 1 - 8 dari 45 data</span>
+              <span className="text-sm text-gray-500">
+                Menampilkan {tests.length > 0 ? (page - 1) * pageSize + 1 : 0} - {Math.min(page * pageSize, total)} dari {total} data
+              </span>
               <div className="flex items-center gap-2">
-                <select className="form-select text-sm h-[38px] py-1 px-2 border-gray-200"><option>10 / halaman</option></select>
+                <select 
+                  className="form-select text-sm h-[38px] py-1 px-2 border-gray-200"
+                  value={pageSize}
+                  onChange={(e) => {
+                    setPageSize(Number(e.target.value));
+                    setPage(1);
+                  }}
+                >
+                  <option value={10}>10 / halaman</option>
+                  <option value={20}>20 / halaman</option>
+                  <option value={50}>50 / halaman</option>
+                </select>
                 <div className="flex gap-1">
-                  <button className="btn btn-sm btn-light p-1 px-2"><i className="ri-arrow-left-s-line"></i></button>
-                  <button className="btn btn-sm btn-primary bg-[#1B4E3B] text-white p-1 px-2">1</button>
-                  <button className="btn btn-sm btn-light p-1 px-2">2</button>
-                  <button className="btn btn-sm btn-light p-1 px-2">3</button>
-                  <button className="btn btn-sm btn-light p-1 px-2">4</button>
-                  <button className="btn btn-sm btn-light p-1 px-2">5</button>
-                  <button className="btn btn-sm btn-light p-1 px-2"><i className="ri-arrow-right-s-line"></i></button>
+                  <button 
+                    className="btn btn-sm btn-light p-1 px-2 disabled:opacity-50"
+                    disabled={page === 1}
+                    onClick={() => setPage(p => Math.max(1, p - 1))}
+                  >
+                    <i className="ri-arrow-left-s-line"></i>
+                  </button>
+                  
+                  {Array.from({ length: totalPages }, (_, i) => i + 1).map(p => (
+                    <button
+                      key={p}
+                      onClick={() => setPage(p)}
+                      className={`btn btn-sm p-1 px-2 ${page === p ? 'btn-primary bg-[#1B4E3B] text-white' : 'btn-light'}`}
+                    >
+                      {p}
+                    </button>
+                  ))}
+
+                  <button 
+                    className="btn btn-sm btn-light p-1 px-2 disabled:opacity-50"
+                    disabled={page === totalPages || totalPages === 0}
+                    onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+                  >
+                    <i className="ri-arrow-right-s-line"></i>
+                  </button>
                 </div>
               </div>
             </div>

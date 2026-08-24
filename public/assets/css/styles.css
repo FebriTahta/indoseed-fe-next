@@ -10834,14 +10834,14 @@ select.tabulator-page-size option {
   @apply relative flex items-center no-underline text-[0.8rem] text-menuprimecolor font-normal border px-5 py-[0.65rem] rounded-lg border-solid border-transparent;
 }
 .app-sidebar .side-menu__item.active {
-  @apply text-primary;
+  @apply text-[#0f7a24] font-semibold;
 }
 .app-sidebar .side-menu__item.active .side-menu__label,
 .app-sidebar .side-menu__item.active .side-menu__angle {
-  @apply text-menuprimecolor;
+  @apply text-[#0f7a24];
 }
 .app-sidebar .side-menu__item.active .side-menu__icon {
-  @apply text-menuprimecolor;
+  @apply text-[#0f7a24];
 }
 .app-sidebar .side-menu__item:hover {
   @apply bg-transparent;
@@ -20181,3 +20181,14 @@ ul.analytics-activity li:last-child {
   filter: invert(1);
   
 }
+/* Custom override for active menu link (hijau sedikit tua) */
+.app-sidebar .side-menu__item.active,
+.app-sidebar .side-menu__item.active .side-menu__label,
+.app-sidebar .side-menu__item.active .side-menu__angle,
+.app-sidebar .side-menu__item.active .side-menu__icon,
+.app-sidebar .slide-menu.child1 .side-menu__item.active,
+.app-sidebar .slide-menu.child2 .side-menu__item.active,
+.app-sidebar .slide-menu.child3 .side-menu__item.active {
+    color: #0f7a24 !important;
+}
+

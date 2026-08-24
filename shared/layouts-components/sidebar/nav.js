@@ -28,40 +28,19 @@ export const MENUITEMS = [
   },
   { menutitle: "MASTER DATA" },
   {
-    title: "Varietas",
+    title: "Master",
     icon: MasterDataIcon,
     type: "sub",
     active: false,
+    selected: false,
     children: [
-      { path: "/master/varietas", type: "link", active: false, selected: false, title: "Daftar Varietas" }
-    ]
-  },
-  {
-    title: "Lahan & Produksi",
-    icon: ProduksiIcon,
-    type: "sub",
-    active: false,
-    children: [
+      { path: "/master/varietas", type: "link", active: false, selected: false, title: "Daftar Varietas" },
+      { path: "/master/komoditas", type: "link", active: false, selected: false, title: "Daftar Komoditas" },
       { path: "/master/greenhouse", type: "link", active: false, selected: false, title: "Greenhouse" },
-      { path: "/master/petani-mitra", type: "link", active: false, selected: false, title: "Petani Mitra" }
-    ]
-  },
-  {
-    title: "Supplier",
-    icon: PembelianIcon,
-    type: "sub",
-    active: false,
-    children: [
-      { path: "/master/supplier", type: "link", active: false, selected: false, title: "Daftar Supplier" }
-    ]
-  },
-  {
-    title: "Pelanggan",
-    icon: CRMIcon,
-    type: "sub",
-    active: false,
-    children: [
-      { path: "/master/customer", type: "link", active: false, selected: false, title: "Daftar Pelanggan" }
+      { path: "/master/petani-mitra", type: "link", active: false, selected: false, title: "Petani Mitra" },
+      { path: "/master/supplier", type: "link", active: false, selected: false, title: "Daftar Supplier" },
+      { path: "/master/customer", type: "link", active: false, selected: false, title: "Daftar Pelanggan" },
+      { path: "/master/gudang", type: "link", active: false, selected: false, title: "Master Gudang" }
     ]
   },
   { menutitle: "PROSES BISNIS" },
@@ -108,8 +87,7 @@ export const MENUITEMS = [
     type: "sub",
     active: false,
     children: [
-      { path: "/gudang/stok-masuk", type: "link", active: false, selected: false, title: "Stok Masuk" },
-      { path: "/master/gudang", type: "link", active: false, selected: false, title: "Master Gudang" }
+      { path: "/gudang/stok-masuk", type: "link", active: false, selected: false, title: "Stok Masuk" }
     ]
   },
   {
