@@ -23,6 +23,7 @@ export const MENUITEMS = [
     selected: false,
     children: [
       { path: "/dashboard", type: "link", active: false, selected: false, title: "Dashboard Utama" },
+      { path: "/dashboard/produksi", type: "link", active: false, selected: false, title: "Dashboard Produksi" },
       { path: "/dashboard/qc", type: "link", active: false, selected: false, title: "Dashboard QC" }
     ]
   },
@@ -50,7 +51,6 @@ export const MENUITEMS = [
     type: "sub",
     active: false,
     children: [
-      { path: "/produksi/rencana", type: "link", active: false, selected: false, title: "Rencana Produksi" },
       { path: "/produksi/jadwaltanam", type: "link", active: false, selected: false, title: "Jadwal Tanam" },
       { path: "/produksi/monitoringlahan", type: "link", active: false, selected: false, title: "Monitoring Lahan" },
       { path: "/produksi/monitoringgreenhouse", type: "link", active: false, selected: false, title: "Monitoring Greenhouse" },
