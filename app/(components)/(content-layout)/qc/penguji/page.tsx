@@ -6,7 +6,14 @@ import Pageheader from '@/shared/layouts-components/page-header/pageheader';
 import Link from 'next/link';
 import { pengujiService } from '@/shared/services/pengujiService';
 import PengujiFormModal from './PengujiFormModal';
-import { AddButton, ExportButton, FilterButton, ResetButton, EditIconButton } from '../../shared/ActionButtons';
+import { 
+  AddButton, 
+  EditIconButton,
+  DeleteIconButton, 
+  ExportButton, 
+  FilterButton,
+  ResetButton 
+} from '@/app/(components)/(content-layout)/shared/ActionButtons';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
@@ -249,7 +256,7 @@ export default function PengujiPage() {
               <select className="form-select text-sm h-[38px] w-full" value={labFilter} onChange={(e) => setLabFilter(e.target.value)}>
                 <option value="">Semua Laboratorium</option>
                 {laboratoriums.map((l) => (
-                  <option key={l.id} value={l.id}>{l.nama}</option>
+                  <option key={l.id} value={l.id}>{l.namaLaboratorium}</option>
                 ))}
               </select>
             </div>
@@ -309,7 +316,7 @@ export default function PengujiPage() {
                         </td>
                         <td className="text-sm font-medium py-3 px-4">{row.kodePenguji}</td>
                         <td className="text-sm font-medium text-gray-800 py-3 px-4">{row.nama}</td>
-                        <td className="text-sm text-gray-700 font-semibold py-3 px-4">{row.laboratorium?.nama || '-'}</td>
+                        <td className="text-sm text-gray-700 font-semibold py-3 px-4">{row.laboratorium?.namaLaboratorium || '-'}</td>
                         <td className="py-3 px-4">
                           <div className="flex gap-1 flex-wrap">
                             {row.metodeUji?.slice(0, 3).map((mu: any) => {
@@ -344,12 +351,9 @@ export default function PengujiPage() {
                                 setIsModalOpen(true);
                               }}
                             />
-                            <button 
-                              className="btn btn-sm btn-icon btn-danger-light rounded-full hover:scale-110 transition-transform shadow-sm"
+                            <DeleteIconButton 
                               onClick={() => toast.success('Data penguji berhasil dihapus')}
-                            >
-                              <i className="ri-delete-bin-line"></i>
-                            </button>
+                            />
                           </div>
                         </td>
                       </tr>

@@ -35,7 +35,8 @@ export default function PengujiFormModal({
     noSertifikat: '',
     tanggalSertifikat: '',
     foto: null as File | null,
-    sertifikatFile: null as File | null
+    sertifikatFile: null as File | null,
+    existingSertifikatUrl: null as string | null
   });
 
   useEffect(() => {
@@ -56,7 +57,8 @@ export default function PengujiFormModal({
         noSertifikat: sertif?.noSertifikat || sertif?.nomorSertifikat || sertif?.namaSertifikasi || '',
         tanggalSertifikat: sertif?.tanggalSertifikat ? new Date(sertif.tanggalSertifikat).toISOString().split('T')[0] : (sertif?.createdAt ? new Date(sertif.createdAt).toISOString().split('T')[0] : ''),
         foto: null,
-        sertifikatFile: null
+        sertifikatFile: null,
+        existingSertifikatUrl: sertif?.lampiranUrl || null
       });
     } else if (isOpen && mode === 'add') {
       setFormData({
@@ -73,7 +75,8 @@ export default function PengujiFormModal({
         noSertifikat: '',
         tanggalSertifikat: '',
         foto: null,
-        sertifikatFile: null
+        sertifikatFile: null,
+        existingSertifikatUrl: null
       });
     }
   }, [isOpen, mode, initialData]);
@@ -182,7 +185,7 @@ export default function PengujiFormModal({
                       <select name="laboratoriumId" value={formData.laboratoriumId} onChange={handleChange} className="form-select w-full border-gray-200 rounded text-sm focus:border-success focus:ring focus:ring-success/20" required>
                         <option value="">Pilih laboratorium</option>
                         {laboratoriums.map(l => (
-                          <option key={l.id} value={l.id}>{l.nama}</option>
+                          <option key={l.id} value={l.id}>{l.namaLaboratorium}</option>
                         ))}
                       </select>
                     </div>
@@ -300,6 +303,11 @@ export default function PengujiFormModal({
                     <p className="text-sm text-gray-600 mb-1">Klik atau drag file sertifikat di sini</p>
                     <p className="text-xs text-gray-400">Format PDF. Maks. 5MB</p>
                     {formData.sertifikatFile && <p className="text-xs text-success mt-2 font-medium">{formData.sertifikatFile.name}</p>}
+                    {!formData.sertifikatFile && (formData as any).existingSertifikatUrl && (
+                      <a href={(formData as any).existingSertifikatUrl} target="_blank" rel="noreferrer" className="text-xs text-primary mt-2 font-medium hover:underline relative z-10" onClick={(e) => e.stopPropagation()}>
+                        Lihat file sertifikat saat ini
+                      </a>
+                    )}
                   </div>
                 </div>
               </div>

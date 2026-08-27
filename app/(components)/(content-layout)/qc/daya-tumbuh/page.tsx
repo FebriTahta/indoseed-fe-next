@@ -1,5 +1,6 @@
 "use client"
 import React, { useState, useEffect } from 'react';
+import { ViewIconButton } from '@/app/(components)/(content-layout)/shared/ActionButtons';
 import Pageheader from '@/shared/layouts-components/page-header/pageheader';
 import Seo from '@/shared/layouts-components/seo/seo';
 import StatsWidgets, { StatItem } from '../../shared/StatsWidgets';
@@ -293,7 +294,7 @@ export default function DayaTumbuhPage() {
                             </td>
                             <td className="hidden 2xl:table-cell text-sm py-2 px-4">{row.lampiranUrl ? <a href={row.lampiranUrl} target="_blank" rel="noreferrer" className="text-primary hover:underline" onClick={(e) => e.stopPropagation()}>Lihat</a> : '-'}</td>
                             <td className="py-2 px-4 text-center flex justify-center gap-1">
-                              <button className="text-gray-400 hover:text-primary transition-colors" title="Lihat Detail"><i className="ri-eye-line text-lg"></i></button>
+                              <ViewIconButton />
                             </td>
                           </tr>
                           {expandedRows[row.id || String(idx)] && (

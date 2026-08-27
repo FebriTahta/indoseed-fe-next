@@ -1,5 +1,6 @@
 "use client"
 import React, { useState, useEffect } from 'react';
+import { ViewIconButton } from '@/app/(components)/(content-layout)/shared/ActionButtons';
 import Pageheader from '@/shared/layouts-components/page-header/pageheader';
 import Seo from '@/shared/layouts-components/seo/seo';
 import StatsWidgets, { StatItem } from '../../shared/StatsWidgets';
@@ -306,7 +307,7 @@ export default function VigorPage() {
                           </td>
                           <td className="py-2 px-4 text-center">
                             <div className="flex justify-center gap-1">
-                              <button className="text-gray-400 hover:text-primary transition-colors"><i className="ri-eye-line text-lg"></i></button>
+                              <ViewIconButton />
                               <button className="text-gray-400 hover:text-primary transition-colors"><i className="ri-download-2-line text-lg"></i></button>
                             </div>
                           </td>

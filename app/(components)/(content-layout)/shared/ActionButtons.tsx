@@ -155,3 +155,15 @@ export const TableViewBtn = ({ onClick, id }: { onClick?: (id: string) => void; 
     </button>
   );
 };
+
+export const DeleteIconButton: React.FC<IconButtonProps> = ({ onClick, title = "Hapus", className = '' }) => {
+  return (
+    <button
+      onClick={onClick}
+      className={`btn btn-sm btn-icon btn-danger-light rounded-full hover:scale-110 transition-transform shadow-sm ${className}`}
+      title={title}
+    >
+      <i className="ri-delete-bin-line"></i>
+    </button>
+  );
+};
