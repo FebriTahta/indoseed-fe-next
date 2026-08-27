@@ -765,9 +765,13 @@ const Sidebar = () => {
 
 	};
 
-	const logoUrl = settings?.logoWebsite 
-		? (settings.logoWebsite.startsWith('http') ? settings.logoWebsite : `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080'}${settings.logoWebsite}`) 
+	const logoUrl = settings?.logoWebsite
+		? (settings.logoWebsite.startsWith('http') ? settings.logoWebsite : `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080'}${settings.logoWebsite}`)
 		: null;
+
+	const logoKotakUrl = settings?.logoKotak
+		? (settings.logoKotak.startsWith('http') ? settings.logoKotak : `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080'}${settings.logoKotak}`)
+		: logoUrl; // Fallback ke logoUrl jika tidak ada logoKotak
 
 	return (
 		<Fragment>
@@ -775,27 +779,27 @@ const Sidebar = () => {
 			<aside className={`app-sidebar ${isSticky ? "sticky-pin" : ""}`} id="sidebar" onMouseOver={Onhover} onMouseLeave={Outhover} >
 				<div className="main-sidebar-header">
 					<Link href="/dashboard/sales" className="header-logo flex items-center justify-center">
-						{settings?.logoWebsite ? (
+						{settings?.logoWebsite || settings?.logoKotak ? (
 							<>
 								<div className="relative flex desktop-logo w-48 h-14 items-center justify-center">
 									<img src={logoUrl} alt="logo" className="!w-full !h-full object-contain opacity-0" />
 									<div className="absolute inset-0" style={{ WebkitMaskImage: `url(${logoUrl})`, maskImage: `url(${logoUrl})`, WebkitMaskSize: 'contain', maskSize: 'contain', WebkitMaskRepeat: 'no-repeat', maskRepeat: 'no-repeat', WebkitMaskPosition: 'center', maskPosition: 'center', backgroundColor: settings.logoColor || '#11b238' }}></div>
 								</div>
 								<div className="relative flex toggle-dark w-28 h-14 items-center justify-center -mt-4">
-									<img src={logoUrl} alt="logo" className="!w-full !h-full object-contain opacity-0" />
-									<div className="absolute inset-0" style={{ WebkitMaskImage: `url(${logoUrl})`, maskImage: `url(${logoUrl})`, WebkitMaskSize: 'contain', maskSize: 'contain', WebkitMaskRepeat: 'no-repeat', maskRepeat: 'no-repeat', WebkitMaskPosition: 'center', maskPosition: 'center', backgroundColor: settings.logoColor || '#11b238' }}></div>
+									<img src={logoKotakUrl} alt="logo" className="!w-full !h-full object-contain opacity-0" />
+									<div className="absolute inset-0" style={{ WebkitMaskImage: `url(${logoKotakUrl})`, maskImage: `url(${logoKotakUrl})`, WebkitMaskSize: 'contain', maskSize: 'contain', WebkitMaskRepeat: 'no-repeat', maskRepeat: 'no-repeat', WebkitMaskPosition: 'center', maskPosition: 'center', backgroundColor: settings.logoColor || '#11b238' }}></div>
 								</div>
 								<div className="relative flex desktop-dark w-48 h-14 items-center justify-center">
 									<img src={logoUrl} alt="logo" className="!w-full !h-full object-contain opacity-0" />
 									<div className="absolute inset-0" style={{ WebkitMaskImage: `url(${logoUrl})`, maskImage: `url(${logoUrl})`, WebkitMaskSize: 'contain', maskSize: 'contain', WebkitMaskRepeat: 'no-repeat', maskRepeat: 'no-repeat', WebkitMaskPosition: 'center', maskPosition: 'center', backgroundColor: settings.logoColor || '#11b238' }}></div>
 								</div>
 								<div className="relative flex toggle-logo w-28 h-14 items-center justify-center -mt-4">
-									<img src={logoUrl} alt="logo" className="!w-full !h-full object-contain opacity-0" />
-									<div className="absolute inset-0" style={{ WebkitMaskImage: `url(${logoUrl})`, maskImage: `url(${logoUrl})`, WebkitMaskSize: 'contain', maskSize: 'contain', WebkitMaskRepeat: 'no-repeat', maskRepeat: 'no-repeat', WebkitMaskPosition: 'center', maskPosition: 'center', backgroundColor: settings.logoColor || '#11b238' }}></div>
+									<img src={logoKotakUrl} alt="logo" className="!w-full !h-full object-contain opacity-0" />
+									<div className="absolute inset-0" style={{ WebkitMaskImage: `url(${logoKotakUrl})`, maskImage: `url(${logoKotakUrl})`, WebkitMaskSize: 'contain', maskSize: 'contain', WebkitMaskRepeat: 'no-repeat', maskRepeat: 'no-repeat', WebkitMaskPosition: 'center', maskPosition: 'center', backgroundColor: settings.logoColor || '#11b238' }}></div>
 								</div>
 								<div className="relative flex toggle-white w-28 h-14 items-center justify-center -mt-4">
-									<img src={logoUrl} alt="logo" className="!w-full !h-full object-contain opacity-0" />
-									<div className="absolute inset-0" style={{ WebkitMaskImage: `url(${logoUrl})`, maskImage: `url(${logoUrl})`, WebkitMaskSize: 'contain', maskSize: 'contain', WebkitMaskRepeat: 'no-repeat', maskRepeat: 'no-repeat', WebkitMaskPosition: 'center', maskPosition: 'center', backgroundColor: settings.logoColor || '#11b238' }}></div>
+									<img src={logoKotakUrl} alt="logo" className="!w-full !h-full object-contain opacity-0" />
+									<div className="absolute inset-0" style={{ WebkitMaskImage: `url(${logoKotakUrl})`, maskImage: `url(${logoKotakUrl})`, WebkitMaskSize: 'contain', maskSize: 'contain', WebkitMaskRepeat: 'no-repeat', maskRepeat: 'no-repeat', WebkitMaskPosition: 'center', maskPosition: 'center', backgroundColor: settings.logoColor || '#11b238' }}></div>
 								</div>
 								<div className="relative flex desktop-white w-48 h-14 items-center justify-center">
 									<img src={logoUrl} alt="logo" className="!w-full !h-full object-contain opacity-0" />
@@ -842,7 +846,7 @@ const Sidebar = () => {
 					</Link>
 				</div>
 				<SimpleBar className='main-sidebar' id="sidebar-scroll">
-					
+
 					<nav className='main-menu-container nav nav-pills flex-col sub-open'>
 						<div className="slide-left" id="slide-left" onClick={() => { slideLeft(); }}> <svg xmlns="http://www.w3.org/2000/svg" fill="#7b8191" width="24" height="24" viewBox="0 0 24 24"> <path d="M13.293 6.293 7.586 12l5.707 5.707 1.414-1.414L10.414 12l4.293-4.293z"></path> </svg> </div>
 
@@ -900,14 +904,14 @@ const Sidebar = () => {
 				</SimpleBar>
 				<div className="p-4 mt-auto sticky bottom-0 z-10" style={{ backgroundColor: 'inherit' }}>
 					<Link href="/support" className="flex items-center gap-3 py-2 px-3 rounded-lg hover:bg-white/10 transition-colors">
-						<div className="text-white">
+						<div className="">
 							<svg xmlns="http://www.w3.org/2000/svg" className="w-6 h-6" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
 								<path strokeLinecap="round" strokeLinejoin="round" d="M12 2C6.477 2 2 6.477 2 12c0 4.418 2.865 8.166 6.839 9.489.102.034.209.04.314.015l1.696-.424A3 3 0 0013.293 18.6L12.5 17.027a1.5 1.5 0 011.692-2.115l.182.046a3 3 0 003.585-1.921l1.642-4.106c.219-.548.219-1.157 0-1.705l-1.642-4.106A3 3 0 0014.375 5.2l-.182.046A1.5 1.5 0 0112.5 3.13L13.293 1.56a3 3 0 00-2.444-2.474l-1.696-.424a1.36 1.36 0 00-.314-.015C2.865 3.834 2 7.582 2 12z" />
 							</svg>
 						</div>
-						<div className="flex flex-col">
-							<span className="text-white text-[13px] font-semibold leading-tight">Butuh Bantuan?</span>
-							<span className="text-white/70 text-[11px]">Hubungi Support</span>
+						<div className="flex flex-col side-menu__label !mt-0 !mb-0 !leading-tight">
+							<span className="text-[13px] font-semibold leading-tight">Butuh Bantuan?</span>
+							<span className="text-[11px]">Hubungi Support</span>
 						</div>
 					</Link>
 				</div>

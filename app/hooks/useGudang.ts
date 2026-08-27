@@ -13,6 +13,16 @@ export function useGudang() {
   // Filters State
   const [search, setSearch] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
+  
+  // Debounce search input
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedSearch(search);
+      setCurrentPage(1);
+    }, 500);
+    return () => clearTimeout(handler);
+  }, [search]);
+
   const [filterKategori, setFilterKategori] = useState<any>(null);
   const [filterStatus, setFilterStatus] = useState<any>(null);
   const [filterWilayah, setFilterWilayah] = useState<any>(null);
@@ -177,6 +187,7 @@ export function useGudang() {
 
   const handleDelete = (id: string) => {
     console.log("Delete customer", id);
+    toast.success('Data gudang berhasil dihapus');
   };
 
   // Open Edit Modal

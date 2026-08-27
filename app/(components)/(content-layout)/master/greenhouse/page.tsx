@@ -1,6 +1,5 @@
 "use client"
-import React, { useState, useMemo, Fragment, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import React, {Fragment } from 'react';
 import Pageheader from '@/shared/layouts-components/page-header/pageheader';
 import Seo from '@/shared/layouts-components/seo/seo';
 import SpkButton from '@/shared/@spk-reusable-components/uielements/spk-button';
@@ -13,6 +12,8 @@ import FilterRow, { FilterSelectConfig } from '../../shared/FilterRow';
 import DataTable from '../../shared/DataTable';
 import DetailPanel, { TabConfig, DetailAction } from '../../shared/DetailPanel';
 import CrudModal from '../../shared/CrudModal';
+import ImageUpload from '../../shared/ImageUpload';
+import { TableViewBtn, TableEditBtn, TableRemoveBtn } from '../../shared/ActionButtons';
 
 import { Land } from '@/app/types/greenhouse';
 import { useGreenhouse, KOMODITAS_DEFAULTS } from '@/app/hooks/useGreenhouse';
@@ -69,6 +70,7 @@ export default function GreenhousePage() {
     handleViewDetail,
     handleFileChange,
     handleClearImage,
+    setImageFile,
   } = useGreenhouse();
 
   // Shared Filters Configuration
@@ -156,28 +158,10 @@ export default function GreenhousePage() {
           </span>
         </td>
         <td className="p-4 text-center">
-          <div className="flex items-center justify-center gap-3">
-            <button
-              onClick={() => handleViewDetail(item)}
-              className="text-gray-400 hover:text-emerald-600 transition-colors"
-              title="Lihat Detail Lahan"
-            >
-              <i className="ri-eye-line text-lg"></i>
-            </button>
-            <button
-              onClick={() => handleOpenEditModal(item)}
-              className="text-gray-400 hover:text-blue-600 transition-colors"
-              title="Edit Lahan"
-            >
-              <i className="ri-edit-line text-lg"></i>
-            </button>
-            <button
-              onClick={() => handleDeleteLand(item.id)}
-              className="text-gray-400 hover:text-red-500 transition-colors"
-              title="Hapus Lahan"
-            >
-              <i className="ri-trash-line text-lg"></i>
-            </button>
+          <div className="flex items-center justify-center">
+            <TableViewBtn id={item.id} onClick={() => handleViewDetail(item)} />
+            <TableEditBtn id={item.id} onClick={() => handleOpenEditModal(item)} />
+            <TableRemoveBtn id={item.id} onClick={() => handleDeleteLand(item.id)} />
           </div>
         </td>
       </tr>
@@ -278,6 +262,19 @@ export default function GreenhousePage() {
             <div className="col-span-4 font-semibold text-textmuted py-2 flex items-start">Keterangan</div>
             <div className="col-span-8 py-2 text-gray-600 flex items-start leading-relaxed">
               <span className="mr-2">:</span>{viewedLand.keterangan || '-'}
+            </div>
+
+            <div className="col-span-12 py-2">
+              <p className="font-semibold text-textmuted mb-2">Gambar Lahan / Greenhouse</p>
+              <div className="w-32 h-24 rounded border bg-gray-50 flex items-center justify-center overflow-hidden">
+                {viewedLand.image ? (
+                  <img src={viewedLand.image} alt={viewedLand.namaLahan} className="w-full h-full object-cover" />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center bg-gray-100 text-gray-400">
+                    <i className="ri-image-line text-2xl"></i>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         );
@@ -381,20 +378,8 @@ export default function GreenhousePage() {
       <Pageheader
         title="Master Data"
         currentpage="Greenhouse / Lahan"
-        activepage="Greenhouse / Lahan"
-        description="Kelola data greenhouse dan lahan produksi"
-        customButton={
-          <SpkButton
-            {...({
-              onclickfunc: handleOpenAddModal,
-              style: { backgroundColor: '#078836', color: 'white' },
-              className: "hover:bg-[#06732d] hover:text-white",
-              customClass: "ti-btn !border-0 btn-wave !me-0 flex items-center gap-1.5"
-            } as any)}
-          >
-            <i className="ri-add-line text-lg"></i> Tambah Greenhouse / Lahan
-          </SpkButton>
-        }
+        activepage="Greenhouse"
+        description="Kelola data greenhouse / lahan produksi"
       />
 
       {/* Summary Cards */}
@@ -411,6 +396,8 @@ export default function GreenhousePage() {
             selectFilters={filterConfig}
             onReset={handleResetFilters}
             onExport={handleExportData}
+            onAdd={handleOpenAddModal}
+            addLabel="Tambah GH / Lahan"
           />
 
           {/* Table list with pagination */}
@@ -584,46 +571,6 @@ export default function GreenhousePage() {
           </div>
         </div>
 
-        {/* Beautiful image file upload with size limit */}
-        <div>
-          <label className="block text-xs font-bold text-gray-700 mb-1.5">Gambar Greenhouse / Lahan (Maks. 5MB)</label>
-          <div className="flex items-center gap-4">
-            <div className="w-16 h-16 rounded-md border border-defaultborder overflow-hidden bg-gray-50 flex-shrink-0 flex items-center justify-center relative group">
-              {previewUrl ? (
-                <>
-                  <img src={previewUrl} alt="Preview" className="w-full h-full object-cover" />
-                  <button
-                    type="button"
-                    onClick={handleClearImage}
-                    className="absolute inset-0 bg-black/40 text-white opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity"
-                    disabled={isSubmitLoading}
-                  >
-                    <i className="ri-delete-bin-line text-lg"></i>
-                  </button>
-                </>
-              ) : (
-                <i className="ri-image-line text-2xl text-gray-300"></i>  
-              )}
-            </div>
-
-            <div className="flex-1">
-              <input
-                type="file"
-                accept="image/jpeg,image/png,image/gif,image/webp"
-                onChange={handleFileChange}
-                className="block w-full text-xs text-gray-500
-                  file:mr-4 file:py-1.5 file:px-3
-                  file:rounded-md file:border-0
-                  file:text-xs file:font-semibold
-                  file:bg-emerald-50 file:text-emerald-700
-                  hover:file:bg-emerald-100
-                  cursor-pointer disabled:opacity-50"
-                disabled={isSubmitLoading}
-              />
-              <p className="text-[10px] text-gray-400 mt-1">Format: JPG, PNG, GIF, WEBP. Maksimal ukuran file 5MB.</p>
-            </div>
-          </div>
-        </div>
 
         <div className="grid grid-cols-3 gap-4">
           <div>
@@ -720,6 +667,16 @@ export default function GreenhousePage() {
               disabled={isSubmitLoading}
             />
           </div>
+        </div>
+
+        <div>
+          <ImageUpload
+            label="Foto Greenhouse/Lahan (Maks. 5MB)"
+            imageUrl={previewUrl}
+            onImageChange={setImageFile}
+            disabled={isSubmitLoading}
+            className="mb-4"
+          />
         </div>
 
         <div>

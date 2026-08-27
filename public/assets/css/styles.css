@@ -20192,3 +20192,27 @@ ul.analytics-activity li:last-child {
     color: #0f7a24 !important;
 }
 
+
+/* Remove background from active submenu links */
+.app-sidebar .slide-menu .side-menu__item.active {
+    background-color: transparent !important;
+}
+
+
+/* Force transparent bg for all submenu levels */
+.app-sidebar .slide-menu.child1 .side-menu__item.active,
+.app-sidebar .slide-menu.child2 .side-menu__item.active,
+.app-sidebar .slide-menu.child3 .side-menu__item.active {
+    background-color: transparent !important;
+}
+
+/* Force transparent bg for all submenu levels MORE aggressively */
+html body .app-sidebar .slide-menu .side-menu__item.active,
+html body .app-sidebar .slide-menu .slide.has-sub .side-menu__item.active,
+html body .app-sidebar .slide-menu .slide.has-sub.open > .side-menu__item,
+html body .app-sidebar .slide-menu .slide .side-menu__item.active,
+html body .app-sidebar .slide-menu .slide.active,
+html body .app-sidebar .slide-menu .slide.open {
+    background-color: transparent !important;
+    background: transparent !important;
+}

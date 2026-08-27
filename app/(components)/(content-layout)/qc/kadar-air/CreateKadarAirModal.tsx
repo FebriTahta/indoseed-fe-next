@@ -1,8 +1,11 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import SpkDatepickr from "@/shared/@spk-reusable-components/spk-packages/datepicker-component";
 import uploadService from '@/app/services/uploadService';
 import { qcKadarAirService } from '@/app/services/qcKadarAirService';
+import { batchProduksiService } from '@/app/services/batchProduksiService';
+import { qcService } from '@/app/services/qcService';
 import ModalFooter from '../components/ModalFooter';
+import SpkSelect from '@/shared/@spk-reusable-components/spk-packages/spk-reactselect';
 
 interface Props {
   isOpen: boolean;
@@ -20,17 +23,22 @@ export default function CreateKadarAirModal({ isOpen, onClose, onSuccess, method
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const [kodeBatch, setKodeBatch] = useState<string>(`QC-${new Date().getFullYear().toString().slice(-2)}${(new Date().getMonth()+1).toString().padStart(2, '0')}-${Math.floor(Math.random() * 10000).toString().padStart(4, '0')}`);
+  const [batchList, setBatchList] = useState<any[]>([]);
+  const [isBatchLoading, setIsBatchLoading] = useState<boolean>(false);
+  const [batchSearchTerm, setBatchSearchTerm] = useState<string>('');
+
+  const [kodeBatch, setKodeBatch] = useState<string>('');
   const [commodityId, setCommodityId] = useState<string>('');
   const [varietyId, setVarietyId] = useState<string>('');
-  const [lotNumber, setLotNumber] = useState<string>('LOT-A-001');
+  const [lotNumber, setLotNumber] = useState<string>('');
   const [jumlahSampel, setJumlahSampel] = useState<string>('');
   const [testMethodId, setTestMethodId] = useState<string>('');
   const [lokasiLab, setLokasiLab] = useState<string>('Lab Pusat');
   const [petugasUji, setPetugasUji] = useState<string>('Dewi Lestari');
   
-  const [kadarAir, setKadarAir] = useState<string>('');
-  const [batasMaksimal, setBatasMaksimal] = useState<string>('');
+  const [allParameters, setAllParameters] = useState<any[]>([]);
+  const [parameterResults, setParameterResults] = useState<Record<string, { hasilUji: number; status: string }>>({});
+  
   const [alat, setAlat] = useState<string>('');
   const [suhuUji, setSuhuUji] = useState<string>('');
   const [waktuPengeringan, setWaktuPengeringan] = useState<string>('');
@@ -38,6 +46,79 @@ export default function CreateKadarAirModal({ isOpen, onClose, onSuccess, method
   const [beratAwal, setBeratAwal] = useState<string>('');
   const [beratAkhir, setBeratAkhir] = useState<string>('');
   const [catatan, setCatatan] = useState<string>('');
+
+  useEffect(() => {
+    if (isOpen) {
+      qcService.getParameters().then(res => {
+        setAllParameters(Array.isArray(res) ? res : res?.data || []);
+      }).catch(console.error);
+    }
+  }, [isOpen]);
+
+  useEffect(() => {
+    if (!isOpen) {
+      setKodeBatch('');
+      setCommodityId('');
+      setVarietyId('');
+      setBatchList([]);
+      setBatchSearchTerm('');
+      setLotNumber('');
+      setParameterResults({});
+      return;
+    }
+
+    const timer = setTimeout(async () => {
+      setIsBatchLoading(true);
+      try {
+        const [batchRes, qcRes] = await Promise.all([
+          batchProduksiService.getBatchProduksiList({ search: batchSearchTerm, limit: 100 }),
+          qcKadarAirService.getKadarAir({ limit: 1000 }).catch(() => ({ data: [] }))
+        ]);
+
+        if (batchRes?.data) {
+          // Exclude batches that already have a QC Kadar Air test
+          const testedBatchCodes = (qcRes?.data || []).map((q: any) => q.kodeBatch);
+          const filteredBatches = batchRes.data.filter((b: any) => !testedBatchCodes.includes(b.kodeBatch));
+
+          const sortedData = [...filteredBatches].sort((a: any, b: any) => {
+            const dateA = new Date(a.createdAt || a.tanggalMulai || 0).getTime();
+            const dateB = new Date(b.createdAt || b.tanggalMulai || 0).getTime();
+            return dateA - dateB;
+          });
+          setBatchList(sortedData);
+        }
+      } catch (err) {
+        console.error("Failed to load batch list or QC data", err);
+      } finally {
+        setIsBatchLoading(false);
+      }
+    }, 500);
+
+    return () => clearTimeout(timer);
+  }, [isOpen, batchSearchTerm]);
+
+  const handleBatchChange = (selectedOption: any) => {
+    const selectedKode = selectedOption ? selectedOption.value : '';
+    setKodeBatch(selectedKode);
+
+    // Auto-fill commodity and variety from selected batch
+    const selectedBatch = batchList.find(b => b.kodeBatch === selectedKode);
+    if (selectedBatch) {
+      const matchedCommodity = commodities.find(c => c.id === selectedBatch.komoditas || c.namaKomoditas === selectedBatch.komoditas);
+      if (matchedCommodity) setCommodityId(matchedCommodity.id);
+
+      const matchedVariety = varieties.find(v => v.id === selectedBatch.varietas || v.namaVarietas === selectedBatch.varietas);
+      if (matchedVariety) setVarietyId(matchedVariety.id);
+
+      // Auto-fill Lot
+      const computedLot = selectedBatch.batchLot?.kodeLot || `LOT-${selectedKode.replace('BP-', '')}`;
+      setLotNumber(computedLot);
+    } else {
+      setCommodityId('');
+      setVarietyId('');
+      setLotNumber('');
+    }
+  };
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -61,6 +142,21 @@ export default function CreateKadarAirModal({ isOpen, onClose, onSuccess, method
     try {
       setIsSubmitting(true);
       
+      let extractedKadarAir: number | null = null;
+      let extractedBatas: number | null = null;
+      let extractedStatus: string = 'Sedang Diuji';
+
+      const paramKadarAir = allParameters.find(p => p.nama?.toLowerCase().includes('kadar air'));
+      if (paramKadarAir && parameterResults[paramKadarAir.id]) {
+        extractedKadarAir = parameterResults[paramKadarAir.id].hasilUji;
+        extractedStatus = parameterResults[paramKadarAir.id].status;
+        
+        if (paramKadarAir.batasAcuan) {
+          const match = paramKadarAir.batasAcuan.match(/[\d.]+/);
+          if (match) extractedBatas = parseFloat(match[0]);
+        }
+      }
+      
       const payload = {
         kodeBatch,
         commodityId: commodityId || null,
@@ -72,8 +168,9 @@ export default function CreateKadarAirModal({ isOpen, onClose, onSuccess, method
         petugasUji,
         jumlahSampel: parseInt(jumlahSampel) || null,
         lampiranUrl,
-        kadarAir: parseFloat(kadarAir) || null,
-        batasMaksimal: parseFloat(batasMaksimal) || null,
+        kadarAir: extractedKadarAir,
+        batasMaksimal: extractedBatas,
+        status: extractedStatus !== 'Sedang Diuji' ? extractedStatus : undefined,
         alat: alat || null,
         suhuUji: suhuUji || null,
         waktuPengeringan: waktuPengeringan || null,
@@ -81,6 +178,17 @@ export default function CreateKadarAirModal({ isOpen, onClose, onSuccess, method
         beratAwal: parseFloat(beratAwal) || null,
         beratAkhir: parseFloat(beratAkhir) || null,
         catatan: catatan || null,
+        parameterUji: JSON.stringify(Object.keys(parameterResults).map(id => {
+          const p = allParameters.find(x => x.id === id);
+          return {
+             id,
+             parameter: p?.nama,
+             satuan: p?.satuan,
+             batasAcuan: p?.batasAcuan,
+             hasilUji: parameterResults[id].hasilUji,
+             status: parameterResults[id].status
+          };
+        })),
       };
 
       const res = await qcKadarAirService.createKadarAir(payload);
@@ -119,30 +227,48 @@ export default function CreateKadarAirModal({ isOpen, onClose, onSuccess, method
               <div className="grid grid-cols-1 md:grid-cols-4 gap-4 bg-gray-50 p-4 rounded border border-gray-100">
                 <div>
                   <label className="text-xs font-semibold text-gray-600 block mb-1">Kode Batch / Lot <span className="text-danger">*</span></label>
-                  <input 
-                    type="text" 
-                    className="form-control text-sm h-[38px] w-full" 
-                    value={kodeBatch} 
-                    onChange={e => setKodeBatch(e.target.value)} 
+                  <SpkSelect 
+                    name="kodeBatch"
+                    id="kodeBatch"
+                    searchable={true}
+                    isLoading={isBatchLoading}
+                    onInputChange={(val: string) => setBatchSearchTerm(val)}
+                    value={kodeBatch ? { value: kodeBatch, label: kodeBatch } : null}
+                    onfunchange={handleBatchChange}
+                    option={batchList?.map((b: any) => ({
+                      value: b.kodeBatch,
+                      label: `${b.kodeBatch} - ${b.komoditas}`
+                    }))}
+                    placeholder="Pilih Batch Produksi..."
                   />
                 </div>
                 <div>
                   <label className="text-xs font-semibold text-gray-600 block mb-1">Komoditas <span className="text-danger">*</span></label>
-                  <select className="form-select text-sm h-[38px] w-full" value={commodityId} onChange={e => setCommodityId(e.target.value)}>
+                  <select 
+                    className={`form-select text-sm h-[38px] w-full ${kodeBatch ? 'bg-gray-100 pointer-events-none' : ''}`}
+                    value={commodityId} 
+                    onChange={e => setCommodityId(e.target.value)}
+                    disabled={!!kodeBatch}
+                  >
                     <option value="">Pilih komoditas</option>
                     {commodities?.map(c => <option key={c.id} value={c.id}>{c.namaKomoditas}</option>)}
                   </select>
                 </div>
                 <div>
                   <label className="text-xs font-semibold text-gray-600 block mb-1">Varietas <span className="text-danger">*</span></label>
-                  <select className="form-select text-sm h-[38px] w-full" value={varietyId} onChange={e => setVarietyId(e.target.value)}>
+                  <select 
+                    className={`form-select text-sm h-[38px] w-full ${kodeBatch ? 'bg-gray-100 pointer-events-none' : ''}`}
+                    value={varietyId} 
+                    onChange={e => setVarietyId(e.target.value)}
+                    disabled={!!kodeBatch}
+                  >
                     <option value="">Pilih varietas</option>
                     {varieties?.map(v => <option key={v.id} value={v.id}>{v.namaVarietas}</option>)}
                   </select>
                 </div>
                 <div>
                   <label className="text-xs font-semibold text-gray-600 block mb-1">Lot / No. Benih <span className="text-danger">*</span></label>
-                  <input type="text" className="form-control text-sm h-[38px] w-full" value={lotNumber} onChange={e => setLotNumber(e.target.value)} />
+                  <input type="text" className="form-control text-sm h-[38px] w-full bg-gray-100" readOnly value={lotNumber} onChange={e => setLotNumber(e.target.value)} />
                 </div>
                 <div>
                   <label className="text-xs font-semibold text-gray-600 block mb-1">Jumlah Sampel <span className="text-danger">*</span></label>
@@ -198,21 +324,87 @@ export default function CreateKadarAirModal({ isOpen, onClose, onSuccess, method
                     <tr>
                       <th className="text-left text-xs font-semibold text-gray-500 py-2 px-4">Parameter</th>
                       <th className="text-left text-xs font-semibold text-gray-500 py-2 px-4">Satuan</th>
-                      <th className="text-left text-xs font-semibold text-gray-500 py-2 px-4">Batas Maksimal <span className="text-danger">*</span></th>
-                      <th className="text-left text-xs font-semibold text-gray-500 py-2 px-4">Hasil Uji (%) <span className="text-danger">*</span></th>
+                      <th className="text-left text-xs font-semibold text-gray-500 py-2 px-4">Batas Minimal</th>
+                      <th className="text-left text-xs font-semibold text-gray-500 py-2 px-4">Hasil Uji</th>
+                      <th className="text-left text-xs font-semibold text-gray-500 py-2 px-4 w-36">Status</th>
                     </tr>
                   </thead>
                   <tbody>
-                    <tr className="border-b border-gray-50">
-                      <td className="text-sm py-2 px-4 font-medium">Kadar Air</td>
-                      <td className="text-sm py-2 px-4 text-gray-500">%</td>
-                      <td className="text-sm py-2 px-4 w-48">
-                        <input type="number" className="form-control text-sm py-1" placeholder="0.00" value={batasMaksimal} onChange={(e) => setBatasMaksimal(e.target.value)} />
-                      </td>
-                      <td className="text-sm py-2 px-4 w-48">
-                        <input type="number" className="form-control text-sm py-1" placeholder="0.00" value={kadarAir} onChange={(e) => setKadarAir(e.target.value)} />
-                      </td>
-                    </tr>
+                    {(() => {
+                      const selectedMethod = methods?.find(m => m.kode === testMethodId || m.id === testMethodId);
+                      let paramsToRender = (selectedMethod?.testParameters || allParameters?.filter(p => p.metodeId === selectedMethod?.id) || []);
+                      
+                      if (paramsToRender.length === 0) {
+                        const defaultParamNames = ['kadar air'];
+                        paramsToRender = allParameters?.filter(p => {
+                          if (!p.nama) return false;
+                          const pNama = p.nama.toLowerCase();
+                          return defaultParamNames.some(d => pNama.includes(d));
+                        }) || [];
+                      }
+
+                      if (paramsToRender.length === 0) {
+                        return (
+                          <tr>
+                            <td colSpan={5} className="text-center text-sm py-4 text-gray-500">
+                              {allParameters?.length === 0 ? 'Memuat parameter...' : 'Tidak ada parameter yang tersedia.'}
+                            </td>
+                          </tr>
+                        );
+                      }
+
+                      return paramsToRender.map((param: any, i: number) => {
+                        const result = parameterResults[param.id] || { hasilUji: '', status: 'Sedang Diuji' };
+                        
+                        const handleResultChange = (val: string) => {
+                          const numVal = parseFloat(val);
+                          let status = 'Sedang Diuji';
+                          
+                          if (!isNaN(numVal) && param.batasAcuan) {
+                            if (param.batasAcuan.includes('>=')) {
+                              const limit = parseFloat(param.batasAcuan.replace('>=', '').replace(',', '.').trim());
+                              status = numVal >= limit ? 'Lulus' : 'Tidak Lulus';
+                            } else if (param.batasAcuan.includes('<=')) {
+                              const limit = parseFloat(param.batasAcuan.replace('<=', '').replace(',', '.').trim());
+                              status = numVal <= limit ? 'Lulus' : 'Tidak Lulus';
+                            } else if (param.batasAcuan.includes('>')) {
+                              const limit = parseFloat(param.batasAcuan.replace('>', '').replace(',', '.').trim());
+                              status = numVal > limit ? 'Lulus' : 'Tidak Lulus';
+                            } else if (param.batasAcuan.includes('<')) {
+                              const limit = parseFloat(param.batasAcuan.replace('<', '').replace(',', '.').trim());
+                              status = numVal < limit ? 'Lulus' : 'Tidak Lulus';
+                            }
+                          }
+                          
+                          setParameterResults(prev => ({
+                            ...prev,
+                            [param.id]: { hasilUji: isNaN(numVal) ? 0 : numVal, status }
+                          }));
+                        };
+
+                        return (
+                          <tr key={i} className="border-b border-gray-50">
+                            <td className="text-sm py-2 px-4 font-medium">{param.nama}</td>
+                            <td className="text-sm py-2 px-4 text-gray-500">{param.satuan || '-'}</td>
+                            <td className="text-sm py-2 px-4">{param.batasAcuan || '-'}</td>
+                            <td className="text-sm py-2 px-4 w-48">
+                              <input 
+                                type="number" 
+                                className="form-control text-sm py-1" 
+                                placeholder="0.00"
+                                value={result.hasilUji}
+                                onChange={(e) => handleResultChange(e.target.value)}
+                              />
+                            </td>
+                            <td className="text-sm py-2 px-4 w-36">
+                              <span className={`badge min-w-[100px] inline-block text-center ${result.status === 'Lulus' ? 'bg-success/10 text-success' : result.status === 'Tidak Lulus' ? 'bg-danger/10 text-danger' : 'bg-gray-100 text-gray-500'}`}>
+                                {result.status}
+                              </span>
+                            </td>
+                          </tr>
+                        );
+                      });
+                    })()}
                   </tbody>
                 </table>
               </div>
@@ -250,7 +442,7 @@ export default function CreateKadarAirModal({ isOpen, onClose, onSuccess, method
                 </div>
                 <div className="md:col-span-3">
                   <label className="text-xs font-semibold text-gray-600 block mb-1">Catatan (Opsional)</label>
-                  <textarea className="form-control text-sm h-[38px] w-full" rows={2} placeholder="Tambahkan catatan jika diperlukan..." value={catatan} onChange={e => setCatatan(e.target.value)}></textarea>
+                  <textarea className="form-control text-sm min-h-[100px] w-full" rows={3} placeholder="Tambahkan catatan jika diperlukan..." value={catatan} onChange={e => setCatatan(e.target.value)}></textarea>
                 </div>
               </div>
             </div>

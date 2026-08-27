@@ -30,13 +30,19 @@ export default function SistemPengaturanPage() {
   const [formData, setFormData] = useState({
     namaWebsite: '',
     titleWebsite: '',
+    deskripsi: '',
     logoWebsite: '',
+    logoKotak: '',
     logoColor: '#11b238'
   });
   
   const [files, setFiles] = useState<any[]>([]);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewLogo, setPreviewLogo] = useState<string | null>(null);
+
+  const [kotakFiles, setKotakFiles] = useState<any[]>([]);
+  const [selectedKotakFile, setSelectedKotakFile] = useState<File | null>(null);
+  const [previewLogoKotak, setPreviewLogoKotak] = useState<string | null>(null);
 
   useEffect(() => {
     fetchSettings();
@@ -51,11 +57,16 @@ export default function SistemPengaturanPage() {
         setFormData({
           namaWebsite: data.data.namaWebsite || '',
           titleWebsite: data.data.titleWebsite || '',
+          deskripsi: data.data.deskripsi || '',
           logoWebsite: data.data.logoWebsite || '',
+          logoKotak: data.data.logoKotak || '',
           logoColor: data.data.logoColor || '#11b238'
         });
         if (data.data.logoWebsite) {
           setPreviewLogo(data.data.logoWebsite);
+        }
+        if (data.data.logoKotak) {
+          setPreviewLogoKotak(data.data.logoKotak);
         }
       } else {
         toast.error(data.message || 'Gagal mengambil pengaturan');
@@ -78,6 +89,16 @@ export default function SistemPengaturanPage() {
     throw new Error('Gagal mengupload logo');
   };
 
+  const uploadLogoKotak = async (): Promise<string | null> => {
+    if (!selectedKotakFile) return formData.logoKotak;
+
+    const res = await uploadService.uploadFile(selectedKotakFile, 'settings');
+    if (res.success) {
+      return res.data.fileUrl;
+    }
+    throw new Error('Gagal mengupload logo kotak');
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -89,10 +110,17 @@ export default function SistemPengaturanPage() {
         finalLogoUrl = await uploadLogo() || '';
       }
 
+      let finalLogoKotakUrl = formData.logoKotak;
+
+      if (selectedKotakFile) {
+        finalLogoKotakUrl = await uploadLogoKotak() || '';
+      }
+
       const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
       const payload = {
         ...formData,
-        logoWebsite: finalLogoUrl
+        logoWebsite: finalLogoUrl,
+        logoKotak: finalLogoKotakUrl
       };
 
       const res = await api.put('/settings', payload);
@@ -104,7 +132,9 @@ export default function SistemPengaturanPage() {
         setFormData({
           namaWebsite: data.data.namaWebsite || '',
           titleWebsite: data.data.titleWebsite || '',
+          deskripsi: data.data.deskripsi || '',
           logoWebsite: data.data.logoWebsite || '',
+          logoKotak: data.data.logoKotak || '',
           logoColor: data.data.logoColor || '#11b238'
         });
         
@@ -114,10 +144,15 @@ export default function SistemPengaturanPage() {
         if (data.data.logoWebsite) {
             setPreviewLogo(data.data.logoWebsite);
         }
+        if (data.data.logoKotak) {
+            setPreviewLogoKotak(data.data.logoKotak);
+        }
         
         // Reset FilePond
         setFiles([]);
         setSelectedFile(null);
+        setKotakFiles([]);
+        setSelectedKotakFile(null);
       } else {
         toast.error(data.message || 'Gagal menyimpan pengaturan');
       }
@@ -184,6 +219,19 @@ export default function SistemPengaturanPage() {
                     <p className="text-xs text-gray-500 mt-1">Judul yang akan tampil pada tab browser pengguna.</p>
                   </div>
                   
+                  {/* Deskripsi Website */}
+                  <div>
+                    <label className="ti-form-label font-medium mb-2 text-sm text-gray-700 dark:text-gray-300">Deskripsi Website</label>
+                    <textarea 
+                      className="ti-form-input bg-gray-50 dark:bg-bgdark border-gray-200 dark:border-white/10 rounded-lg focus:ring-primary focus:border-primary" 
+                      placeholder="Masukkan deskripsi singkat tentang website" 
+                      value={formData.deskripsi}
+                      onChange={(e) => setFormData({...formData, deskripsi: e.target.value})}
+                      rows={3}
+                    ></textarea>
+                    <p className="text-xs text-gray-500 mt-1">Penjelasan singkat terkait website atau perusahaan.</p>
+                  </div>
+                  
                   {/* Logo Website */}
                   <div className="mt-2">
                     <label className="ti-form-label font-medium mb-2 text-sm text-gray-700 dark:text-gray-300">Logo Website</label>
@@ -227,6 +275,54 @@ export default function SistemPengaturanPage() {
                                 maxFiles={1}
                                 name="logo"
                                 labelIdle='<div class="flex flex-col items-center justify-center py-4"><i class="bi bi-cloud-arrow-up text-3xl text-primary mb-2"></i><span class="text-sm font-medium">Drag & Drop logo baru atau <span class="filepond--label-action text-primary font-semibold">Browse</span></span></div>'
+                            />
+                        </div>
+                    </div>
+                  </div>
+
+                  {/* Logo Kotak */}
+                  <div className="mt-2">
+                    <label className="ti-form-label font-medium mb-2 text-sm text-gray-700 dark:text-gray-300">Logo Kotak</label>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
+                        {/* Current Logo Preview */}
+                        <div className="border border-dashed border-gray-300 dark:border-white/10 rounded-xl p-4 flex flex-col items-center justify-center min-h-[160px] bg-gray-50/50 dark:bg-bgdark/50">
+                            <span className="text-xs font-semibold text-gray-500 mb-3 uppercase tracking-wider">Logo Kotak Saat Ini</span>
+                            {previewLogoKotak ? (
+                                <div 
+                                    className="h-16 w-16"
+                                    style={{
+                                        WebkitMaskImage: `url(${previewLogoKotak.startsWith('http') ? previewLogoKotak : `${process.env.NEXT_PUBLIC_API_BASE_URL?.replace('/api', '') || 'http://localhost:8080'}${previewLogoKotak}`})`,
+                                        WebkitMaskSize: 'contain',
+                                        WebkitMaskRepeat: 'no-repeat',
+                                        WebkitMaskPosition: 'center',
+                                        backgroundColor: formData.logoColor || '#11b238',
+                                    }}
+                                ></div>
+                            ) : (
+                                <div className="text-gray-400 flex flex-col items-center">
+                                    <i className="bi bi-image text-3xl mb-1"></i>
+                                    <span className="text-sm">Belum ada logo kotak</span>
+                                </div>
+                            )}
+                        </div>
+
+                        {/* FilePond Uploader */}
+                        <div className="filepond-custom-wrapper">
+                            <FilePond
+                                files={kotakFiles}
+                                onupdatefiles={(fileItems) => {
+                                    setKotakFiles(fileItems.map(f => f.file));
+                                    if (fileItems.length > 0) {
+                                        setSelectedKotakFile(fileItems[0].file as File);
+                                    } else {
+                                        setSelectedKotakFile(null);
+                                    }
+                                }}
+                                allowMultiple={false}
+                                maxFiles={1}
+                                name="logoKotak"
+                                labelIdle='<div class="flex flex-col items-center justify-center py-4"><i class="bi bi-cloud-arrow-up text-3xl text-primary mb-2"></i><span class="text-sm font-medium">Drag & Drop logo kotak baru atau <span class="filepond--label-action text-primary font-semibold">Browse</span></span></div>'
                             />
                         </div>
                     </div>

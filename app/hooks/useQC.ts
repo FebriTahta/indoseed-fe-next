@@ -127,15 +127,9 @@ export const useQC = () => {
     try {
       setLoading(true);
       if (tab === 'parameter') {
-        // Map terkaitTipe/terkaitId to standarId/metodeId
         const payload: any = { ...data };
-        if (data.terkaitTipe === 'standar') {
-          payload.standarId = data.terkaitId;
-        } else if (data.terkaitTipe === 'metode') {
-          payload.metodeId = data.terkaitId;
-        }
-        delete payload.terkaitTipe;
-        delete payload.terkaitId;
+        if (!payload.standarId) payload.standarId = null;
+        if (!payload.metodeId) payload.metodeId = null;
         await qcService.createParameter(payload);
         toast.success('Parameter berhasil ditambahkan');
         fetchParameters();
@@ -182,15 +176,8 @@ export const useQC = () => {
       setLoading(true);
       if (tab === 'parameter') {
         const payload: any = { ...data };
-        if (data.terkaitTipe === 'standar') {
-          payload.standarId = data.terkaitId;
-          payload.metodeId = null;
-        } else if (data.terkaitTipe === 'metode') {
-          payload.metodeId = data.terkaitId;
-          payload.standarId = null;
-        }
-        delete payload.terkaitTipe;
-        delete payload.terkaitId;
+        if (!payload.standarId) payload.standarId = null;
+        if (!payload.metodeId) payload.metodeId = null;
         await qcService.updateParameter(selectedItem.id, payload);
         toast.success('Parameter berhasil diperbarui');
         fetchParameters();

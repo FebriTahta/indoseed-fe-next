@@ -305,7 +305,7 @@ export default function CreateDayaTumbuhModal({ isOpen, onClose, onSuccess, meth
                       <th className="text-left text-xs font-semibold text-gray-500 py-2 px-4">Satuan</th>
                       <th className="text-left text-xs font-semibold text-gray-500 py-2 px-4">Batas Minimal</th>
                       <th className="text-left text-xs font-semibold text-gray-500 py-2 px-4">Hasil Uji</th>
-                      <th className="text-left text-xs font-semibold text-gray-500 py-2 px-4">Status</th>
+                      <th className="text-left text-xs font-semibold text-gray-500 py-2 px-4 w-36">Status</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -375,8 +375,8 @@ export default function CreateDayaTumbuhModal({ isOpen, onClose, onSuccess, meth
                                 onChange={(e) => handleResultChange(e.target.value)}
                               />
                             </td>
-                            <td className="text-sm py-2 px-4">
-                              <span className={`badge ${result.status === 'Lulus' ? 'bg-success/10 text-success' : result.status === 'Tidak Lulus' ? 'bg-danger/10 text-danger' : 'bg-gray-100 text-gray-500'}`}>
+                            <td className="text-sm py-2 px-4 w-36">
+                              <span className={`badge min-w-[100px] inline-block text-center ${result.status === 'Lulus' ? 'bg-success/10 text-success' : result.status === 'Tidak Lulus' ? 'bg-danger/10 text-danger' : 'bg-gray-100 text-gray-500'}`}>
                                 {result.status}
                               </span>
                             </td>
@@ -444,7 +444,7 @@ export default function CreateDayaTumbuhModal({ isOpen, onClose, onSuccess, meth
                 </div>
                 <div className="md:col-span-4">
                   <label className="text-xs font-semibold text-gray-600 block mb-1">Catatan Tambahan</label>
-                  <textarea className="form-control text-sm h-[38px] w-full" rows={2} placeholder="Tuliskan catatan (opsional)" value={catatanTambahan} onChange={e => setCatatanTambahan(e.target.value)}></textarea>
+                  <textarea className="form-control text-sm min-h-[100px] w-full" rows={3} placeholder="Tuliskan catatan (opsional)" value={catatanTambahan} onChange={e => setCatatanTambahan(e.target.value)}></textarea>
                 </div>
               </div>
             </div>

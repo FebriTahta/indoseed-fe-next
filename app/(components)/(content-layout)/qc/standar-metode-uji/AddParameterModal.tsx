@@ -18,8 +18,8 @@ export default function AddParameterModal({ isOpen, onClose, mode = 'add', initi
     kategori: '',
     satuan: '',
     batasAcuan: '',
-    terkaitTipe: '', // 'standar' | 'metode'
-    terkaitId: '',
+    standarId: '',
+    metodeId: '',
     definisi: '',
     keterangan: '',
     status: 'Aktif'
@@ -33,8 +33,8 @@ export default function AddParameterModal({ isOpen, onClose, mode = 'add', initi
         kategori: initialData.kategori || '',
         satuan: initialData.satuan || '',
         batasAcuan: initialData.batasAcuan || '',
-        terkaitTipe: initialData.standarId ? 'standar' : initialData.metodeId ? 'metode' : '',
-        terkaitId: initialData.standarId || initialData.metodeId || '',
+        standarId: initialData.standarId || '',
+        metodeId: initialData.metodeId || '',
         definisi: initialData.definisi || '',
         keterangan: initialData.keterangan || '',
         status: initialData.status || 'Aktif'
@@ -46,8 +46,8 @@ export default function AddParameterModal({ isOpen, onClose, mode = 'add', initi
         kategori: '',
         satuan: '',
         batasAcuan: '',
-        terkaitTipe: '',
-        terkaitId: '',
+        standarId: '',
+        metodeId: '',
         definisi: '',
         keterangan: '',
         status: 'Aktif'
@@ -67,8 +67,8 @@ export default function AddParameterModal({ isOpen, onClose, mode = 'add', initi
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-[100] overflow-y-auto">
-      <div className="fixed inset-0 bg-black/50 transition-opacity" onClick={onClose}></div>
+    <div className="fixed inset-0 z-[9999] overflow-y-auto">
+      <div className="fixed inset-0 bg-black/50 backdrop-blur-sm transition-opacity" onClick={onClose}></div>
       <div className="flex min-h-full items-center justify-center p-4 sm:p-6">
         <div className="relative w-full max-w-3xl rounded-xl bg-white shadow-xl overflow-hidden animate-slide-down">
           <div className="flex items-center justify-between px-6 py-4 border-b border-defaultborder">
@@ -115,25 +115,12 @@ export default function AddParameterModal({ isOpen, onClose, mode = 'add', initi
                 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Terkait Dengan (Standar / Metode) <span className="text-danger">*</span>
+                    Metode Uji Terkait <span className="text-gray-400 font-normal">(Opsional)</span>
                   </label>
-                  <div className="flex gap-2 mb-2">
-                    <label className="flex items-center gap-1 text-sm">
-                      <input type="radio" name="terkaitTipe" value="standar" checked={formData.terkaitTipe === 'standar'} onChange={handleChange} required /> Standar Uji
-                    </label>
-                    <label className="flex items-center gap-1 text-sm">
-                      <input type="radio" name="terkaitTipe" value="metode" checked={formData.terkaitTipe === 'metode'} onChange={handleChange} required /> Metode Uji
-                    </label>
-                  </div>
-                  {formData.terkaitTipe && (
-                    <select name="terkaitId" value={formData.terkaitId} onChange={handleChange} className="form-select w-full border-gray-300 rounded-md shadow-sm text-sm focus:border-success focus:ring focus:ring-success/50" required>
-                      <option value="">Pilih {formData.terkaitTipe === 'standar' ? 'Standar Uji' : 'Metode Uji'}</option>
-                      {formData.terkaitTipe === 'standar' 
-                        ? standards.map(s => <option key={s.id} value={s.id}>{s.kode} - {s.nama}</option>)
-                        : methods.map(m => <option key={m.id} value={m.id}>{m.kode} - {m.nama}</option>)
-                      }
-                    </select>
-                  )}
+                  <select name="metodeId" value={formData.metodeId} onChange={handleChange} className="form-select w-full border-gray-300 rounded-md shadow-sm text-sm focus:border-success focus:ring focus:ring-success/50">
+                    <option value="">-- Pilih Metode Uji --</option>
+                    {methods.map(m => <option key={m.id} value={m.id}>{m.kode} - {m.nama}</option>)}
+                  </select>
                 </div>
 
                 <div className="md:col-span-2">

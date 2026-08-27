@@ -21,7 +21,7 @@ const Pageheader = (props) => {
           <h1 className="page-title font-medium text-lg mb-0">{props.activepage}</h1>
           <span className='text-xs'>{props.description}</span>
         </div>
-        <div className="ti-btn-list">
+        {/* <div className="ti-btn-list">
           {props.customButton ? props.customButton : (
             !props.hideExport && (
               <SpkButton style={{ backgroundColor: "#078836", color: "white" }} className="hover:bg-[#078836] hover:text-white" customClass="ti-btn !border-0 btn-wave !me-0">
@@ -29,7 +29,7 @@ const Pageheader = (props) => {
               </SpkButton>
             )
           )}
-        </div>
+        </div> */}
       </div>
       {/* <!-- Page Header Close --> */}
 

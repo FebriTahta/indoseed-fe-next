@@ -75,7 +75,7 @@ html[data-menu-styles] .app-sidebar .side-menu__item.active .side-menu__angle {
 html[data-menu-styles] .app-sidebar .slide-menu.child1 .side-menu__item.active,
 html[data-menu-styles] .app-sidebar .slide-menu.child2 .side-menu__item.active,
 html[data-menu-styles] .app-sidebar .slide-menu.child3 .side-menu__item.active {
-    background-color: rgba(10, 143, 62, 0.1) !important;
+    background-color: transparent !important;
     color: #0A8F3E !important;
     font-weight: 600 !important;
     border-right: 0 !important; /* Remove border for submenu to keep it clean */

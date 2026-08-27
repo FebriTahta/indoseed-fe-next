@@ -122,3 +122,36 @@ export const ResetButton: React.FC<BaseButtonProps & { label?: string }> = ({ on
     </SpkButton>
   );
 };
+
+export const TableEditBtn = ({ onClick, id }: { onClick?: (id: string) => void; id: string }) => {
+  return (
+    <button
+      onClick={() => onClick && onClick(id)}
+      className="ti-btn ti-btn-sm ti-btn-info me-1"
+    >
+      <i className="ri-edit-line"></i>
+    </button>
+  );
+};
+
+export const TableRemoveBtn = ({ onClick, id }: { onClick?: (id: string) => void; id: string }) => {
+  return (
+    <button
+      onClick={() => onClick && onClick(id)}
+      className="ti-btn ti-btn-sm ti-btn-danger"
+    >
+      <i className="ri-delete-bin-line"></i>
+    </button>
+  );
+};
+
+export const TableViewBtn = ({ onClick, id }: { onClick?: (id: string) => void; id: string }) => {
+  return (
+    <button
+      onClick={() => onClick && onClick(id)}
+      className="ti-btn ti-btn-sm ti-btn-success me-1"
+    >
+      <i className="ri-eye-line"></i>
+    </button>
+  );
+};

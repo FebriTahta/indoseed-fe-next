@@ -1,6 +1,5 @@
 "use client"
-import React, { useState, useMemo, Fragment, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import React, { Fragment} from 'react';
 import Pageheader from '@/shared/layouts-components/page-header/pageheader';
 import Seo from '@/shared/layouts-components/seo/seo';
 import SpkButton from '@/shared/@spk-reusable-components/uielements/spk-button';
@@ -13,6 +12,8 @@ import FilterRow, { FilterSelectConfig } from '../../shared/FilterRow';
 import DataTable from '../../shared/DataTable';
 import DetailPanel, { TabConfig, DetailAction } from '../../shared/DetailPanel';
 import CrudModal from '../../shared/CrudModal';
+import ImageUpload from '../../shared/ImageUpload';
+import { TableViewBtn, TableEditBtn, TableRemoveBtn } from '../../shared/ActionButtons';
 
 import { Commodity } from '@/app/types/commodity';
 import { useKomoditas } from '@/app/hooks/useKomoditas';
@@ -141,28 +142,10 @@ export default function KomoditasPage() {
           </span>
         </td>
         <td className="p-4 text-center">
-          <div className="flex items-center justify-center gap-3">
-            <button
-              onClick={() => handleViewDetail(item)}
-              className="text-gray-400 hover:text-emerald-600 transition-colors"
-              title="Lihat Detail Komoditas"
-            >
-              <i className="ri-eye-line text-lg"></i>
-            </button>
-            <button
-              onClick={() => handleOpenEditModal(item)}
-              className="text-gray-400 hover:text-blue-600 transition-colors"
-              title="Edit Komoditas"
-            >
-              <i className="ri-edit-line text-lg"></i>
-            </button>
-            <button
-              onClick={() => handleDeleteCommodity(item.id)}
-              className="text-gray-400 hover:text-red-500 transition-colors"
-              title="Hapus Komoditas"
-            >
-              <i className="ri-trash-line text-lg"></i>
-            </button>
+          <div className="flex items-center justify-center">
+            <TableViewBtn id={item.id} onClick={() => handleViewDetail(item)} />
+            <TableEditBtn id={item.id} onClick={() => handleOpenEditModal(item)} />
+            <TableRemoveBtn id={item.id} onClick={() => handleDeleteCommodity(item.id)} />
           </div>
         </td>
       </tr>
@@ -255,7 +238,7 @@ export default function KomoditasPage() {
               <span className="mr-2">:</span>{viewedCommodity.diubahOleh || 'Admin'}
             </div>
 
-            {/* <div className="col-span-12 py-2">
+            <div className="col-span-12 py-2">
               <p className="font-semibold text-textmuted mb-2">Gambar / Ikon</p>
               <div className="w-20 h-20 rounded border bg-gray-50 flex items-center justify-center overflow-hidden">
                 {viewedCommodity.image ? (
@@ -266,7 +249,7 @@ export default function KomoditasPage() {
                   </div>
                 )}
               </div>
-            </div> */}
+            </div>
           </div>
         );
       case 'riwayat':
@@ -323,18 +306,6 @@ export default function KomoditasPage() {
         currentpage="Komoditas"
         activepage="Komoditas"
         description="Kelola master data komoditas perusahaan"
-        customButton={
-          <SpkButton
-            {...({
-              onclickfunc: handleOpenAddModal,
-              style: { backgroundColor: '#078836', color: 'white' },
-              className: "hover:bg-[#06732d] hover:text-white",
-              customClass: "ti-btn !border-0 btn-wave !me-0 flex items-center gap-1.5"
-            } as any)}
-          >
-            <i className="ri-add-line text-lg"></i> Tambah Komoditas
-          </SpkButton>
-        }
       />
 
       {/* Summary Cards */}
@@ -351,6 +322,8 @@ export default function KomoditasPage() {
             selectFilters={filterConfig}
             onReset={handleResetFilters}
             onExport={handleExportData}
+            onAdd={handleOpenAddModal}
+            addLabel="Tambah Komoditas"
           />
 
           {/* Table list with pagination */}
@@ -458,6 +431,16 @@ export default function KomoditasPage() {
               <option value="Tidak Aktif">Non Aktif</option>
             </select>
           </div>
+        </div>
+
+        <div>
+          <ImageUpload
+            label="Foto Komoditas"
+            imageUrl={previewUrl}
+            onImageChange={handleFileChange}
+            disabled={isSubmitLoading}
+            className="mb-4"
+          />
         </div>
 
         <div>
