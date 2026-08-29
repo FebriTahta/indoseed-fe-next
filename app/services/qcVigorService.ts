@@ -6,16 +6,15 @@ const JENIS_UJI = 'Vigor';
 
 function mapToBackendPayload(data: any) {
   const {
-    kodeBatch, commodityId, varietyId, metodeUji, lotNoBenih, tanggalUji, lokasiLab, petugasUji, jumlahSampel,
-    vigor, kategori, batasMinimal, status, alatInstrumen, waktuPengujian, suhuRuangan, catatan, lampiranUrl, parameterUji, ...rest
+    kodeBatch, commodityId, varietyId, testMethodId, lotNoBenih, tanggalUji, lokasiLab, petugasUjiId, jumlahSampel,
+    lampiranUrl, lampiranUrls, indeksVigor, katIndeksVigor, kce, batasMinimalKce, katKce, dayaBerkecambah, batasMinimalDb, katDb, 
+    status, alatInstrumen, waktuPengujian, suhuRuangan, ulangan, catatanTambahan, parameterUji, kategori, ...rest
   } = data;
 
   return {
-    kodeBatch, commodityId, varietyId, tanggalUji, petugasUji, jumlahSampel, lampiranUrl, catatan, lokasiLab,
-    testMethodId: metodeUji,
+    kodeBatch, commodityId, varietyId, tanggalUji, petugasUjiId, jumlahSampel, lampiranUrl, lampiranUrls, lokasiLab,
+    testMethodId: testMethodId,
     jenisUji: JENIS_UJI,
-    nilaiHasil: vigor,
-    batasAcuan: batasMinimal,
     status: status || 'Sedang Diuji',
     detailUji: {
       lotNoBenih, kategori, alatInstrumen, waktuPengujian, suhuRuangan, parameterUji, ...rest
@@ -26,7 +25,6 @@ function mapToBackendPayload(data: any) {
 function mapToFrontendItem(item: any) {
   return {
     ...item,
-    metodeUji: item.testMethod?.nama || item.testMethodId,
     vigor: item.nilaiHasil,
     batasMinimal: item.batasAcuan,
     ...(item.detailUji || {})

@@ -10,6 +10,7 @@ import 'react-toastify/dist/ReactToastify.css';
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import CreateCertificateModal from './CreateCertificateModal';
+import QcPageHeader from '../shared/QcPageHeader';
 import DownloadCertificateModal from './DownloadCertificateModal';
 
 const ReactApexChart = dynamic(() => import('react-apexcharts'), { ssr: false });
@@ -130,19 +131,20 @@ export default function SertifikatQCPage() {
       <Pageheader currentpage="Sertifikat QC" activepage="Quality Control" mainpage="Sertifikat QC" />
 
       {/* Header & Actions */}
-      <div className="flex justify-between items-center mb-4">
-        <div>
-          <p className="text-gray-500 text-sm">Kelola dan pantau sertifikat hasil quality control untuk setiap batch benih.</p>
-        </div>
-        <div className="flex gap-2">
-          <SpkButton variant="primary" onClick={() => setIsCreateModalOpen(true)}>
-            <i className="ri-add-line mr-1"></i> Buat Sertifikat Baru
-          </SpkButton>
-          <SpkButton variant="outline-secondary" customClass="bg-white">
-            <i className="ri-download-2-line mr-1"></i> Export Laporan <i className="ri-arrow-down-s-line ml-1"></i>
-          </SpkButton>
-        </div>
-      </div>
+      <QcPageHeader
+        title="Sertifikat QC"
+        description="Kelola dan pantau sertifikat hasil quality control untuk setiap batch benih."
+        actionButtons={
+          <>
+            <SpkButton variant="primary" onClick={() => setIsCreateModalOpen(true)}>
+              <i className="ri-add-line mr-1"></i> Buat Sertifikat Baru
+            </SpkButton>
+            <SpkButton variant="outline-secondary" customClass="bg-white">
+              <i className="ri-download-2-line mr-1"></i> Export Laporan <i className="ri-arrow-down-s-line ml-1"></i>
+            </SpkButton>
+          </>
+        }
+      />
 
       {/* Metric Cards */}
       <StatsWidgets items={statItems} />

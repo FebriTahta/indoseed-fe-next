@@ -1,6 +1,7 @@
 "use client"
 import React, { useState, useEffect } from 'react';
-import { ViewIconButton } from '@/app/(components)/(content-layout)/shared/ActionButtons';
+import { ViewIconButton, EditIconButton } from '@/app/(components)/(content-layout)/shared/ActionButtons';
+import QcPageHeader from '../shared/QcPageHeader';
 import Pageheader from '@/shared/layouts-components/page-header/pageheader';
 import Seo from '@/shared/layouts-components/seo/seo';
 import StatsWidgets, { StatItem } from '../../shared/StatsWidgets';
@@ -18,6 +19,7 @@ import { qcDayaTumbuhService } from '@/app/services/qcDayaTumbuhService';
 
 export default function DayaTumbuhPage() {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [editData, setEditData] = useState<any>(null);
   const [selectedTest, setSelectedTest] = useState<any>(null);
   const [methods, setMethods] = useState<any[]>([]);
   const [commodities, setCommodities] = useState<any[]>([]);
@@ -67,10 +69,28 @@ export default function DayaTumbuhPage() {
   let totalDayaTumbuh = 0;
   let sertifikatCount = 0;
 
+  const distKomoditasMap: Record<string, { total: number; lulus: number; tidakLulus: number; sedangDiuji: number }> = {};
+
+  const getOverallStatus = (t: any, fallback: string) => {
+    if (t.parameterUji) {
+      try {
+        const params = typeof t.parameterUji === 'string' ? JSON.parse(t.parameterUji) : t.parameterUji;
+        if (Array.isArray(params) && params.length > 0) {
+          const allLulus = params.every((p: any) => p.status === 'Lulus');
+          const anyTidakLulus = params.some((p: any) => p.status === 'Tidak Lulus');
+          if (anyTidakLulus) return 'Tidak Lulus';
+          if (allLulus) return 'Lulus';
+          return 'Sedang Diuji';
+        }
+      } catch (e) { }
+    }
+    return t.status || fallback;
+  };
+
   tests.forEach(t => {
-    const dayaTumbuh = t.dayaTumbuh ?? (t.jumlahBenihDitanam ? (t.jumlahBerkecambah / t.jumlahBenihDitanam) * 100 : 0);
+    const dayaTumbuh = t.jumlahBenihDitanam ? (t.jumlahBerkecambah / t.jumlahBenihDitanam) * 100 : (t.dayaTumbuh || 0);
     const batasMinimal = t.batasMinimal ?? 85;
-    const status = t.status || (dayaTumbuh >= batasMinimal ? 'Lulus' : 'Tidak Lulus');
+    const status = getOverallStatus(t, (dayaTumbuh >= batasMinimal ? 'Lulus' : 'Tidak Lulus'));
 
     if (status === 'Lulus') lulusCount++;
     else if (status === 'Tidak Lulus') tidakLulusCount++;
@@ -78,7 +98,18 @@ export default function DayaTumbuhPage() {
 
     if (t.lampiranUrl) sertifikatCount++;
     totalDayaTumbuh += dayaTumbuh;
+
+    const k = t.commodity?.namaKomoditas || 'Unknown';
+    if (!distKomoditasMap[k]) distKomoditasMap[k] = { total: 0, lulus: 0, tidakLulus: 0, sedangDiuji: 0 };
+    distKomoditasMap[k].total++;
+    if (status === 'Lulus') distKomoditasMap[k].lulus++;
+    else if (status === 'Tidak Lulus') distKomoditasMap[k].tidakLulus++;
+    else distKomoditasMap[k].sedangDiuji++;
   });
+
+  const distKomoditasArray = Object.entries(distKomoditasMap)
+    .map(([name, data]) => ({ name, ...data }))
+    .sort((a, b) => b.total - a.total);
 
   const avgDayaTumbuh = totalUji > 0 ? (totalDayaTumbuh / totalUji) : 0;
 
@@ -189,22 +220,28 @@ export default function DayaTumbuhPage() {
     setSelectedTest(row);
   };
 
+  const handleEdit = (row: any, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setEditData(row);
+    setIsCreateModalOpen(true);
+  };
+
   return (
     <>
       <Seo title="Daya Tumbuh" />
       <Pageheader currentpage="Daya Tumbuh" activepage="Quality Control (QC)" mainpage="Daya Tumbuh" />
       <ToastContainer />
 
-      <div className="flex justify-between items-center mb-4">
-        <div>
-          <h4 className="font-bold text-xl text-gray-800 mb-1">Daya Tumbuh</h4>
-          <p className="text-sm text-gray-500">Uji daya tumbuh benih untuk memastikan persentase benih mampu berkecambah dengan optimal.</p>
-        </div>
-        <div className="flex gap-2">
-          <AddButton onClick={() => setIsCreateModalOpen(true)} label="Buat Uji Daya Tumbuh" />
-          <ExportButton />
-        </div>
-      </div>
+      <QcPageHeader
+        title="Daya Tumbuh"
+        description="Uji daya tumbuh benih untuk memastikan persentase benih mampu berkecambah dengan optimal."
+        actionButtons={
+          <>
+            <AddButton onClick={() => setIsCreateModalOpen(true)} label="Buat Uji Daya Tumbuh" />
+            <ExportButton />
+          </>
+        }
+      />
 
       {/* Metric Cards */}
       <StatsWidgets items={statItems} columns={6} />
@@ -253,7 +290,8 @@ export default function DayaTumbuhPage() {
                       <th className="hidden 2xl:table-cell text-left text-xs font-semibold text-gray-500 py-3 px-4">Varietas</th>
                       <th className="hidden 2xl:table-cell text-left text-xs font-semibold text-gray-500 py-3 px-4">Tanggal Uji</th>
                       <th className="hidden 2xl:table-cell text-left text-xs font-semibold text-gray-500 py-3 px-4">Metode</th>
-                      <th className="hidden 2xl:table-cell text-left text-xs font-semibold text-gray-500 py-3 px-4">Jumlah Sampel</th>
+                      <th className="hidden 2xl:table-cell text-left text-xs font-semibold text-gray-500 py-3 px-4">Metode Uji</th>
+                      <th className="hidden 2xl:table-cell text-left text-xs font-semibold text-gray-500 py-3 px-4">Petugas Uji</th>
                       <th className="text-left text-xs font-semibold text-gray-500 py-3 px-4">Daya Tumbuh (%)</th>
                       <th className="hidden 2xl:table-cell text-left text-xs font-semibold text-gray-500 py-3 px-4">Batas Minimal (%)</th>
                       <th className="text-left text-xs font-semibold text-gray-500 py-3 px-4">Status</th>
@@ -263,9 +301,9 @@ export default function DayaTumbuhPage() {
                   </thead>
                   <tbody>
                     {tests.length > 0 ? tests.map((row, idx) => {
-                      const dayaTumbuh = row.dayaTumbuh ?? (row.jumlahBenihDitanam ? (row.jumlahBerkecambah / row.jumlahBenihDitanam) * 100 : 0);
+                      const dayaTumbuh = row.jumlahBenihDitanam ? (row.jumlahBerkecambah / row.jumlahBenihDitanam) * 100 : (row.dayaTumbuh || 0);
                       const batasMinimal = row.batasMinimal ?? 85;
-                      const status = row.status || (dayaTumbuh >= batasMinimal ? 'Lulus' : 'Tidak Lulus');
+                      const status = getOverallStatus(row, (dayaTumbuh >= batasMinimal ? 'Lulus' : 'Tidak Lulus'));
 
                       return (
                         <React.Fragment key={row.id || idx}>
@@ -284,17 +322,27 @@ export default function DayaTumbuhPage() {
                             <td className="hidden 2xl:table-cell text-sm py-2 px-4">{row.variety?.namaVarietas || '-'}</td>
                             <td className="hidden 2xl:table-cell text-sm py-2 px-4">{row.tanggalUji ? new Date(row.tanggalUji).toLocaleDateString() : '-'}</td>
                             <td className="hidden 2xl:table-cell text-sm py-2 px-4">{row.metodeUji || '-'}</td>
-                            <td className="hidden 2xl:table-cell text-sm py-2 px-4">{row.jumlahSampel || '-'}</td>
-                            <td className="text-sm py-2 px-4 font-semibold">{dayaTumbuh.toFixed(2).replace('.', ',')}</td>
+                            <td className="hidden 2xl:table-cell text-sm py-2 px-4">{row.testMethod?.nama || '-'}</td>
+                            <td className="hidden 2xl:table-cell text-sm py-2 px-4">{row.petugasUji?.nama || '-'}</td>
+                            <td className="text-sm py-2 px-4 font-semibold">{dayaTumbuh.toFixed(1).replace('.', ',')}</td>
                             <td className="hidden 2xl:table-cell text-sm py-2 px-4">{batasMinimal}</td>
                             <td className="py-2 px-4">
                               <span className={`badge ${status === 'Lulus' ? 'bg-success/10 text-success' : status === 'Tidak Lulus' ? 'bg-danger/10 text-danger' : 'bg-gray-100 text-gray-500'}`}>
                                 {status}
                               </span>
                             </td>
-                            <td className="hidden 2xl:table-cell text-sm py-2 px-4">{row.lampiranUrl ? <a href={row.lampiranUrl} target="_blank" rel="noreferrer" className="text-primary hover:underline" onClick={(e) => e.stopPropagation()}>Lihat</a> : '-'}</td>
+                            <td className="hidden 2xl:table-cell text-sm py-2 px-4">
+                              {row.lampirans && row.lampirans.length > 0 ? (
+                                <div className="flex flex-col gap-1">
+                                  {row.lampirans.map((lampiran: any, i: number) => (
+                                    <a key={lampiran.id || i} href={lampiran.url} target="_blank" rel="noreferrer" className="text-primary hover:underline" onClick={(e) => e.stopPropagation()}>File {i + 1}</a>
+                                  ))}
+                                </div>
+                              ) : '-'}
+                            </td>
                             <td className="py-2 px-4 text-center flex justify-center gap-1">
                               <ViewIconButton />
+                              <EditIconButton onClick={(e: any) => handleEdit(row, e)} />
                             </td>
                           </tr>
                           {expandedRows[row.id || String(idx)] && (
@@ -302,11 +350,18 @@ export default function DayaTumbuhPage() {
                               <td colSpan={7} className="py-3 px-6">
                                 <ul className="text-sm space-y-1 text-gray-600">
                                   <li><span className="font-semibold text-gray-800">Varietas:</span> {row.variety?.namaVarietas || '-'}</li>
-                                  <li><span className="font-semibold text-gray-800">Tanggal Uji:</span> {row.tanggalUji ? new Date(row.tanggalUji).toLocaleDateString() : '-'}</li>
-                                  <li><span className="font-semibold text-gray-800">Metode Uji:</span> {row.metodeUji || '-'}</li>
+                                  <li><span className="font-semibold text-gray-800">Tanggal Uji:</span> {row.tanggalUji ? new Date(row.tanggalUji).toLocaleDateString('id-ID') : '-'}</li>
+                                  <li><span className="font-semibold text-gray-800">Metode Uji:</span> {row.testMethod?.nama || '-'}</li>
+                                  <li><span className="font-semibold text-gray-800">Petugas Uji:</span> {row.petugasUji?.nama || '-'}</li>
                                   <li><span className="font-semibold text-gray-800">Jumlah Sampel:</span> {row.jumlahSampel || '-'}</li>
                                   <li><span className="font-semibold text-gray-800">Batas Minimal:</span> {batasMinimal}%</li>
-                                  <li><span className="font-semibold text-gray-800">Sertifikat:</span> {row.lampiranUrl ? <a href={row.lampiranUrl} target="_blank" rel="noreferrer" className="text-primary hover:underline">Lihat</a> : '-'}</li>
+                                  <li><span className="font-semibold text-gray-800">Lampiran:</span> {row.lampirans && row.lampirans.length > 0 ? (
+                                    <div className="flex flex-col gap-1 mt-1 ml-4">
+                                      {row.lampirans.map((lampiran: any, i: number) => (
+                                        <a key={lampiran.id || i} href={lampiran.url} target="_blank" rel="noreferrer" className="text-primary hover:underline" onClick={(e) => e.stopPropagation()}>File {i + 1}</a>
+                                      ))}
+                                    </div>
+                                  ) : '-'}</li>
                                 </ul>
                               </td>
                             </tr>
@@ -315,7 +370,7 @@ export default function DayaTumbuhPage() {
                       )
                     }) : (
                       <tr>
-                        <td colSpan={13} className="text-center py-4 text-gray-500">Tidak ada data ditemukan</td>
+                        <td colSpan={14} className="text-center py-4 text-gray-500">Tidak ada data ditemukan</td>
                       </tr>
                     )}
                   </tbody>
@@ -438,8 +493,8 @@ export default function DayaTumbuhPage() {
                   <div className="flex items-center gap-2">
                     <h5 className="font-bold text-lg mb-0">{selectedTest ? selectedTest.kodeBatch : '-'}</h5>
                     {selectedTest && (
-                      <span className={`badge ${((selectedTest.dayaTumbuh !== undefined && selectedTest.dayaTumbuh !== null ? selectedTest.dayaTumbuh : (((selectedTest.jumlahBerkecambah || 0) / (selectedTest.jumlahBenihDitanam || 1)) * 100)) >= 85) ? 'bg-success/10 text-success' : 'bg-danger/10 text-danger'}`}>
-                        {((selectedTest.dayaTumbuh !== undefined && selectedTest.dayaTumbuh !== null ? selectedTest.dayaTumbuh : (((selectedTest.jumlahBerkecambah || 0) / (selectedTest.jumlahBenihDitanam || 1)) * 100)) >= 85) ? 'Lulus' : 'Tidak Lulus'}
+                      <span className={`badge ${((selectedTest.jumlahBenihDitanam ? (selectedTest.jumlahBerkecambah / selectedTest.jumlahBenihDitanam) * 100 : (selectedTest.dayaTumbuh || 0)) >= 85) ? 'bg-success/10 text-success' : 'bg-danger/10 text-danger'}`}>
+                        {((selectedTest.jumlahBenihDitanam ? (selectedTest.jumlahBerkecambah / selectedTest.jumlahBenihDitanam) * 100 : (selectedTest.dayaTumbuh || 0)) >= 85) ? 'Lulus' : 'Tidak Lulus'}
                       </span>
                     )}
                   </div>
@@ -466,7 +521,7 @@ export default function DayaTumbuhPage() {
                 </div>
                 <div>
                   <p className="text-xs text-gray-500 mb-1">Daya Tumbuh</p>
-                  <h6 className="font-bold text-lg text-primary mb-0">{selectedTest ? (selectedTest.dayaTumbuh !== undefined && selectedTest.dayaTumbuh !== null ? selectedTest.dayaTumbuh : (((selectedTest.jumlahBerkecambah || 0) / (selectedTest.jumlahBenihDitanam || 1)) * 100)).toFixed(2).replace('.', ',') : '0,00'}%</h6>
+                  <h6 className="font-bold text-lg text-primary mb-0">{selectedTest ? (selectedTest.jumlahBenihDitanam ? (selectedTest.jumlahBerkecambah / selectedTest.jumlahBenihDitanam) * 100 : (selectedTest.dayaTumbuh || 0)).toFixed(2).replace('.', ',') : '0,00'}%</h6>
                 </div>
               </div>
 
@@ -474,7 +529,7 @@ export default function DayaTumbuhPage() {
                 <div>
                   <h6 className="text-sm font-semibold mb-3">Parameter Uji</h6>
                   <div className="space-y-2">
-                    <div className="flex justify-between text-sm"><span className="text-gray-500">Daya Tumbuh</span><span className="font-semibold">{selectedTest ? (selectedTest.dayaTumbuh !== undefined && selectedTest.dayaTumbuh !== null ? selectedTest.dayaTumbuh : (((selectedTest.jumlahBerkecambah || 0) / (selectedTest.jumlahBenihDitanam || 1)) * 100)).toFixed(2).replace('.', ',') : '0,00'} %</span></div>
+                    <div className="flex justify-between text-sm"><span className="text-gray-500">Daya Tumbuh</span><span className="font-semibold">{selectedTest ? (selectedTest.jumlahBenihDitanam ? (selectedTest.jumlahBerkecambah / selectedTest.jumlahBenihDitanam) * 100 : (selectedTest.dayaTumbuh || 0)).toFixed(2).replace('.', ',') : '0,00'} %</span></div>
                     <div className="flex justify-between text-sm"><span className="text-gray-500">Batas Minimal</span><span className="font-semibold">{selectedTest?.batasMinimal || 85} %</span></div>
                     <div className="flex justify-between text-sm"><span className="text-gray-500">Jumlah Benih Ditanam</span><span className="font-semibold">{selectedTest?.jumlahBenihDitanam || '-'} Butir</span></div>
                     <div className="flex justify-between text-sm"><span className="text-gray-500">Jumlah Berkecambah</span><span className="font-semibold">{selectedTest?.jumlahBerkecambah || '-'} Butir</span></div>
@@ -502,39 +557,19 @@ export default function DayaTumbuhPage() {
               <a href="#" className="text-xs text-primary hover:underline">Lihat Semua</a>
             </div>
             <div className="box-body p-4 space-y-4">
-              <div>
-                <div className="flex justify-between text-xs mb-1">
-                  <span className="font-semibold">Padi</span>
-                  <span className="text-gray-500">Total 34</span>
+              {distKomoditasArray.map(item => (
+                <div key={item.name}>
+                  <div className="flex justify-between text-xs mb-1">
+                    <span className="font-semibold">{item.name}</span>
+                    <span className="text-gray-500">Total {item.total}</span>
+                  </div>
+                  <div className="w-full h-3 bg-gray-100 rounded-full flex overflow-hidden">
+                    <div className="bg-success h-full" style={{ width: `${(item.lulus / item.total) * 100}%` }}></div>
+                    <div className="bg-danger h-full" style={{ width: `${(item.tidakLulus / item.total) * 100}%` }}></div>
+                    <div className="bg-info h-full" style={{ width: `${(item.sedangDiuji / item.total) * 100}%` }}></div>
+                  </div>
                 </div>
-                <div className="w-full h-3 bg-gray-100 rounded-full flex overflow-hidden">
-                  <div className="bg-success h-full" style={{ width: '88%' }}></div>
-                  <div className="bg-danger h-full" style={{ width: '6%' }}></div>
-                  <div className="bg-info h-full" style={{ width: '6%' }}></div>
-                </div>
-              </div>
-              <div>
-                <div className="flex justify-between text-xs mb-1">
-                  <span className="font-semibold">Jagung</span>
-                  <span className="text-gray-500">Total 23</span>
-                </div>
-                <div className="w-full h-3 bg-gray-100 rounded-full flex overflow-hidden">
-                  <div className="bg-success h-full" style={{ width: '87%' }}></div>
-                  <div className="bg-danger h-full" style={{ width: '9%' }}></div>
-                  <div className="bg-info h-full" style={{ width: '4%' }}></div>
-                </div>
-              </div>
-              <div>
-                <div className="flex justify-between text-xs mb-1">
-                  <span className="font-semibold">Kedelai</span>
-                  <span className="text-gray-500">Total 16</span>
-                </div>
-                <div className="w-full h-3 bg-gray-100 rounded-full flex overflow-hidden">
-                  <div className="bg-success h-full" style={{ width: '94%' }}></div>
-                  <div className="bg-danger h-full" style={{ width: '0%' }}></div>
-                  <div className="bg-info h-full" style={{ width: '6%' }}></div>
-                </div>
-              </div>
+              ))}
               <div className="flex gap-4 mt-2 justify-center border-t border-gray-100 pt-3">
                 <div className="flex items-center gap-1"><span className="w-2 h-2 rounded bg-success"></span><span className="text-[10px] text-gray-500">Lulus</span></div>
                 <div className="flex items-center gap-1"><span className="w-2 h-2 rounded bg-danger"></span><span className="text-[10px] text-gray-500">Tidak Lulus</span></div>
@@ -544,7 +579,7 @@ export default function DayaTumbuhPage() {
           </div>
         </div>
       </div>
-      {isCreateModalOpen && <CreateDayaTumbuhModal isOpen={isCreateModalOpen} onClose={() => setIsCreateModalOpen(false)} onSuccess={() => { fetchData(); toast.success('Berhasil menyimpan data Uji Daya Tumbuh!'); }} methods={methods} commodities={commodities} varieties={varieties} />}
+      {isCreateModalOpen && <CreateDayaTumbuhModal isOpen={isCreateModalOpen} onClose={() => { setIsCreateModalOpen(false); setEditData(null); }} onSuccess={() => { fetchData(); toast.success('Berhasil menyimpan data Uji Daya Tumbuh!'); setEditData(null); }} methods={methods} commodities={commodities} varieties={varieties} editData={editData} />}
     </>
   );
 }

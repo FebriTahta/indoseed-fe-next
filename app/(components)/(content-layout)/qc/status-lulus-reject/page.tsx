@@ -6,6 +6,7 @@ import Seo from '@/shared/layouts-components/seo/seo';
 import StatsWidgets, { StatItem } from '../../shared/StatsWidgets';
 import ClientChart from '../../shared/ClientChart';
 import SharedFilterSection from '../shared/SharedFilterSection';
+import QcPageHeader from '../shared/QcPageHeader';
 import { qcTestService } from '@/app/services/qcTestService';
 import { commodityService } from '@/app/services/commodityService';
 import { varietyService } from '@/app/services/varietyService';
@@ -197,17 +198,17 @@ export default function StatusLulusRejectPage() {
       <Seo title="Status Lulus / Reject" />
       <Pageheader currentpage="Status Lulus / Reject" activepage="Quality Control (QC)" mainpage="Status Lulus / Reject" />
 
-      <div className="flex justify-between items-center mb-4">
-        <div>
-          <h4 className="font-bold text-xl text-gray-800 mb-1">Status Lulus / Reject</h4>
-          <p className="text-sm text-gray-500">Monitor dan kelola status kelulusan hasil quality control setiap batch benih.</p>
-        </div>
-        <div className="flex gap-2">
-          <button className="btn btn-outline-light btn-sm flex items-center gap-2">
-            <i className="ri-download-2-line"></i> Export Laporan <i className="ri-arrow-down-s-line"></i>
-          </button>
-        </div>
-      </div>
+      <QcPageHeader
+        title="Status Lulus / Reject"
+        description="Monitor dan kelola status kelulusan hasil quality control setiap batch benih."
+        actionButtons={
+          <>
+            <button className="btn btn-outline-light btn-sm flex items-center gap-2">
+              <i className="ri-download-2-line"></i> Export Laporan <i className="ri-arrow-down-s-line"></i>
+            </button>
+          </>
+        }
+      />
 
       <StatsWidgets items={statItems} columns={5} />
 

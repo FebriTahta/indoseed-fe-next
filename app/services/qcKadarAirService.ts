@@ -6,12 +6,12 @@ const JENIS_UJI = 'Kadar Air';
 
 function mapToBackendPayload(data: any) {
   const {
-    kodeBatch, commodityId, varietyId, testMethodId, lotNumber, tanggalUji, lokasiLab, petugasUji, jumlahSampel,
-    lampiranUrl, kadarAir, batasMaksimal, status, alat, suhuUji, waktuPengeringan, ulangan, beratAwal, beratAkhir, catatan, parameterUji, ...rest
+    kodeBatch, commodityId, varietyId, testMethodId, lotNumber, tanggalUji, lokasiLab, petugasUjiId, jumlahSampel,
+    lampiranUrl, lampiranUrls, kadarAir, batasMaksimal, status, alat, suhuUji, waktuPengeringan, ulangan, beratAwal, beratAkhir, catatan, parameterUji, ...rest
   } = data;
 
   return {
-    kodeBatch, commodityId, varietyId, tanggalUji, petugasUji, jumlahSampel, lampiranUrl, catatan, lokasiLab,
+    kodeBatch, commodityId, varietyId, tanggalUji, petugasUjiId, jumlahSampel, lampiranUrl, lampiranUrls, catatan, lokasiLab,
     testMethodId: testMethodId,
     jenisUji: JENIS_UJI,
     nilaiHasil: kadarAir,
@@ -26,7 +26,6 @@ function mapToBackendPayload(data: any) {
 function mapToFrontendItem(item: any) {
   return {
     ...item,
-    testMethodId: item.testMethod?.nama || item.testMethodId,
     kadarAir: item.nilaiHasil,
     batasMaksimal: item.batasAcuan,
     ...(item.detailUji || {})

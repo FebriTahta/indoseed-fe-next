@@ -1,9 +1,11 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { toast } from 'react-toastify';
 import SpkDatepickr from "@/shared/@spk-reusable-components/spk-packages/datepicker-component";
 import uploadService from '@/app/services/uploadService';
 import { qcKadarAirService } from '@/app/services/qcKadarAirService';
 import { batchProduksiService } from '@/app/services/batchProduksiService';
 import { qcService } from '@/app/services/qcService';
+import { pengujiService } from '@/app/services/pengujiService';
 import ModalFooter from '../components/ModalFooter';
 import SpkSelect from '@/shared/@spk-reusable-components/spk-packages/spk-reactselect';
 
@@ -14,11 +16,12 @@ interface Props {
   methods: any[];
   commodities: any[];
   varieties: any[];
+  editData?: any;
 }
 
-export default function CreateKadarAirModal({ isOpen, onClose, onSuccess, methods, commodities, varieties }: Props) {
+export default function CreateKadarAirModal({ isOpen, onClose, onSuccess, methods, commodities, varieties, editData }: Props) {
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
-  const [lampiranUrl, setLampiranUrl] = useState<string>('');
+  const [lampiranUrls, setLampiranUrls] = useState<string[]>([]);
   const [isUploading, setIsUploading] = useState<boolean>(false);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -34,7 +37,8 @@ export default function CreateKadarAirModal({ isOpen, onClose, onSuccess, method
   const [jumlahSampel, setJumlahSampel] = useState<string>('');
   const [testMethodId, setTestMethodId] = useState<string>('');
   const [lokasiLab, setLokasiLab] = useState<string>('Lab Pusat');
-  const [petugasUji, setPetugasUji] = useState<string>('Dewi Lestari');
+  const [petugasUji, setPetugasUji] = useState<string>('');
+  const [pengujis, setPengujis] = useState<any[]>([]);
   
   const [allParameters, setAllParameters] = useState<any[]>([]);
   const [parameterResults, setParameterResults] = useState<Record<string, { hasilUji: number; status: string }>>({});
@@ -52,6 +56,9 @@ export default function CreateKadarAirModal({ isOpen, onClose, onSuccess, method
       qcService.getParameters().then(res => {
         setAllParameters(Array.isArray(res) ? res : res?.data || []);
       }).catch(console.error);
+      pengujiService.getPengujis().then(res => {
+        setPengujis(res.data || []);
+      }).catch(console.error);
     }
   }, [isOpen]);
 
@@ -64,7 +71,56 @@ export default function CreateKadarAirModal({ isOpen, onClose, onSuccess, method
       setBatchSearchTerm('');
       setLotNumber('');
       setParameterResults({});
+      setLampiranUrls([]);
+      setJumlahSampel('');
+      setTestMethodId('');
+      setLokasiLab('Lab Pusat');
+      setPetugasUji('');
+      setAlat('');
+      setSuhuUji('');
+      setWaktuPengeringan('');
+      setUlangan('');
+      setBeratAwal('');
+      setBeratAkhir('');
+      setCatatan('');
+      setSelectedDate(null);
       return;
+    }
+
+    if (editData) {
+      setKodeBatch(editData.kodeBatch || '');
+      setCommodityId(editData.commodityId || editData.komoditasId || '');
+      setVarietyId(editData.varietyId || editData.varietasId || '');
+      const fallbackLot = editData.kodeBatch ? `LOT-${editData.kodeBatch.replace('BP-', '')}` : '';
+      setLotNumber(editData.lotNumber || fallbackLot);
+      setJumlahSampel(editData.jumlahSampel?.toString() || '');
+      setTestMethodId(editData.testMethodId || '');
+      setLokasiLab(editData.lokasiLab || 'Lab Pusat');
+      setPetugasUji(editData.petugasUjiId || '');
+      setAlat(editData.alat || '');
+      setSuhuUji(editData.suhuUji || '');
+      setWaktuPengeringan(editData.waktuPengeringan || '');
+      setUlangan(editData.ulangan || '');
+      setBeratAwal(editData.beratAwal?.toString() || '');
+      setBeratAkhir(editData.beratAkhir?.toString() || '');
+      setCatatan(editData.catatan || '');
+      if (editData.tanggalUji) setSelectedDate(new Date(editData.tanggalUji));
+      if (editData.lampirans && editData.lampirans.length > 0) {
+        setLampiranUrls(editData.lampirans.map((l: any) => l.url));
+      }
+
+      if (editData.parameterUji) {
+        try {
+          const params = typeof editData.parameterUji === 'string' ? JSON.parse(editData.parameterUji) : editData.parameterUji;
+          const parsedResults: any = {};
+          if (Array.isArray(params)) {
+            params.forEach((p: any) => {
+              parsedResults[p.id] = { hasilUji: p.hasilUji, status: p.status };
+            });
+          }
+          setParameterResults(parsedResults);
+        } catch (e) {}
+      }
     }
 
     const timer = setTimeout(async () => {
@@ -78,7 +134,7 @@ export default function CreateKadarAirModal({ isOpen, onClose, onSuccess, method
         if (batchRes?.data) {
           // Exclude batches that already have a QC Kadar Air test
           const testedBatchCodes = (qcRes?.data || []).map((q: any) => q.kodeBatch);
-          const filteredBatches = batchRes.data.filter((b: any) => !testedBatchCodes.includes(b.kodeBatch));
+          const filteredBatches = batchRes.data.filter((b: any) => !testedBatchCodes.includes(b.kodeBatch) || (editData && b.kodeBatch === editData.kodeBatch));
 
           const sortedData = [...filteredBatches].sort((a: any, b: any) => {
             const dateA = new Date(a.createdAt || a.tanggalMulai || 0).getTime();
@@ -97,6 +153,22 @@ export default function CreateKadarAirModal({ isOpen, onClose, onSuccess, method
     return () => clearTimeout(timer);
   }, [isOpen, batchSearchTerm]);
 
+  useEffect(() => {
+    if (editData && batchList.length > 0 && kodeBatch) {
+      const selectedBatch = batchList.find(b => b.kodeBatch === kodeBatch);
+      if (selectedBatch) {
+        if (!commodityId) {
+          const matchedCommodity = commodities.find(c => c.id === selectedBatch.komoditas || c.namaKomoditas === selectedBatch.komoditas);
+          if (matchedCommodity) setCommodityId(matchedCommodity.id);
+        }
+        if (!varietyId) {
+          const matchedVariety = varieties.find(v => v.id === selectedBatch.varietas || v.namaVarietas === selectedBatch.varietas);
+          if (matchedVariety) setVarietyId(matchedVariety.id);
+        }
+      }
+    }
+  }, [batchList, editData, kodeBatch, commodityId, varietyId, commodities, varieties]);
+
   const handleBatchChange = (selectedOption: any) => {
     const selectedKode = selectedOption ? selectedOption.value : '';
     setKodeBatch(selectedKode);
@@ -114,31 +186,53 @@ export default function CreateKadarAirModal({ isOpen, onClose, onSuccess, method
       const computedLot = selectedBatch.batchLot?.kodeLot || `LOT-${selectedKode.replace('BP-', '')}`;
       setLotNumber(computedLot);
     } else {
-      setCommodityId('');
-      setVarietyId('');
-      setLotNumber('');
+      if (editData && editData.kodeBatch === selectedKode) {
+        setCommodityId(editData.commodityId || editData.komoditasId || '');
+        setVarietyId(editData.varietyId || editData.varietasId || '');
+        const fallbackLot = `LOT-${selectedKode.replace('BP-', '')}`;
+        setLotNumber(editData.lotNumber || fallbackLot);
+      } else {
+        setCommodityId('');
+        setVarietyId('');
+        setLotNumber('');
+      }
     }
   };
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
 
     try {
       setIsUploading(true);
-      const res = await uploadService.uploadFile(file, 'qc');
-      if (res.success && res.data?.fileUrl) {
-        setLampiranUrl(res.data.fileUrl);
+      const uploaded: string[] = [];
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        const res = await uploadService.uploadFile(file, 'qc');
+        if (res.success && res.data?.fileUrl) {
+          uploaded.push(res.data.fileUrl);
+        }
       }
+      setLampiranUrls(prev => [...prev, ...uploaded]);
     } catch (error) {
       console.error('Error uploading file:', error);
-      alert('Gagal mengupload file.');
+      toast.error('Gagal mengupload file.');
     } finally {
       setIsUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
     }
   };
 
+  const handleRemoveLampiran = (index: number) => {
+    setLampiranUrls(prev => prev.filter((_, i) => i !== index));
+  };
+
   const handleSubmit = async () => {
+    if (!kodeBatch || !testMethodId || !petugasUji || !selectedDate) {
+      toast.error('Harap lengkapi semua field yang wajib (Kode Batch, Metode Uji, Petugas Uji, Tanggal Uji)!');
+      return;
+    }
+
     try {
       setIsSubmitting(true);
       
@@ -165,9 +259,9 @@ export default function CreateKadarAirModal({ isOpen, onClose, onSuccess, method
         lotNumber,
         tanggalUji: selectedDate,
         lokasiLab,
-        petugasUji,
+        petugasUjiId: petugasUji || null,
         jumlahSampel: parseInt(jumlahSampel) || null,
-        lampiranUrl,
+        lampiranUrls: lampiranUrls.length > 0 ? lampiranUrls : [],
         kadarAir: extractedKadarAir,
         batasMaksimal: extractedBatas,
         status: extractedStatus !== 'Sedang Diuji' ? extractedStatus : undefined,
@@ -191,14 +285,16 @@ export default function CreateKadarAirModal({ isOpen, onClose, onSuccess, method
         })),
       };
 
-      const res = await qcKadarAirService.createKadarAir(payload);
+      const res = editData 
+        ? await qcKadarAirService.updateKadarAir(editData.id, payload)
+        : await qcKadarAirService.createKadarAir(payload);
       if (res.success) {
          if (onSuccess) onSuccess();
          onClose();
       }
     } catch (e) {
        console.error(e);
-       alert('Gagal menyimpan.');
+       toast.error('Gagal menyimpan.');
     } finally {
        setIsSubmitting(false);
     }
@@ -207,10 +303,10 @@ export default function CreateKadarAirModal({ isOpen, onClose, onSuccess, method
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black bg-opacity-50">
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black bg-opacity-50">
       <div className="bg-white rounded-lg shadow-lg w-full max-w-5xl max-h-[90vh] flex flex-col overflow-hidden">
         <div className="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50">
-          <h5 className="font-semibold text-lg">Buat Uji Baru - Kadar Air</h5>
+          <h5 className="font-semibold text-lg">{editData ? 'Edit Uji - Kadar Air' : 'Buat Uji Baru - Kadar Air'}</h5>
           <button onClick={onClose} className="text-gray-400 hover:text-gray-700">
             <i className="ri-close-line text-2xl"></i>
           </button>
@@ -298,14 +394,22 @@ export default function CreateKadarAirModal({ isOpen, onClose, onSuccess, method
                 <div>
                   <label className="text-xs font-semibold text-gray-600 block mb-1">Petugas Uji <span className="text-danger">*</span></label>
                   <select className="form-select text-sm h-[38px] w-full" value={petugasUji} onChange={e => setPetugasUji(e.target.value)}>
-                    <option value="Dewi Lestari">Dewi Lestari</option>
+                    <option value="">Pilih Petugas Uji</option>
+                    {pengujis.filter((p: any) => !testMethodId || p.metodeUji?.some((mu: any) => mu.testMethodId === testMethodId)).map((p: any) => (
+                      <option key={p.id} value={p.id}>{p.nama}</option>
+                    ))}
                   </select>
                 </div>
                 <div>
                   <label className="text-xs font-semibold text-gray-600 block mb-1">Metode Uji <span className="text-danger">*</span></label>
                   <select className="form-select text-sm h-[38px] w-full" value={testMethodId} onChange={e => setTestMethodId(e.target.value)}>
                     <option value="">Pilih Metode Uji</option>
-                    {methods?.map(m => (
+                    {methods?.filter((m: any) => {
+                      if (!petugasUji) return true;
+                      const selectedPenguji = pengujis.find((p: any) => p.id === petugasUji);
+                      if (!selectedPenguji) return true;
+                      return selectedPenguji.metodeUji?.some((mu: any) => mu.testMethodId === m.id);
+                    }).map(m => (
                       <option key={m.id} value={m.id}>{m.nama}</option>
                     ))}
                   </select>
@@ -459,10 +563,11 @@ export default function CreateKadarAirModal({ isOpen, onClose, onSuccess, method
                 onChange={handleFileUpload} 
                 className="hidden" 
                 accept=".svg,.png,.jpg,.jpeg,.pdf,.xlsx"
+                multiple
               />
 
               <div 
-                className={`border-2 border-dashed rounded-md p-6 flex flex-col items-center justify-center text-center cursor-pointer transition-colors ${lampiranUrl ? 'border-primary/50 bg-primary/5' : 'border-gray-200 bg-gray-50/50 hover:bg-gray-50'}`}
+                className={`border-2 border-dashed rounded-md p-6 flex flex-col items-center justify-center text-center cursor-pointer transition-colors border-gray-200 bg-gray-50/50 hover:bg-gray-50 mb-4`}
                 onClick={() => fileInputRef.current?.click()}
               >
                 {isUploading ? (
@@ -470,24 +575,40 @@ export default function CreateKadarAirModal({ isOpen, onClose, onSuccess, method
                     <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin mb-3"></div>
                     <p className="text-sm font-semibold">Mengupload...</p>
                   </div>
-                ) : lampiranUrl ? (
-                  <div className="flex flex-col items-center">
-                    <div className="w-12 h-12 bg-primary/10 text-primary rounded-full flex items-center justify-center mb-3">
-                      <i className="ri-check-line text-2xl"></i>
-                    </div>
-                    <p className="text-sm font-semibold mb-1 text-primary">File berhasil diupload</p>
-                    <a href={lampiranUrl} target="_blank" rel="noreferrer" className="text-xs text-primary hover:underline" onClick={(e) => e.stopPropagation()}>Lihat File</a>
-                  </div>
                 ) : (
                   <>
                     <div className="w-12 h-12 bg-primary/10 text-primary rounded-full flex items-center justify-center mb-3">
                       <i className="ri-upload-cloud-2-line text-2xl"></i>
                     </div>
                     <p className="text-sm font-semibold mb-1">Drag & drop file di sini atau klik untuk memilih file</p>
-                    <p className="text-xs text-gray-500">Format yang didukung: JPG, PNG, PDF, XLSX (Maks. 10 MB)</p>
+                    <p className="text-xs text-gray-500">Format yang didukung: JPG, PNG, PDF, XLSX (Maks. 10 MB). Bisa pilih lebih dari satu.</p>
                   </>
                 )}
               </div>
+
+              {lampiranUrls.length > 0 && (
+                <div className="flex flex-col gap-2">
+                  {lampiranUrls.map((url, idx) => {
+                    const fileName = url.split('/').pop() || `File ${idx + 1}`;
+                    return (
+                      <div key={idx} className="flex items-center justify-between p-3 border border-gray-100 rounded-md bg-white shadow-sm">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 bg-primary/10 text-primary rounded flex items-center justify-center">
+                            <i className="ri-file-text-line text-xl"></i>
+                          </div>
+                          <div>
+                            <p className="text-sm font-medium line-clamp-1">{fileName}</p>
+                            <a href={url} target="_blank" rel="noreferrer" className="text-xs text-primary hover:underline">Lihat File</a>
+                          </div>
+                        </div>
+                        <button type="button" onClick={() => handleRemoveLampiran(idx)} className="text-red-500 hover:bg-red-50 p-2 rounded transition-colors" title="Hapus File">
+                          <i className="ri-delete-bin-line"></i>
+                        </button>
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
             </div>
 
           </div>

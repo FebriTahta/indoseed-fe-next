@@ -1,13 +1,14 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { toast } from 'react-toastify';
 import SpkButton from '@/shared/@spk-reusable-components/uielements/spk-button';
 import SpkDatepickr from "@/shared/@spk-reusable-components/spk-packages/datepicker-component";
 import uploadService from '@/app/services/uploadService';
 import { qcDayaTumbuhService } from '@/app/services/qcDayaTumbuhService';
 import { batchProduksiService } from '@/app/services/batchProduksiService';
+import { qcService } from '@/app/services/qcService';
+import { pengujiService } from '@/app/services/pengujiService';
 import ModalFooter from '../components/ModalFooter';
 import SpkSelect from '@/shared/@spk-reusable-components/spk-packages/spk-reactselect';
-
-import { qcService } from '@/app/services/qcService';
 
 interface Props {
   isOpen: boolean;
@@ -16,11 +17,12 @@ interface Props {
   methods: any[];
   commodities: any[];
   varieties: any[];
+  editData?: any;
 }
 
-export default function CreateDayaTumbuhModal({ isOpen, onClose, onSuccess, methods, commodities, varieties }: Props) {
+export default function CreateDayaTumbuhModal({ isOpen, onClose, onSuccess, methods, commodities, varieties, editData }: Props) {
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
-  const [lampiranUrl, setLampiranUrl] = useState<string>('');
+  const [lampiranUrls, setLampiranUrls] = useState<string[]>([]);
   const [isUploading, setIsUploading] = useState<boolean>(false);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -36,13 +38,18 @@ export default function CreateDayaTumbuhModal({ isOpen, onClose, onSuccess, meth
   const [lotNoBenih, setLotNoBenih] = useState<string>('LOT-A-001');
   const [jumlahSampel, setJumlahSampel] = useState<string>('');
   const [metodeUji, setMetodeUji] = useState<string>('');
-  const [petugasUji, setPetugasUji] = useState<string>('Dewi Lestari');
+  const [lokasiLab, setLokasiLab] = useState<string>('Lab Pusat');
+  const [petugasUji, setPetugasUji] = useState<string>('');
+  const [pengujis, setPengujis] = useState<any[]>([]);
   const [parameterResults, setParameterResults] = useState<Record<string, { hasilUji: number; status: string }>>({});
 
   useEffect(() => {
     if (isOpen) {
       qcService.getParameters().then(res => {
         setAllParameters(Array.isArray(res) ? res : res?.data || []);
+      }).catch(console.error);
+      pengujiService.getPengujis().then(res => {
+        setPengujis(res.data || []);
       }).catch(console.error);
     }
   }, [isOpen]);
@@ -56,7 +63,59 @@ export default function CreateDayaTumbuhModal({ isOpen, onClose, onSuccess, meth
       setBatchSearchTerm('');
       setParameterResults({});
       setLotNoBenih('');
+      setJumlahSampel('');
+      setMetodeUji('');
+      setLokasiLab('Lab Pusat');
+      setPetugasUji('');
+      setSelectedDate(null);
+      setLampiranUrls([]);
+      setJumlahBenihDitanam('');
+      setJumlahBerkecambah('');
+      setWaktuUjiHari('');
+      setSuhuUji('');
+      setMediaUji('');
+      setKelembabanMedia('');
+      setCatatanTambahan('');
       return;
+    }
+
+    if (editData) {
+      setKodeBatch(editData.kodeBatch || '');
+      setCommodityId(editData.commodityId || '');
+      setVarietyId(editData.varietyId || '');
+      setLotNoBenih(editData.lotNoBenih || (editData.kodeBatch ? `LOT-${editData.kodeBatch.replace('BP-', '')}` : ''));
+      setJumlahSampel(editData.jumlahSampel?.toString() || '');
+      setMetodeUji(editData.testMethodId || editData.metodeUji || '');
+      setLokasiLab(editData.lokasiLab || 'Lab Pusat');
+      setPetugasUji(editData.petugasUjiId || '');
+      setSelectedDate(editData.tanggalUji ? new Date(editData.tanggalUji) : null);
+      
+      let parsedUrls: string[] = [];
+      if (editData.lampirans && Array.isArray(editData.lampirans)) {
+        parsedUrls = editData.lampirans.map((l: any) => l.url);
+      }
+      setLampiranUrls(parsedUrls);
+      
+      setJumlahBenihDitanam(editData.jumlahBenihDitanam?.toString() || '');
+      setJumlahBerkecambah(editData.jumlahBerkecambah?.toString() || '');
+      setWaktuUjiHari(editData.waktuUjiHari?.toString() || '');
+      setSuhuUji(editData.suhuUji || '');
+      setMediaUji(editData.mediaUji || '');
+      setKelembabanMedia(editData.kelembabanMedia || '');
+      setCatatanTambahan(editData.catatan || '');
+
+      if (editData.parameterUji) {
+         try {
+           const parsed = typeof editData.parameterUji === 'string' ? JSON.parse(editData.parameterUji) : editData.parameterUji;
+           const newResults: Record<string, any> = {};
+           parsed.forEach((p: any) => {
+             newResults[p.id] = { hasilUji: p.hasilUji, status: p.status };
+           });
+           setParameterResults(newResults);
+         } catch (e) {
+           console.error("Failed to parse parameterUji", e);
+         }
+      }
     }
 
     const timer = setTimeout(async () => {
@@ -121,21 +180,31 @@ export default function CreateDayaTumbuhModal({ isOpen, onClose, onSuccess, meth
   const [catatanTambahan, setCatatanTambahan] = useState<string>('');
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
 
     try {
       setIsUploading(true);
-      const res = await uploadService.uploadFile(file, 'qc');
-      if (res.success && res.data?.fileUrl) {
-        setLampiranUrl(res.data.fileUrl);
+      const uploaded: string[] = [];
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        const res = await uploadService.uploadFile(file, 'qc');
+        if (res.success && res.data?.fileUrl) {
+          uploaded.push(res.data.fileUrl);
+        }
       }
+      setLampiranUrls(prev => [...prev, ...uploaded]);
     } catch (error) {
       console.error('Error uploading file:', error);
-      alert('Gagal mengupload file.');
+      toast.error('Gagal mengupload file.');
     } finally {
       setIsUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
     }
+  };
+
+  const handleRemoveLampiran = (index: number) => {
+    setLampiranUrls(prev => prev.filter((_, i) => i !== index));
   };
 
   const handleSubmit = async () => {
@@ -144,13 +213,16 @@ export default function CreateDayaTumbuhModal({ isOpen, onClose, onSuccess, meth
 
       const payload = {
         kodeBatch,
+        lotNoBenih: lotNoBenih || null,
         commodityId: commodityId || null,
         varietyId: varietyId || null,
         metodeUji: metodeUji || null,
+        testMethodId: metodeUji || null,
         tanggalUji: selectedDate,
-        petugasUji,
+        lokasiLab: lokasiLab,
+        petugasUjiId: petugasUji || null,
         jumlahSampel: parseInt(jumlahSampel) || null,
-        lampiranUrl,
+        lampiranUrls: lampiranUrls.length > 0 ? lampiranUrls : [],
         jumlahBenihDitanam: parseInt(jumlahBenihDitanam) || null,
         jumlahBerkecambah: parseInt(jumlahBerkecambah) || null,
         jumlahTidakBerkecambah: (parseInt(jumlahBenihDitanam) || 0) - (parseInt(jumlahBerkecambah) || 0),
@@ -172,14 +244,17 @@ export default function CreateDayaTumbuhModal({ isOpen, onClose, onSuccess, meth
         })),
       };
 
-      const res = await qcDayaTumbuhService.createDayaTumbuh(payload);
+      const res = editData && editData.id 
+        ? await qcDayaTumbuhService.updateDayaTumbuh(editData.id, payload)
+        : await qcDayaTumbuhService.createDayaTumbuh(payload);
+        
       if (res.success) {
         if (onSuccess) onSuccess();
         onClose();
       }
     } catch (e) {
       console.error(e);
-      alert('Gagal menyimpan.');
+      toast.error('Gagal menyimpan.');
     } finally {
       setIsSubmitting(false);
     }
@@ -188,11 +263,11 @@ export default function CreateDayaTumbuhModal({ isOpen, onClose, onSuccess, meth
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black bg-opacity-50">
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black bg-opacity-50">
       <div className="bg-white rounded-lg shadow-lg w-full max-w-5xl max-h-[90vh] flex flex-col overflow-hidden">
         {/* Header */}
         <div className="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50">
-          <h5 className="font-semibold text-lg">Buat Uji Daya Tumbuh</h5>
+          <h5 className="font-semibold text-lg">{editData ? 'Edit Uji Daya Tumbuh' : 'Buat Uji Daya Tumbuh'}</h5>
           <button onClick={onClose} className="text-gray-400 hover:text-gray-700">
             <i className="ri-close-line text-2xl"></i>
           </button>
@@ -265,8 +340,13 @@ export default function CreateDayaTumbuhModal({ isOpen, onClose, onSuccess, meth
                   <label className="text-xs font-semibold text-gray-600 block mb-1">Metode Uji <span className="text-danger">*</span></label>
                   <select className="form-select text-sm h-[38px] w-full" value={metodeUji} onChange={e => setMetodeUji(e.target.value)}>
                     <option value="">Pilih Metode Uji</option>
-                    {methods?.map(m => (
-                      <option key={m.id} value={m.kode}>{m.nama}</option>
+                    {methods?.filter((m: any) => {
+                      if (!petugasUji) return true;
+                      const selectedPenguji = pengujis.find((p: any) => p.id === petugasUji);
+                      if (!selectedPenguji) return true;
+                      return selectedPenguji.metodeUji?.some((mu: any) => mu.testMethodId === m.id);
+                    }).map(m => (
+                      <option key={m.id} value={m.id}>{m.nama}</option>
                     ))}
                   </select>
                 </div>
@@ -285,7 +365,15 @@ export default function CreateDayaTumbuhModal({ isOpen, onClose, onSuccess, meth
                 <div>
                   <label className="text-xs font-semibold text-gray-600 block mb-1">Petugas Uji <span className="text-danger">*</span></label>
                   <select className="form-select text-sm h-[38px] w-full" value={petugasUji} onChange={e => setPetugasUji(e.target.value)}>
-                    <option value="Dewi Lestari">Dewi Lestari</option>
+                    <option value="">Pilih Petugas Uji</option>
+                    {pengujis.filter((p: any) => {
+                      if (!metodeUji) return true;
+                      const selectedMethod = methods?.find(m => m.kode === metodeUji || m.id === metodeUji);
+                      if (!selectedMethod) return true;
+                      return p.metodeUji?.some((mu: any) => mu.testMethodId === selectedMethod.id);
+                    }).map((p: any) => (
+                      <option key={p.id} value={p.id}>{p.nama}</option>
+                    ))}
                   </select>
                 </div>
               </div>
@@ -462,10 +550,11 @@ export default function CreateDayaTumbuhModal({ isOpen, onClose, onSuccess, meth
                 onChange={handleFileUpload}
                 className="hidden"
                 accept=".svg,.png,.jpg,.jpeg,.pdf"
+                multiple
               />
 
               <div
-                className={`border-2 border-dashed rounded-md p-6 flex flex-col items-center justify-center text-center cursor-pointer transition-colors ${lampiranUrl ? 'border-primary/50 bg-primary/5' : 'border-gray-200 bg-gray-50/50 hover:bg-gray-50'}`}
+                className={`border-2 border-dashed rounded-md p-6 flex flex-col items-center justify-center text-center cursor-pointer transition-colors border-gray-200 bg-gray-50/50 hover:bg-gray-50 mb-4`}
                 onClick={() => fileInputRef.current?.click()}
               >
                 {isUploading ? (
@@ -473,24 +562,40 @@ export default function CreateDayaTumbuhModal({ isOpen, onClose, onSuccess, meth
                     <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin mb-3"></div>
                     <p className="text-sm font-semibold">Mengupload...</p>
                   </div>
-                ) : lampiranUrl ? (
-                  <div className="flex flex-col items-center">
-                    <div className="w-12 h-12 bg-primary/10 text-primary rounded-full flex items-center justify-center mb-3">
-                      <i className="ri-check-line text-2xl"></i>
-                    </div>
-                    <p className="text-sm font-semibold mb-1 text-primary">File berhasil diupload</p>
-                    <a href={lampiranUrl} target="_blank" rel="noreferrer" className="text-xs text-primary hover:underline" onClick={(e) => e.stopPropagation()}>Lihat File</a>
-                  </div>
                 ) : (
                   <>
                     <div className="w-12 h-12 bg-primary/10 text-primary rounded-full flex items-center justify-center mb-3">
                       <i className="ri-upload-cloud-2-line text-2xl"></i>
                     </div>
                     <p className="text-sm font-semibold mb-1">Klik untuk upload atau drag and drop</p>
-                    <p className="text-xs text-gray-500">SVG, PNG, JPG, JPEG atau PDF (MAX. 5MB)</p>
+                    <p className="text-xs text-gray-500">SVG, PNG, JPG, JPEG atau PDF (MAX. 5MB). Bisa pilih lebih dari satu.</p>
                   </>
                 )}
               </div>
+
+              {lampiranUrls.length > 0 && (
+                <div className="flex flex-col gap-2">
+                  {lampiranUrls.map((url, idx) => {
+                    const fileName = url.split('/').pop() || `File ${idx + 1}`;
+                    return (
+                      <div key={idx} className="flex items-center justify-between p-3 border border-gray-100 rounded-md bg-white shadow-sm">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 bg-primary/10 text-primary rounded flex items-center justify-center">
+                            <i className="ri-file-text-line text-xl"></i>
+                          </div>
+                          <div>
+                            <p className="text-sm font-medium line-clamp-1">{fileName}</p>
+                            <a href={url} target="_blank" rel="noreferrer" className="text-xs text-primary hover:underline">Lihat File</a>
+                          </div>
+                        </div>
+                        <button type="button" onClick={() => handleRemoveLampiran(idx)} className="text-red-500 hover:bg-red-50 p-2 rounded transition-colors" title="Hapus File">
+                          <i className="ri-delete-bin-line"></i>
+                        </button>
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
             </div>
 
           </div>

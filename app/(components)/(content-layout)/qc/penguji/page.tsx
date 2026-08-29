@@ -14,6 +14,7 @@ import {
   FilterButton,
   ResetButton 
 } from '@/app/(components)/(content-layout)/shared/ActionButtons';
+import QcPageHeader from '../shared/QcPageHeader';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
@@ -142,23 +143,23 @@ export default function PengujiPage() {
       <Pageheader currentpage="Penguji" activepage="Quality Control (QC)" mainpage="Penguji" />
 
       {/* HEADER SECTION */}
-      <div className="flex justify-between items-center mb-4">
-        <div>
-          <h4 className="font-bold text-xl text-gray-800 mb-1">Penguji</h4>
-          <p className="text-gray-500 text-sm">Kelola data penguji yang bertugas melakukan pengujian benih di laboratorium dan lapangan.</p>
-        </div>
-        <div className="flex gap-2">
-          <AddButton 
-            onClick={() => {
-              setModalMode('add');
-              setCurrentPenguji(null);
-              setIsModalOpen(true);
-            }} 
-            label="Tambah Penguji" 
-          />
-          <ExportButton />
-        </div>
-      </div>
+      <QcPageHeader
+        title="Penguji"
+        description="Kelola data penguji yang bertugas melakukan pengujian benih di laboratorium dan lapangan."
+        actionButtons={
+          <>
+            <AddButton 
+              onClick={() => {
+                setModalMode('add');
+                setCurrentPenguji(null);
+                setIsModalOpen(true);
+              }} 
+              label="Tambah Penguji" 
+            />
+            <ExportButton />
+          </>
+        }
+      />
 
       {/* DASHBOARD CARDS */}
       <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6">
@@ -350,9 +351,6 @@ export default function PengujiPage() {
                                 setCurrentPenguji(row);
                                 setIsModalOpen(true);
                               }}
-                            />
-                            <DeleteIconButton 
-                              onClick={() => toast.success('Data penguji berhasil dihapus')}
                             />
                           </div>
                         </td>

@@ -11,7 +11,8 @@ import StatsWidgets from '../../shared/StatsWidgets';
 import DataTable from '../../shared/DataTable';
 import { HistoryButton, AddButton, EditButton, ManageButton, ViewIconButton, EditIconButton, ResetButton } from '../../shared/ActionButtons';
 // import DetailPanel, { TabConfig, DetailAction } from '../../shared/DetailPanel';
-// import CrudModal from '../../shared/CrudModal';
+// import ConfirmationModal from './components/ConfirmationModal';
+import QcPageHeader from '../shared/QcPageHeader';
 import FilterRow, { FilterSelectConfig } from '../../shared/FilterRow';
 import AddParameterModal from './AddParameterModal';
 import AddDocumentModal from './AddDocumentModal';
@@ -344,19 +345,19 @@ export default function StandarMetodeUjiPage() {
       <ToastContainer position="top-right" autoClose={3000} hideProgressBar={false} />
 
       {/* Top Actions & Stats */}
-      <div className="mb-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-        <div>
-          <h2 className="text-xl font-semibold text-gray-800 dark:text-white">Standar & Metode Uji</h2>
-          <p className="text-sm text-gray-500 dark:text-gray-400">Kelola standar acuan dan metode pengujian sesuai ISO</p>
-        </div>
-        <div className="flex gap-3">
-          <HistoryButton />
-          <AddButton
-            onClick={handleOpenAddModal}
-            label={`Tambah ${activeTab === 'parameter' ? 'Parameter' : activeTab === 'document' ? 'Dokumen' : 'Standar / Metode Uji'}`}
-          />
-        </div>
-      </div>
+      <QcPageHeader
+        title="Standar & Metode Uji"
+        description="Kelola standar acuan dan metode pengujian sesuai ISO"
+        actionButtons={
+          <>
+            <HistoryButton />
+            <AddButton
+              onClick={handleOpenAddModal}
+              label={`Tambah ${activeTab === 'parameter' ? 'Parameter' : activeTab === 'document' ? 'Dokumen' : 'Standar / Metode Uji'}`}
+            />
+          </>
+        }
+      />
 
       <StatsWidgets items={statItems} />
 

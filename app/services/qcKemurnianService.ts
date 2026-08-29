@@ -6,13 +6,13 @@ const JENIS_UJI = 'Kemurnian';
 
 function mapToBackendPayload(data: any) {
   const {
-    kodeBatch, commodityId, varietyId, metodeUji, lotNoBenih, tanggalUji, lokasiLab, petugasUji, jumlahSampel,
-    kemurnian, batasMinimal, status, beratBenihMurni, beratTanamanLain, beratGulma, beratBahanAsing, alatInstrumen, waktuPengujian, suhuRuangan, beratAwalSampel, ulangan, catatan, lampiranUrl, ...rest
+    kodeBatch, commodityId, varietyId, testMethodId, lotNoBenih, tanggalUji, lokasiLab, petugasUjiId, jumlahSampel,
+    lampiranUrl, lampiranUrls, kemurnian, batasMinimal, status, beratBenihMurni, beratTanamanLain, beratGulma, beratBahanAsing, alatInstrumen, waktuPengujian, suhuRuangan, beratAwalSampel, ulangan, catatanTambahan, parameterUji, ...rest
   } = data;
 
   return {
-    kodeBatch, commodityId, varietyId, tanggalUji, petugasUji, jumlahSampel, lampiranUrl, catatan, lokasiLab,
-    testMethodId: metodeUji,
+    kodeBatch, commodityId, varietyId, tanggalUji, petugasUjiId, jumlahSampel, lampiranUrl, lampiranUrls, lokasiLab,
+    testMethodId: testMethodId,
     jenisUji: JENIS_UJI,
     nilaiHasil: kemurnian,
     batasAcuan: batasMinimal,
@@ -26,7 +26,6 @@ function mapToBackendPayload(data: any) {
 function mapToFrontendItem(item: any) {
   return {
     ...item,
-    metodeUji: item.testMethod?.nama || item.testMethodId,
     kemurnian: item.nilaiHasil,
     batasMinimal: item.batasAcuan,
     ...(item.detailUji || {})

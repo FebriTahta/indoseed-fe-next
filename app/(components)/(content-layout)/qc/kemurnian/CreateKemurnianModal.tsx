@@ -1,8 +1,11 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { toast } from 'react-toastify';
 import SpkDatepickr from "@/shared/@spk-reusable-components/spk-packages/datepicker-component";
 import uploadService from '@/app/services/uploadService';
 import { batchProduksiService } from '@/app/services/batchProduksiService';
 import { qcKemurnianService } from '@/app/services/qcKemurnianService';
+import { qcService } from '@/app/services/qcService';
+import { pengujiService } from '@/app/services/pengujiService';
 import ModalFooter from '../components/ModalFooter';
 import SpkSelect from '@/shared/@spk-reusable-components/spk-packages/spk-reactselect';
 
@@ -18,7 +21,7 @@ interface Props {
 
 export default function CreateKemurnianModal({ isOpen, onClose, onSuccess, methods = [], commodities = [], varieties = [], initialData }: Props) {
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
-  const [lampiranUrl, setLampiranUrl] = useState<string>('');
+  const [lampiranUrls, setLampiranUrls] = useState<string[]>([]);
   const [isUploading, setIsUploading] = useState<boolean>(false);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -33,8 +36,9 @@ export default function CreateKemurnianModal({ isOpen, onClose, onSuccess, metho
   const [varietyId, setVarietyId] = useState<string>('');
   const [lotNoBenih, setLotNoBenih] = useState<string>('');
   const [jumlahSampel, setJumlahSampel] = useState<string>('');
-  const [lokasiLab, setLokasiLab] = useState<string>('');
-  const [petugasUji, setPetugasUji] = useState<string>('Dewi Lestari');
+  const [lokasiLab, setLokasiLab] = useState<string>('Lab Pusat');
+  const [petugasUji, setPetugasUji] = useState<string>('');
+  const [pengujis, setPengujis] = useState<any[]>([]);
   const [metodeUji, setMetodeUji] = useState<string>('');
 
   // 2. Hasil Uji Kemurnian
@@ -58,21 +62,26 @@ export default function CreateKemurnianModal({ isOpen, onClose, onSuccess, metho
       // Reset state
       setKodeBatch(''); setCommodityId(''); setVarietyId(''); setLotNoBenih('');
       setBeratBenihMurni(''); setBeratTanamanLain(''); setBeratGulma(''); setBeratBahanAsing('');
-      setJumlahSampel(''); setLokasiLab(''); setMetodeUji('');
+      setJumlahSampel(''); setLokasiLab('Lab Pusat'); setMetodeUji('');
       setAlatInstrumen(''); setWaktuPengujian(''); setSuhuRuangan(''); setBeratAwalSampel(''); setUlangan(''); setCatatanTambahan('');
-      setLampiranUrl(''); setSelectedDate(null);
+      setLampiranUrls([]); setSelectedDate(null);
       return;
     }
+
+    pengujiService.getPengujis().then(res => {
+      setPengujis(res.data || []);
+    }).catch(console.error);
 
     if (initialData) {
       // Populating data for Edit mode
       setKodeBatch(initialData.kodeBatch || '');
       setCommodityId(initialData.komoditasId || '');
       setVarietyId(initialData.varietasId || '');
-      setLotNoBenih(initialData.lotNoBenih || '');
+      setLotNoBenih(initialData.lotNoBenih || (initialData.kodeBatch ? `LOT-${initialData.kodeBatch.replace('BP-', '')}` : ''));
       setJumlahSampel(initialData.jumlahSampel || '');
-      setLokasiLab(initialData.lokasiLab || '');
-      setMetodeUji(initialData.metodeUji || '');
+      setLokasiLab(initialData.lokasiLab || 'Lab Pusat');
+      setPetugasUji(initialData.petugasUjiId || '');
+      setMetodeUji(initialData.testMethodId || '');
       
       setBeratBenihMurni(initialData.beratBenihMurni || '');
       setBeratTanamanLain(initialData.beratTanamanLain || '');
@@ -87,7 +96,12 @@ export default function CreateKemurnianModal({ isOpen, onClose, onSuccess, metho
       setUlangan(initialData.ulangan || '');
       setCatatanTambahan(initialData.catatanTambahan || '');
       if (initialData.tanggalUji) setSelectedDate(new Date(initialData.tanggalUji));
-      if (initialData.lampiranUrl) setLampiranUrl(initialData.lampiranUrl);
+      
+      let parsedUrls: string[] = [];
+      if (initialData.lampirans && Array.isArray(initialData.lampirans)) {
+        parsedUrls = initialData.lampirans.map((l: any) => l.url);
+      }
+      setLampiranUrls(parsedUrls);
     }
 
     const timer = setTimeout(async () => {
@@ -107,6 +121,22 @@ export default function CreateKemurnianModal({ isOpen, onClose, onSuccess, metho
     return () => clearTimeout(timer);
   }, [isOpen, batchSearchTerm]);
 
+  useEffect(() => {
+    if (initialData && batchList.length > 0 && kodeBatch) {
+      const selectedBatch = batchList.find(b => b.kodeBatch === kodeBatch);
+      if (selectedBatch) {
+        if (!commodityId) {
+          const matchedCommodity = commodities?.find(c => c.id === selectedBatch.komoditas || c.namaKomoditas === selectedBatch.komoditas);
+          if (matchedCommodity) setCommodityId(matchedCommodity.id);
+        }
+        if (!varietyId) {
+          const matchedVariety = varieties?.find(v => v.id === selectedBatch.varietas || v.namaVarietas === selectedBatch.varietas);
+          if (matchedVariety) setVarietyId(matchedVariety.id);
+        }
+      }
+    }
+  }, [batchList, initialData, kodeBatch, commodityId, varietyId, commodities, varieties]);
+
   const handleBatchChange = (selectedOption: any) => {
     const selectedKode = selectedOption ? selectedOption.value : '';
     setKodeBatch(selectedKode);
@@ -122,29 +152,51 @@ export default function CreateKemurnianModal({ isOpen, onClose, onSuccess, metho
       const computedLot = selectedBatch.batchLot?.kodeLot || `LOT-${selectedKode.replace('BP-', '')}`;
       setLotNoBenih(computedLot);
     } else {
-      setCommodityId(''); setVarietyId(''); setLotNoBenih('');
+      if (initialData && initialData.kodeBatch === selectedKode) {
+        setCommodityId(initialData.commodityId || initialData.komoditasId || '');
+        setVarietyId(initialData.varietyId || initialData.varietasId || '');
+        const fallbackLot = `LOT-${selectedKode.replace('BP-', '')}`;
+        setLotNoBenih(initialData.lotNoBenih || fallbackLot);
+      } else {
+        setCommodityId(''); setVarietyId(''); setLotNoBenih('');
+      }
     }
   };
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
 
     try {
       setIsUploading(true);
-      const res = await uploadService.uploadFile(file, 'qc');
-      if (res.success && res.data?.fileUrl) {
-        setLampiranUrl(res.data.fileUrl);
+      const uploaded: string[] = [];
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        const res = await uploadService.uploadFile(file, 'qc');
+        if (res.success && res.data?.fileUrl) {
+          uploaded.push(res.data.fileUrl);
+        }
       }
+      setLampiranUrls(prev => [...prev, ...uploaded]);
     } catch (error) {
       console.error('Error uploading file:', error);
-      alert('Gagal mengupload file.');
+      toast.error('Gagal mengupload file.');
     } finally {
       setIsUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
     }
   };
 
+  const handleRemoveLampiran = (index: number) => {
+    setLampiranUrls(prev => prev.filter((_, i) => i !== index));
+  };
+
   const handleSubmit = async () => {
+    if (!kodeBatch || !metodeUji || !petugasUji || !selectedDate) {
+      toast.error('Harap lengkapi semua field yang wajib (Kode Batch, Metode Uji, Petugas Uji, Tanggal Uji)!');
+      return;
+    }
+
     try {
       setIsSubmitting(true);
       
@@ -155,8 +207,8 @@ export default function CreateKemurnianModal({ isOpen, onClose, onSuccess, metho
         metodeUji: metodeUji || null,
         lotNoBenih: lotNoBenih || null,
         tanggalUji: selectedDate,
-        lokasiLab: lokasiLab || null,
-        petugasUji: petugasUji || null,
+        lokasiLab: lokasiLab,
+        petugasUjiId: petugasUji || null,
         jumlahSampel: parseInt(jumlahSampel) || null,
 
         kemurnian: parseFloat(kemurnianPct) || null,
@@ -175,7 +227,7 @@ export default function CreateKemurnianModal({ isOpen, onClose, onSuccess, metho
         ulangan: ulangan || null,
         catatan: catatanTambahan || null,
 
-        lampiranUrl
+        lampiranUrls: lampiranUrls.length > 0 ? lampiranUrls : []
       };
 
       if (initialData?.id) {
@@ -188,7 +240,7 @@ export default function CreateKemurnianModal({ isOpen, onClose, onSuccess, metho
       onClose();
     } catch (e) {
       console.error(e);
-      alert('Gagal menyimpan data uji kemurnian.');
+      toast.error('Gagal menyimpan data uji kemurnian.');
     } finally {
       setIsSubmitting(false);
     }
@@ -304,15 +356,28 @@ export default function CreateKemurnianModal({ isOpen, onClose, onSuccess, metho
                 <div>
                   <label className="text-xs font-semibold text-gray-600 block mb-1">Petugas Uji <span className="text-danger">*</span></label>
                   <select className="form-select text-sm h-[38px] w-full" value={petugasUji} onChange={e => setPetugasUji(e.target.value)}>
-                    <option value="Dewi Lestari">Dewi Lestari</option>
+                    <option value="">Pilih Petugas Uji</option>
+                    {pengujis.filter((p: any) => {
+                      if (!metodeUji) return true;
+                      const selectedMethod = methods?.find(m => m.kode === metodeUji || m.id === metodeUji);
+                      if (!selectedMethod) return true;
+                      return p.metodeUji?.some((mu: any) => mu.testMethodId === selectedMethod.id);
+                    }).map((p: any) => (
+                      <option key={p.id} value={p.id}>{p.nama}</option>
+                    ))}
                   </select>
                 </div>
                 <div>
                   <label className="text-xs font-semibold text-gray-600 block mb-1">Metode Uji <span className="text-danger">*</span></label>
                   <select className="form-select text-sm h-[38px] w-full" value={metodeUji} onChange={e => setMetodeUji(e.target.value)}>
                     <option value="">Pilih metode uji</option>
-                    {methods?.map(m => (
-                      <option key={m.id} value={m.kode}>{m.nama}</option>
+                    {methods?.filter((m: any) => {
+                      if (!petugasUji) return true;
+                      const selectedPenguji = pengujis.find((p: any) => p.id === petugasUji);
+                      if (!selectedPenguji) return true;
+                      return selectedPenguji.metodeUji?.some((mu: any) => mu.testMethodId === m.id);
+                    }).map(m => (
+                      <option key={m.id} value={m.id}>{m.nama}</option>
                     ))}
                   </select>
                 </div>
@@ -452,10 +517,11 @@ export default function CreateKemurnianModal({ isOpen, onClose, onSuccess, metho
                 onChange={handleFileUpload}
                 className="hidden"
                 accept=".svg,.png,.jpg,.jpeg,.pdf,.xlsx"
+                multiple
               />
 
               <div
-                className={`border-2 border-dashed rounded-md p-6 flex flex-col items-center justify-center text-center cursor-pointer transition-colors ${lampiranUrl ? 'border-primary/50 bg-primary/5' : 'border-gray-200 bg-gray-50/50 hover:bg-gray-50'}`}
+                className={`border-2 border-dashed rounded-md p-6 flex flex-col items-center justify-center text-center cursor-pointer transition-colors border-gray-200 bg-gray-50/50 hover:bg-gray-50 mb-4`}
                 onClick={() => fileInputRef.current?.click()}
               >
                 {isUploading ? (
@@ -463,25 +529,40 @@ export default function CreateKemurnianModal({ isOpen, onClose, onSuccess, metho
                     <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin mb-3"></div>
                     <p className="text-sm font-semibold">Mengupload...</p>
                   </div>
-                ) : lampiranUrl ? (
-                  <div className="flex flex-col items-center">
-                    <div className="w-12 h-12 bg-primary/10 text-primary rounded-full flex items-center justify-center mb-3">
-                      <i className="ri-check-line text-2xl"></i>
-                    </div>
-                    <p className="text-sm font-semibold mb-1 text-primary">File berhasil diupload</p>
-                    <a href={lampiranUrl} target="_blank" rel="noreferrer" className="text-xs text-primary hover:underline" onClick={(e) => e.stopPropagation()}>Lihat File</a>
-                  </div>
                 ) : (
                   <>
                     <div className="w-12 h-12 text-gray-400 flex items-center justify-center mb-3">
                       <i className="ri-upload-cloud-2-line text-3xl"></i>
                     </div>
-                    <p className="text-sm font-semibold mb-1">Drag & drop file di sini</p>
-                    <p className="text-sm font-semibold mb-1">atau klik untuk memilih file</p>
-                    <p className="text-xs text-gray-500 mt-2">Format yang didukung: JPG, PNG, PDF, XLSX (Maks. 10 MB)</p>
+                    <p className="text-sm font-semibold mb-1">Drag & drop file di sini atau klik untuk memilih file</p>
+                    <p className="text-xs text-gray-500 mt-2">Format yang didukung: JPG, PNG, PDF, XLSX (Maks. 10 MB). Bisa pilih lebih dari satu.</p>
                   </>
                 )}
               </div>
+
+              {lampiranUrls.length > 0 && (
+                <div className="flex flex-col gap-2">
+                  {lampiranUrls.map((url, idx) => {
+                    const fileName = url.split('/').pop() || `File ${idx + 1}`;
+                    return (
+                      <div key={idx} className="flex items-center justify-between p-3 border border-gray-100 rounded-md bg-white shadow-sm">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 bg-primary/10 text-primary rounded flex items-center justify-center">
+                            <i className="ri-file-text-line text-xl"></i>
+                          </div>
+                          <div>
+                            <p className="text-sm font-medium line-clamp-1">{fileName}</p>
+                            <a href={url} target="_blank" rel="noreferrer" className="text-xs text-primary hover:underline">Lihat File</a>
+                          </div>
+                        </div>
+                        <button type="button" onClick={() => handleRemoveLampiran(idx)} className="text-red-500 hover:bg-red-50 p-2 rounded transition-colors" title="Hapus File">
+                          <i className="ri-delete-bin-line"></i>
+                        </button>
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
             </div>
 
           </div>

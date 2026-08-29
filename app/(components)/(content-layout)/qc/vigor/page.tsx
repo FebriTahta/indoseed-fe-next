@@ -1,6 +1,8 @@
 "use client"
 import React, { useState, useEffect } from 'react';
-import { ViewIconButton } from '@/app/(components)/(content-layout)/shared/ActionButtons';
+import { ViewIconButton, EditIconButton } from '@/app/(components)/(content-layout)/shared/ActionButtons';
+import { toast } from 'react-toastify';
+import QcPageHeader from '../shared/QcPageHeader';
 import Pageheader from '@/shared/layouts-components/page-header/pageheader';
 import Seo from '@/shared/layouts-components/seo/seo';
 import StatsWidgets, { StatItem } from '../../shared/StatsWidgets';
@@ -17,6 +19,7 @@ import Link from 'next/link';
 export default function VigorPage() {
   const [filters, setFilters] = useState<any>({});
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [editData, setEditData] = useState<any>(null);
   const [methods, setMethods] = useState<any[]>([]);
   const [commodities, setCommodities] = useState<any[]>([]);
   const [varieties, setVarieties] = useState<any[]>([]);
@@ -31,6 +34,11 @@ export default function VigorPage() {
   // Expandable Rows State
   const [expandedRows, setExpandedRows] = useState<Record<string, boolean>>({});
   const toggleRow = (id: string) => setExpandedRows(prev => ({ ...prev, [id]: !prev[id] }));
+
+  const handleEdit = (data: any) => {
+    setEditData(data);
+    setIsCreateModalOpen(true);
+  };
 
   const fetchData = () => {
     qcVigorService.getQcVigorList({ page, pageSize, ...filters }).then(res => {
@@ -57,11 +65,11 @@ export default function VigorPage() {
 
   const totalUji = total;
   const totalSampel = tests.reduce((sum, t) => sum + (t.jumlahSampel || 0), 0);
-  
+
   const tinggiCount = tests.filter(t => t.kategori === 'Tinggi').length;
   const sedangCount = tests.filter(t => t.kategori === 'Sedang').length;
   const rendahCount = tests.filter(t => t.kategori === 'Rendah').length;
-  
+
   const avgVigor = tests.length > 0 ? Math.round(tests.reduce((sum, t) => sum + (t.vigor || 0), 0) / tests.length) : 0;
 
   const totalCount = tinggiCount + sedangCount + rendahCount;
@@ -209,22 +217,39 @@ export default function VigorPage() {
     grid: { show: false }
   };
   const top5Series = [{ name: 'Rata-rata Indeks Vigor', data: komoditasStats.length ? komoditasStats.map(k => k.avg) : [0] }];
+  const getOverallStatus = (t: any, fallback: string) => {
+    if (t.parameterUji) {
+      try {
+        const params = typeof t.parameterUji === 'string' ? JSON.parse(t.parameterUji) : t.parameterUji;
+        if (Array.isArray(params) && params.length > 0) {
+          const allPassed = params.every((p: any) => p.status === 'Lulus' || p.status === 'Memenuhi');
+          const anyFailed = params.some((p: any) => p.status === 'Tidak Lulus' || p.status === 'Tidak Memenuhi');
+          const isLulusFormat = fallback === 'Lulus' || fallback === 'Tidak Lulus' || t.status === 'Lulus' || t.status === 'Tidak Lulus';
+
+          if (anyFailed) return isLulusFormat ? 'Tidak Lulus' : 'Tidak Memenuhi';
+          if (allPassed) return isLulusFormat ? 'Lulus' : 'Memenuhi';
+          return 'Sedang Diuji';
+        }
+      } catch (e) { }
+    }
+    return t.status || fallback;
+  };
 
   return (
     <>
       <Seo title="Uji Vigor" />
       <Pageheader currentpage="Vigor" activepage="Quality Control (QC)" mainpage="Vigor" />
 
-      <div className="flex justify-between items-center mb-4">
-        <div>
-          <h4 className="font-bold text-xl text-gray-800 mb-1">Uji Vigor</h4>
-          <p className="text-sm text-gray-500">Kelola dan pantau hasil uji vigor benih untuk memastikan benih memiliki potensi tumbuh kuat dan seragam.</p>
-        </div>
-        <div className="flex gap-2">
-          <AddButton onClick={() => setIsCreateModalOpen(true)} label="Tambah Uji Baru" />
-          <ExportButton />
-        </div>
-      </div>
+      <QcPageHeader
+        title="Uji Vigor"
+        description="Kelola dan pantau hasil uji vigor benih untuk memastikan benih memiliki potensi tumbuh kuat dan seragam."
+        actionButtons={
+          <>
+            <AddButton onClick={() => setIsCreateModalOpen(true)} label="Tambah Uji Baru" />
+            <ExportButton />
+          </>
+        }
+      />
 
       <StatsWidgets items={statItems} columns={6} />
 
@@ -269,64 +294,87 @@ export default function VigorPage() {
                       <th className="hidden 2xl:table-cell text-left text-xs font-semibold text-gray-500 py-3 px-4">Lot / Sampel</th>
                       <th className="hidden 2xl:table-cell text-left text-xs font-semibold text-gray-500 py-3 px-4">Tanggal Uji</th>
                       <th className="hidden 2xl:table-cell text-left text-xs font-semibold text-gray-500 py-3 px-4">Metode Uji</th>
-                      <th className="text-left text-xs font-semibold text-gray-500 py-3 px-4">Indeks Vigor</th>
+                      <th className="hidden 2xl:table-cell text-left text-xs font-semibold text-gray-500 py-3 px-4">Petugas Uji</th>
+                      <th className="text-left text-xs font-semibold text-gray-500 py-3 px-4">Indeks Vigor (%)</th>
                       <th className="text-left text-xs font-semibold text-gray-500 py-3 px-4">Kategori</th>
                       <th className="text-left text-xs font-semibold text-gray-500 py-3 px-4">Status</th>
+                      <th className="hidden 2xl:table-cell text-left text-xs font-semibold text-gray-500 py-3 px-4">Lampiran</th>
                       <th className="text-center text-xs font-semibold text-gray-500 py-3 px-4">Aksi</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {tests.length > 0 ? tests.map((row, index) => (
-                      <React.Fragment key={row.id}>
-                        <tr className="border-b border-gray-50 hover:bg-gray-50/50 cursor-pointer">
-                          <td className="2xl:hidden py-2 px-2 text-center w-8">
-                            <button
-                              onClick={() => toggleRow(row.id)}
-                              className="text-white bg-[#1B4E3B] rounded-full w-5 h-5 flex items-center justify-center text-xs font-bold leading-none focus:outline-none"
-                            >
-                              {expandedRows[row.id] ? '-' : '+'}
-                            </button>
-                          </td>
-                          <td className="text-sm py-2 px-4">{(page - 1) * pageSize + index + 1}</td>
-                          <td className="text-sm font-medium text-primary py-2 px-4">{row.kodeBatch}</td>
-                          <td className="text-sm py-2 px-4">{row.commodity?.namaKomoditas || '-'}</td>
-                          <td className="text-sm py-2 px-4">{row.variety?.namaVarietas || '-'}</td>
-                          <td className="hidden 2xl:table-cell text-sm py-2 px-4">{row.lotNoBenih || '-'}</td>
-                          <td className="hidden 2xl:table-cell text-sm py-2 px-4">{row.tanggalUji ? new Date(row.tanggalUji).toLocaleDateString('id-ID') : '-'}</td>
-                          <td className="hidden 2xl:table-cell text-sm py-2 px-4">{row.metodeUji || '-'}</td>
-                          <td className="text-sm py-2 px-4 font-semibold">{row.vigor || '-'}</td>
-                          <td className="py-2 px-4">
-                            <span className={`text-sm font-semibold ${row.kategori === 'Tinggi' ? 'text-success' : row.kategori === 'Sedang' ? 'text-warning' : 'text-danger'}`}>
-                              {row.kategori}
-                            </span>
-                          </td>
-                          <td className="py-2 px-4">
-                            <span className={`badge ${row.status === 'Memenuhi' ? 'bg-success/10 text-success' : row.status === 'Mendekati' ? 'bg-warning/10 text-warning' : 'bg-danger/10 text-danger'}`}>
-                              {row.status}
-                            </span>
-                          </td>
-                          <td className="py-2 px-4 text-center">
-                            <div className="flex justify-center gap-1">
-                              <ViewIconButton />
-                              <button className="text-gray-400 hover:text-primary transition-colors"><i className="ri-download-2-line text-lg"></i></button>
-                            </div>
-                          </td>
-                        </tr>
-                        {expandedRows[row.id] && (
-                          <tr className="2xl:hidden bg-gray-50/80 border-b border-gray-100">
-                            <td colSpan={10} className="py-3 px-6">
-                              <ul className="text-sm space-y-1 text-gray-600">
-                                <li><span className="font-semibold text-gray-800">Lot / Sampel:</span> {row.lotNoBenih || '-'}</li>
-                                <li><span className="font-semibold text-gray-800">Tanggal Uji:</span> {row.tanggalUji ? new Date(row.tanggalUji).toLocaleDateString('id-ID') : '-'}</li>
-                                <li><span className="font-semibold text-gray-800">Metode Uji:</span> {row.metodeUji || '-'}</li>
-                              </ul>
+                    {tests.length > 0 ? tests.map((row, idx) => {
+                      const status = getOverallStatus(row, 'Memenuhi');
+                      return (
+                        <React.Fragment key={row.id || idx}>
+                          <tr className="border-b border-gray-50 hover:bg-gray-50/50 cursor-pointer">
+                            <td className="2xl:hidden py-2 px-2 text-center w-8">
+                              <button
+                                onClick={() => toggleRow(row.id)}
+                                className="text-white bg-[#1B4E3B] rounded-full w-5 h-5 flex items-center justify-center text-xs font-bold leading-none focus:outline-none"
+                              >
+                                {expandedRows[row.id] ? '-' : '+'}
+                              </button>
+                            </td>
+                            <td className="text-sm py-2 px-4">{(page - 1) * pageSize + idx + 1}</td>
+                            <td className="text-sm font-medium text-primary py-2 px-4">{row.kodeBatch}</td>
+                            <td className="text-sm py-2 px-4">{row.commodity?.namaKomoditas || '-'}</td>
+                            <td className="text-sm py-2 px-4">{row.variety?.namaVarietas || '-'}</td>
+                            <td className="hidden 2xl:table-cell text-sm py-2 px-4">{row.lotNoBenih || '-'}</td>
+                            <td className="hidden 2xl:table-cell text-sm py-2 px-4">{row.tanggalUji ? new Date(row.tanggalUji).toLocaleDateString('id-ID') : '-'}</td>
+                            <td className="hidden 2xl:table-cell text-sm py-2 px-4">{row.testMethod?.nama || '-'}</td>
+                            <td className="hidden 2xl:table-cell text-sm py-2 px-4">{row.petugasUji?.nama || '-'}</td>
+                            <td className="text-sm py-2 px-4 font-semibold">{row.indeksVigor?.toFixed(1).replace('.', ',') || '-'}</td>
+                            <td className="py-2 px-4">
+                              <span className={`text-sm font-semibold ${row.kategori === 'Tinggi' ? 'text-success' : row.kategori === 'Sedang' ? 'text-warning' : 'text-danger'}`}>
+                                {row.kategori}
+                              </span>
+                            </td>
+                            <td className="py-2 px-4">
+                              <span className={`badge ${status === 'Memenuhi' || status === 'Lulus' ? 'bg-success/10 text-success' : status === 'Mendekati' ? 'bg-warning/10 text-warning' : status === 'Tidak Memenuhi' || status === 'Tidak Lulus' ? 'bg-danger/10 text-danger' : 'bg-gray-100 text-gray-500'}`}>
+                                {status}
+                              </span>
+                            </td>
+                            <td className="hidden 2xl:table-cell text-sm py-2 px-4">
+                              {row.lampirans && row.lampirans.length > 0 ? (
+                                <div className="flex flex-col gap-1">
+                                  {row.lampirans.map((lampiran: any, i: number) => (
+                                    <a key={lampiran.id || i} href={lampiran.url} target="_blank" rel="noreferrer" className="text-primary hover:underline" onClick={(e) => e.stopPropagation()}>File {i + 1}</a>
+                                  ))}
+                                </div>
+                              ) : '-'}
+                            </td>
+                            <td className="py-2 px-4 text-center">
+                              <div className="flex justify-center gap-1">
+                                <ViewIconButton />
+                                <EditIconButton onClick={(e) => { e.stopPropagation(); handleEdit(row); }} />
+                              </div>
                             </td>
                           </tr>
-                        )}
-                      </React.Fragment>
-                    )) : (
+                          {expandedRows[row.id] && (
+                            <tr className="2xl:hidden bg-gray-50/80 border-b border-gray-100">
+                              <td colSpan={10} className="py-3 px-6">
+                                <ul className="text-sm space-y-1 text-gray-600">
+                                  <li><span className="font-semibold text-gray-800">Lot / Sampel:</span> {row.lotNoBenih || '-'}</li>
+                                  <li><span className="font-semibold text-gray-800">Tanggal Uji:</span> {row.tanggalUji ? new Date(row.tanggalUji).toLocaleDateString('id-ID') : '-'}</li>
+                                  <li><span className="font-semibold text-gray-800">Metode Uji:</span> {row.testMethod?.nama || '-'}</li>
+                                  <li><span className="font-semibold text-gray-800">Petugas Uji:</span> {row.petugasUji?.nama || '-'}</li>
+                                  <li><span className="font-semibold text-gray-800">Lampiran:</span> {row.lampirans && row.lampirans.length > 0 ? (
+                                    <div className="flex flex-col gap-1 mt-1 ml-4">
+                                      {row.lampirans.map((lampiran: any, i: number) => (
+                                        <a key={lampiran.id || i} href={lampiran.url} target="_blank" rel="noreferrer" className="text-primary hover:underline" onClick={(e) => e.stopPropagation()}>File {i + 1}</a>
+                                      ))}
+                                    </div>
+                                  ) : '-'}</li>
+                                </ul>
+                              </td>
+                            </tr>
+                          )}
+                        </React.Fragment>
+                      );
+                    }) : (
                       <tr>
-                        <td colSpan={12} className="text-center py-4 text-gray-500">Tidak ada data ditemukan</td>
+                        <td colSpan={14} className="text-center py-4 text-gray-500">Tidak ada data ditemukan</td>
                       </tr>
                     )}
                   </tbody>
@@ -467,8 +515,12 @@ export default function VigorPage() {
       {isCreateModalOpen && (
         <CreateVigorModal
           isOpen={isCreateModalOpen}
-          onClose={() => setIsCreateModalOpen(false)}
-          onSuccess={() => { fetchData(); }}
+          onClose={() => { setIsCreateModalOpen(false); setEditData(null); }}
+          onSuccess={() => { fetchData(); toast.success('Berhasil menyimpan data Uji Vigor!'); setEditData(null); }}
+          initialData={editData}
+          methods={methods}
+          commodities={commodities}
+          varieties={varieties}
         />
       )}
     </>

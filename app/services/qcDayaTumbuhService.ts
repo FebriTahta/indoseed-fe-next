@@ -6,21 +6,21 @@ const JENIS_UJI = 'Daya Tumbuh';
 
 function mapToBackendPayload(data: any) {
   const {
-    kodeBatch, commodityId, varietyId, metodeUji, tanggalUji, petugasUji, jumlahSampel,
-    lampiranUrl, catatan, parameterUji,
-    jumlahBenihDitanam, jumlahBerkecambah, jumlahTidakBerkecambah, waktuUjiHari, suhuUji, mediaUji, kelembabanMedia, ...rest
+    kodeBatch, commodityId, varietyId, testMethodId, lotNoBenih, tanggalUji, lokasiLab, petugasUjiId, jumlahSampel, lampiranUrl, lampiranUrls,
+    dayaTumbuh, batasMinimal, status, jumlahBenihDitanam, kecambahNormal, kecambahAbnormal, benihMati, benihKeras, 
+    alatInstrumen, waktuPengujian, suhuRuangan, ulangan, catatanTambahan, parameterUji, ...rest
   } = data;
 
-  const dayaTumbuhVal = jumlahBenihDitanam ? (jumlahBerkecambah / jumlahBenihDitanam) * 100 : 0;
+  const dayaTumbuhVal = jumlahBenihDitanam ? (kecambahNormal / jumlahBenihDitanam) * 100 : 0;
 
   return {
-    kodeBatch, commodityId, varietyId, tanggalUji, petugasUji, jumlahSampel, lampiranUrl, catatan,
-    testMethodId: metodeUji,
+    kodeBatch, commodityId, varietyId, tanggalUji, petugasUjiId, jumlahSampel, lampiranUrl, lampiranUrls, lokasiLab,
+    testMethodId: testMethodId,
     jenisUji: JENIS_UJI,
     nilaiHasil: dayaTumbuhVal,
     batasAcuan: 85,
     detailUji: {
-      jumlahBenihDitanam, jumlahBerkecambah, jumlahTidakBerkecambah, waktuUjiHari, suhuUji, mediaUji, kelembabanMedia, parameterUji, ...rest
+      lotNoBenih, jumlahBenihDitanam, kecambahNormal, kecambahAbnormal, benihMati, benihKeras, alatInstrumen, waktuPengujian, suhuRuangan, ulangan, catatanTambahan, parameterUji, ...rest
     }
   };
 }
