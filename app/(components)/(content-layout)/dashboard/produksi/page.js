@@ -39,10 +39,12 @@ const DashboardProduksi = () => {
     setModalConfig((prev) => ({ ...prev, isOpen: false }));
   };
 
-  const [dateRange, setDateRange] = useState([
-    new Date(2024, 5, 1),
-    new Date(2024, 5, 14),
-  ]);
+  const [dateRange, setDateRange] = useState(() => {
+    const now = new Date();
+    const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
+    const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+    return [firstDay, lastDay];
+  });
   const [startDate, endDate] = dateRange;
 
   useEffect(() => {
@@ -137,22 +139,44 @@ const DashboardProduksi = () => {
   ];
 
   // Donut Chart: Status Produksi
-  const statusProduksiSeries = data?.statusProduksi?.series || [12, 8, 2, 1, 1];
+  const rawStatusSeries = data?.statusProduksi?.series;
+  const isStatusEmpty = !rawStatusSeries ||
+    rawStatusSeries.length === 0 ||
+    rawStatusSeries.every(val => Number(val) === 0);
+
+  const statusProduksiSeries = isStatusEmpty ? [1] : rawStatusSeries;
+  const statusProduksiLabels = isStatusEmpty ? ["Tidak Ada Data"] : (data?.statusProduksi?.labels || ["Selesai", "Proses", "Pengeringan", "Sortasi / QC", "Tidak Aktif"]);
+  const statusProduksiColors = isStatusEmpty ? ["#e5e7eb"] : (data?.statusProduksi?.colors || ["#10b981", "#3b82f6", "#f59e0b", "#ef4444", "#9ca3af"]);
+
   const statusProduksiOptions = {
-    chart: { type: "donut", height: 210 },
-    labels: data?.statusProduksi?.labels || ["Selesai", "Proses", "Pengeringan", "Sortasi / QC", "Tidak Aktif"],
-    colors: data?.statusProduksi?.colors || ["#10b981", "#3b82f6", "#f59e0b", "#ef4444", "#9ca3af"],
+    chart: { type: "donut", height: 180 },
+    labels: statusProduksiLabels,
+    colors: statusProduksiColors,
     plotOptions: {
       pie: {
         donut: {
           size: "72%",
           labels: {
             show: true,
+            name: {
+              show: true,
+              fontSize: "12px",
+              color: "#000000",
+              fontWeight: 600,
+            },
+            value: {
+              show: true,
+              fontSize: "14px",
+              color: "#000000",
+              fontWeight: 700,
+              formatter: () => isStatusEmpty ? "--" : undefined,
+            },
             total: {
               show: true,
               label: "Total",
-              formatter: () => `${data?.statusProduksi?.total || summaryCards[0]?.value || 24} Batch`,
-              style: { fontSize: "14px", fontWeight: 600, color: "#374151" },
+              color: "#000000",
+              formatter: () => isStatusEmpty ? "--" : `${data?.statusProduksi?.total || 0} Batch`,
+              style: { fontSize: "14px", fontWeight: 600, color: "#000000" },
             },
           },
         },
@@ -160,23 +184,28 @@ const DashboardProduksi = () => {
     },
     dataLabels: { enabled: false },
     legend: { show: false },
-    stroke: { width: 2 },
+    stroke: { width: isStatusEmpty ? 0 : 2 },
+    tooltip: { enabled: !isStatusEmpty },
   };
 
-  const statusBreakdown = data?.statusProduksi?.breakdown?.map(item => {
-    const countVal = item.count !== undefined ? item.count : (item.kg !== undefined ? item.kg : 0);
-    return {
-      label: item.label,
-      count: `${countVal} (${item.percentage || '0.0%'})`,
-      color: item.color
-    };
-  }) || [
-      { label: "Selesai", count: "12 (50.0%)", color: "#10b981" },
-      { label: "Proses", count: "8 (33.3%)", color: "#3b82f6" },
-      { label: "Pengeringan", count: "2 (8.3%)", color: "#f59e0b" },
-      { label: "Sortasi / QC", count: "1 (4.2%)", color: "#ef4444" },
-      { label: "Tidak Aktif", count: "1 (4.2%)", color: "#9ca3af" },
-    ];
+  const defaultStatusBreakdown = [
+    { label: "Selesai", count: "--", color: "#10b981" },
+    { label: "Proses", count: "--", color: "#3b82f6" },
+    { label: "Pengeringan", count: "--", color: "#f59e0b" },
+    { label: "Sortasi / QC", count: "--", color: "#ef4444" },
+    { label: "Tidak Aktif", count: "--", color: "#9ca3af" },
+  ];
+
+  const statusBreakdown = isStatusEmpty
+    ? defaultStatusBreakdown
+    : (data?.statusProduksi?.breakdown?.map(item => {
+        const countVal = item.count !== undefined ? item.count : (item.kg !== undefined ? item.kg : 0);
+        return {
+          label: item.label,
+          count: countVal === 0 ? "--" : `${countVal} (${item.percentage || '0.0%'})`,
+          color: item.color
+        };
+      }) || defaultStatusBreakdown);
 
   // Bar Chart: Produksi per Tahap
   const tahapSeries = data?.produksiPerTahap?.series || [
@@ -258,22 +287,44 @@ const DashboardProduksi = () => {
   };
 
   // Donut Chart: Produksi per Produk (Kg)
-  const produkSeries = data?.produksiPerProduk?.series || [6500, 4200, 3000, 2300, 2750];
+  const rawProdukSeries = data?.produksiPerProduk?.series;
+  const isProdukEmpty = !rawProdukSeries ||
+    rawProdukSeries.length === 0 ||
+    rawProdukSeries.every(val => Number(val) === 0);
+
+  const produkSeries = isProdukEmpty ? [1] : rawProdukSeries;
+  const produkLabels = isProdukEmpty ? ["Tidak Ada Data"] : (data?.produksiPerProduk?.labels || ["Padi IR64", "Padi Ciherang", "Tomat Servo", "Cabai Lado F1", "Lainnya"]);
+  const produkColors = isProdukEmpty ? ["#e5e7eb"] : (data?.produksiPerProduk?.colors || ["#059669", "#2563eb", "#f59e0b", "#dc2626", "#9ca3af"]);
+
   const produkOptions = {
-    chart: { type: "donut", height: 200 },
-    labels: data?.produksiPerProduk?.labels || ["Padi IR64", "Padi Ciherang", "Tomat Servo", "Cabai Lado F1", "Lainnya"],
-    colors: data?.produksiPerProduk?.colors || ["#059669", "#2563eb", "#f59e0b", "#dc2626", "#9ca3af"],
+    chart: { type: "donut", height: 180 },
+    labels: produkLabels,
+    colors: produkColors,
     plotOptions: {
       pie: {
         donut: {
-          size: "70%",
+          size: "72%",
           labels: {
             show: true,
+            name: {
+              show: true,
+              fontSize: "12px",
+              color: "#000000",
+              fontWeight: 600,
+            },
+            value: {
+              show: true,
+              fontSize: "14px",
+              color: "#000000",
+              fontWeight: 700,
+              formatter: () => isProdukEmpty ? "--" : undefined,
+            },
             total: {
               show: true,
               label: "Total",
-              formatter: () => `${(data?.produksiPerProduk?.totalKg || 18750).toLocaleString("id-ID")} Kg`,
-              style: { fontSize: "13px", fontWeight: 600, color: "#374151" },
+              color: "#000000",
+              formatter: () => isProdukEmpty ? "--" : `${(data?.produksiPerProduk?.totalKg || 0).toLocaleString("id-ID")} Kg`,
+              style: { fontSize: "14px", fontWeight: 600, color: "#000000" },
             },
           },
         },
@@ -281,22 +332,31 @@ const DashboardProduksi = () => {
     },
     dataLabels: { enabled: false },
     legend: { show: false },
+    stroke: { width: isProdukEmpty ? 0 : 2 },
+    tooltip: { enabled: !isProdukEmpty },
   };
 
-  const produkBreakdown = data?.produksiPerProduk?.breakdown?.map(item => ({
-    label: item.label,
-    detail: `${(item.kg || item.count)?.toLocaleString("id-ID")} (${item.percentage})`,
-    color: item.color
-  })) || [
-      { label: "Padi IR64", detail: "6.500 (34.7%)", color: "#059669" },
-      { label: "Padi Ciherang", detail: "4.200 (22.4%)", color: "#2563eb" },
-      { label: "Tomat Servo", detail: "3.000 (16.0%)", color: "#f59e0b" },
-      { label: "Cabai Lado F1", detail: "2.300 (12.3%)", color: "#dc2626" },
-      { label: "Lainnya", detail: "2.750 (14.6%)", color: "#9ca3af" },
-    ];
+  const defaultProdukBreakdown = [
+    { label: "Padi IR64", detail: "--", color: "#059669" },
+    { label: "Padi Ciherang", detail: "--", color: "#2563eb" },
+    { label: "Tomat Servo", detail: "--", color: "#f59e0b" },
+    { label: "Cabai Lado F1", detail: "--", color: "#dc2626" },
+    { label: "Lainnya", detail: "--", color: "#9ca3af" },
+  ];
+
+  const produkBreakdown = isProdukEmpty
+    ? defaultProdukBreakdown
+    : (data?.produksiPerProduk?.breakdown?.map(item => {
+        const kgVal = item.kg !== undefined ? item.kg : (item.count !== undefined ? item.count : 0);
+        return {
+          label: item.label,
+          detail: kgVal === 0 ? "--" : `${kgVal.toLocaleString("id-ID")} (${item.percentage || '0.0%'})`,
+          color: item.color
+        };
+      }) || defaultProdukBreakdown);
 
   // Active Batches Table
-  const batchList = data?.batchProduksiAktif || [
+  const batchList = (data?.batchProduksiAktif || [
     {
       no: 1,
       kodeBatch: "BCH-2406-001",
@@ -352,7 +412,7 @@ const DashboardProduksi = () => {
       targetKg: "500",
       realisasiKg: "150",
     },
-  ];
+  ]).slice(0, 5);
 
   // Notifications
   const notifications = data?.notifikasiProduksi || [
@@ -824,7 +884,7 @@ const DashboardProduksi = () => {
           <div className="flex items-center gap-2 px-3 py-1.5 bg-white dark:bg-bodybg border border-gray-200 dark:border-white/10 rounded-lg text-xs text-gray-700 dark:text-gray-200 shadow-sm relative focus-within:ring-2 focus-within:ring-emerald-500/20 transition">
             <i className="ri-calendar-line text-emerald-500 text-sm"></i>
             <SpkDatepickr
-              className="bg-transparent text-xs font-medium focus:outline-none cursor-pointer text-gray-700 dark:text-gray-200 w-44"
+              className="bg-transparent text-xs font-medium focus:outline-none cursor-pointer text-gray-700 dark:text-gray-200 w-56 md:w-60"
               placeholderText="Pilih rentang tanggal"
               startDate={startDate}
               endDate={endDate}
@@ -1140,30 +1200,33 @@ const DashboardProduksi = () => {
                 Lihat Detail
               </button>
             </div>
-            <div className="box-body p-4 flex flex-col justify-between">
-              <div className="my-1">
-                <Spkapexcharts
-                  chartOptions={produkOptions}
-                  chartSeries={produkSeries}
-                  type="donut"
-                  width={"100%"}
-                  height={200}
-                />
-              </div>
+            <div className="box-body p-4 flex items-center h-full">
+              <div className="grid grid-cols-12 items-center w-full gap-2">
+                <div className="col-span-12 xl:col-span-6 flex justify-center">
+                  <Spkapexcharts
+                    key={JSON.stringify(produkSeries)}
+                    chartOptions={produkOptions}
+                    chartSeries={produkSeries}
+                    type="donut"
+                    width={"100%"}
+                    height={180}
+                  />
+                </div>
 
-              <div className="space-y-2 mt-4 pt-3 border-t border-gray-100 dark:border-white/10">
-                {produkBreakdown.map((item, index) => (
-                  <div key={index} className="flex items-center justify-between text-xs">
-                    <span className="flex items-center text-gray-600 dark:text-gray-300 font-medium">
-                      <span
-                        className="w-2.5 h-2.5 rounded-full me-2.5 inline-block"
-                        style={{ backgroundColor: item.color }}
-                      ></span>
-                      {item.label}
-                    </span>
-                    <span className="font-semibold text-gray-800 dark:text-white">{item.detail}</span>
-                  </div>
-                ))}
+                <div className="col-span-12 xl:col-span-6 space-y-2">
+                  {produkBreakdown.map((item, index) => (
+                    <div key={index} className="flex items-center justify-between text-xs gap-2">
+                      <span className="flex items-center text-gray-600 dark:text-gray-300 font-medium truncate" title={item.label}>
+                        <span
+                          className="w-2.5 h-2.5 rounded-full me-2 shrink-0 inline-block"
+                          style={{ backgroundColor: item.color }}
+                        ></span>
+                        <span className="truncate">{item.label}</span>
+                      </span>
+                      <span className="font-semibold text-gray-800 dark:text-white shrink-0">{item.detail}</span>
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
           </div>

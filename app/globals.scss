@@ -148,3 +148,8 @@ html[data-menu-styles] .app-sidebar .slide-menu .side-menu__label {
     font-size: 0.7rem !important;
 }
 
+/* Custom override for pie chart text to black */
+.apexcharts-pie text {
+    fill: #000000 !important;
+}
+

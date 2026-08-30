@@ -2996,3 +2996,8 @@ th.gridjs-th .gridjs-th-content {
 div:where(.swal2-container) div:where(.swal2-validation-message) {
   @apply border-0 #{!important};
 }
+
+/* Custom override for pie chart text to black */
+.apexcharts-pie text {
+  fill: #000000 !important;
+}
