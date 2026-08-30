@@ -1,21 +1,17 @@
 "use client"
-import React, { useState, useEffect, Fragment } from 'react';
-import { useRouter } from 'next/navigation';
+import React, { Fragment } from 'react';
 import Pageheader from '../../../../../shared/layouts-components/page-header/pageheader';
 
 
 import { useSupplier } from '@/app/hooks/useSupplier';
-import AddBtn from './component/AddBtn';
-import Table from './component/Table';
 import StatsWidgets from '../../shared/StatsWidgets';
 import FilterRow, { FilterSelectConfig } from '../../shared/FilterRow';
 import DataTable from '../../shared/DataTable';
 
 import {SupplierData} from '@/app/types/supplier';
-import EditBtn from './component/EditBtn';
-import RemoveBtn from './component/RemoveBtn';
+import { TableEditBtn, TableRemoveBtn } from '../../shared/ActionButtons';
 import DetailPanel, { DetailAction, TabConfig } from '../../shared/DetailPanel';
-import DetailInfo from './component/DetInfo';
+import DetailInfo, { DetailItem } from '../../shared/DetailInfo';
 import SpkButton from '@/shared/@spk-reusable-components/uielements/spk-button';
 import CrudModal from '../../shared/CrudModal';
 
@@ -120,8 +116,8 @@ const CATEGORY_LABEL: Record<string, string> = {
               </span>
           </td>
           <td>
-              <EditBtn id={item.kodeSupplier} onClick={handleEdit} />
-              <RemoveBtn id={item.kodeSupplier} onClick={handleDelete} />
+              <TableEditBtn id={item.kodeSupplier} onClick={handleEdit} />
+              <TableRemoveBtn id={item.kodeSupplier} onClick={handleDelete} />
           </td>
       </tr>
     );
@@ -159,9 +155,23 @@ const CATEGORY_LABEL: Record<string, string> = {
     if (!viewed) return null;
     switch (tabId) {
       case 'info':
-        return (
-          <DetailInfo viewed={viewed} />
-        );
+        const infoItems: DetailItem[] = [
+          { label: 'Nama Supplier', value: viewed.namaSupplier },
+          { label: 'Kategori', value: viewed.kategori },
+          { label: 'Tanggal Bergabung', value: viewed.createdAt ? new Date(viewed.createdAt).toLocaleDateString('id-ID') : '-' },
+          { label: 'Status', value: (
+              <span className={`badge rounded font-bold px-1.5 py-0.5 text-[10px] ${viewed.status === 'Aktif'
+                ? 'bg-success/10 text-success'
+                : viewed.status === 'Maintenance'
+                  ? 'bg-danger/10 text-danger'
+                  : 'bg-gray-100 text-gray-500'
+                }`}>
+                {viewed.status}
+              </span>
+            )
+          }
+        ];
+        return <DetailInfo items={infoItems} layout="grid" />;
       case 'kondisi':
         return (
           <div className="space-y-4 py-2">
@@ -250,18 +260,7 @@ const CATEGORY_LABEL: Record<string, string> = {
           activepage="Supplier" 
           mainpage="Supplier" 
           description="Kelola Data Supplier" 
-          customButton={
-              <SpkButton
-                {...({
-                  onclickfunc: handleOpenAddModal,
-                  style: { backgroundColor: '#078836', color: 'white' },
-                  className: "hover:bg-[#06732d] hover:text-white",
-                  customClass: "ti-btn !border-0 btn-wave !me-0 flex items-center gap-1.5"
-                } as any)}
-              >
-                <i className="ri-add-line text-lg"></i> Tambah Supplier
-              </SpkButton>
-            } />
+        />
         
         {/* Summary Cards */}
         <StatsWidgets items={statItems} />
@@ -273,10 +272,12 @@ const CATEGORY_LABEL: Record<string, string> = {
             <FilterRow
               search={search}
               onSearchChange={(val) => { setSearch(val); }}
-              searchPlaceholder="Cari gudang..."
+              searchPlaceholder="Cari supplier..."
               selectFilters={filterConfig}
               onReset={handleResetFilters}
               onExport={handleExportData}
+              onAdd={handleOpenAddModal}
+              addLabel="Tambah Supplier"
             />
   
             {/* Table list with pagination */}

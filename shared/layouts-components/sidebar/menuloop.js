@@ -22,7 +22,7 @@ const Menuloop = ({ MenuItems, level, handleToMenu, HoverToggleInnerMenuFn }) =>
 
   return (
     <Fragment>
-      <Link href="#!" scroll={false} className={`side-menu__item ${MenuItems?.selected ? "active" : ""}`}
+      <Link href="#!" scroll={false} className={`side-menu__item ${MenuItems?.selected ? "active !bg-transparent" : ""}`}
         onClick={(event) => { event.preventDefault(); handleToMenu(event, MenuItems, undefined, true); }} onMouseEnter={(event) => HoverToggleInnerMenuFn(event, MenuItems)}>
         <span className={`${local_varaiable?.dataVerticalStyle == 'doublemenu' ? '' : 'd-none'}`}>
         <span className={`hs-tooltip inline-block [--placement:right] leading-none ${local_varaiable?.dataVerticalStyle == 'doublemenu' ? '' : 'hidden'}`}>
@@ -50,7 +50,7 @@ const Menuloop = ({ MenuItems, level, handleToMenu, HoverToggleInnerMenuFn }) =>
         {MenuItems.children.map((firstlevel, index) =>
           <li className={`${firstlevel.menutitle ? 'slide__category' : ''} ${firstlevel?.type == 'empty' ? 'slide' : ''} ${firstlevel?.type == 'link' ? 'slide' : ''} ${firstlevel?.type == 'sub' ? 'slide has-sub' : ''} ${firstlevel?.active ? 'open' : ''} ${firstlevel?.selected ? 'active' : ''}`} key={index}>
             {firstlevel.type === "link" ?
-              <Link href={firstlevel.path} className={`side-menu__item ${firstlevel.selected ? 'active' : ''}`}>{firstlevel.icon}
+              <Link href={firstlevel.path} className={`side-menu__item ${firstlevel.selected ? 'active !bg-transparent' : ''}`}>{firstlevel.icon}
                 <span className=""> {firstlevel.title} {firstlevel.badgetxt ? (<span className={firstlevel.class}> {firstlevel.badgetxt}</span>
                 ) : (
                   ""

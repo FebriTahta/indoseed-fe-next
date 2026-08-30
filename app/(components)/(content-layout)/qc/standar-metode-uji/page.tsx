@@ -9,14 +9,16 @@ import 'react-toastify/dist/ReactToastify.css';
 // Reusable components
 import StatsWidgets from '../../shared/StatsWidgets';
 import DataTable from '../../shared/DataTable';
-import { HistoryButton, AddButton, EditButton, ManageButton, ViewIconButton, EditIconButton } from '../../shared/ActionButtons';
+import { HistoryButton, AddButton, EditButton, ManageButton, ViewIconButton, EditIconButton, ResetButton } from '../../shared/ActionButtons';
 // import DetailPanel, { TabConfig, DetailAction } from '../../shared/DetailPanel';
-// import CrudModal from '../../shared/CrudModal';
-// import FilterRow, { FilterSelectConfig } from '../../shared/FilterRow';
+// import ConfirmationModal from './components/ConfirmationModal';
+import QcPageHeader from '../shared/QcPageHeader';
+import FilterRow, { FilterSelectConfig } from '../../shared/FilterRow';
 import AddParameterModal from './AddParameterModal';
 import AddDocumentModal from './AddDocumentModal';
 import AddStandardMethodModal from './AddStandardMethodModal';
 import ManageMethodsModal from './ManageMethodsModal';
+import ManageParametersModal from './ManageParametersModal';
 import { format } from 'date-fns';
 import { id } from 'date-fns/locale';
 import { qcService } from '@/app/services/qcService';
@@ -45,12 +47,29 @@ export default function StandarMetodeUjiPage() {
     handleUpdate,
     handleDelete,
     fetchMethods,
+    fetchParameters,
     documents
   } = useQC();
 
   // Manage Methods modal state
   const [isManageMethodsOpen, setIsManageMethodsOpen] = useState(false);
   const [isSavingMethods, setIsSavingMethods] = useState(false);
+
+  // Kategori Filter State
+  const [kategori, setKategori] = useState<any>('');
+
+  const filterConfig: FilterSelectConfig[] = [
+    {
+      value: kategori,
+      onChange: (val: any) => setKategori(val ? val.value : ''),
+      options: [
+        { value: 'Fisiologis', label: 'Fisiologis' },
+        { value: 'Fisik', label: 'Fisik' },
+        { value: 'Kesehatan', label: 'Kesehatan' }
+      ],
+      placeholder: 'Semua Kategori',
+    }
+  ];
 
   /** Save changes: update standarId on added/removed methods */
   const handleSaveMethods = async (added: string[], removed: string[]) => {
@@ -71,6 +90,32 @@ export default function StandarMetodeUjiPage() {
       console.error('Failed to save method links:', err);
     } finally {
       setIsSavingMethods(false);
+    }
+  };
+
+  // Manage Parameters modal state
+  const [isManageParametersOpen, setIsManageParametersOpen] = useState(false);
+  const [isSavingParameters, setIsSavingParameters] = useState(false);
+
+  /** Save changes: update metodeId on added/removed parameters */
+  const handleSaveParameters = async (added: string[], removed: string[]) => {
+    setIsSavingParameters(true);
+    try {
+      await Promise.all([
+        ...added.map((id) =>
+          qcService.updateParameter(id, { metodeId: selectedItem?.id })
+        ),
+        ...removed.map((id) =>
+          qcService.updateParameter(id, { metodeId: null })
+        ),
+      ]);
+      await fetchMethods();
+      await fetchParameters();
+      setIsManageParametersOpen(false);
+    } catch (err: any) {
+      console.error('Failed to save parameter links:', err);
+    } finally {
+      setIsSavingParameters(false);
     }
   };
 
@@ -116,7 +161,7 @@ export default function StandarMetodeUjiPage() {
 
         return (
           <DataTable
-            headers={['No', 'Parameter Uji', 'Kategori', 'Metode Default', 'Standar Acuan', 'Batas Acuan', 'Satuan', 'Status', 'Aksi']}
+            headers={['No', 'Parameter Uji', 'Kategori', 'Metode Default', 'Batas Acuan', 'Satuan', 'Status', 'Aksi']}
             items={paginated}
             currentPage={currentPage}
             pageSize={pageSize}
@@ -130,7 +175,6 @@ export default function StandarMetodeUjiPage() {
                 <td className="p-3 text-sm font-semibold text-gray-800">{item.nama}</td>
                 <td className="p-3 text-sm">{item.kategori || '-'}</td>
                 <td className="p-3 text-sm">{item.metode?.kode || '-'}</td>
-                <td className="p-3 text-sm">{item.standar?.nama || '-'}</td>
                 <td className="p-3 text-sm">{item.batasAcuan || '-'}</td>
                 <td className="p-3 text-sm">{item.satuan || '-'}</td>
                 <td className="p-3 text-sm">
@@ -301,19 +345,19 @@ export default function StandarMetodeUjiPage() {
       <ToastContainer position="top-right" autoClose={3000} hideProgressBar={false} />
 
       {/* Top Actions & Stats */}
-      <div className="mb-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-        <div>
-          <h2 className="text-xl font-semibold text-gray-800 dark:text-white">Standar & Metode Uji</h2>
-          <p className="text-sm text-gray-500 dark:text-gray-400">Kelola standar acuan dan metode pengujian sesuai ISO</p>
-        </div>
-        <div className="flex gap-3">
-          <HistoryButton />
-          <AddButton
-            onClick={handleOpenAddModal}
-            label={`Tambah ${activeTab === 'parameter' ? 'Parameter' : activeTab === 'document' ? 'Dokumen' : 'Standar / Metode Uji'}`}
-          />
-        </div>
-      </div>
+      <QcPageHeader
+        title="Standar & Metode Uji"
+        description="Kelola standar acuan dan metode pengujian sesuai ISO"
+        actionButtons={
+          <>
+            <HistoryButton />
+            <AddButton
+              onClick={handleOpenAddModal}
+              label={`Tambah ${activeTab === 'parameter' ? 'Parameter' : activeTab === 'document' ? 'Dokumen' : 'Standar / Metode Uji'}`}
+            />
+          </>
+        }
+      />
 
       <StatsWidgets items={statItems} />
 
@@ -329,26 +373,33 @@ export default function StandarMetodeUjiPage() {
               </div>
             </div>
             <div className="box-body">
-              <div className="flex flex-col md:flex-row gap-4 mb-4">
-                <div className="relative flex-grow">
-                  <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-                    <i className="ri-search-line text-gray-500"></i>
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end mb-4">
+                <div className="md:col-span-2">
+                  <label className="text-xs font-semibold text-gray-600 mb-1 block">Pencarian</label>
+                  <div className="relative">
+                    <input
+                      type="text"
+                      className="form-control text-sm h-[38px] w-full pr-10"
+                      placeholder="Cari parameter, metode, atau standar..."
+                      value={search}
+                      onChange={(e) => setSearch(e.target.value)}
+                    />
+                    <i className="ri-search-line absolute right-3 top-2.5 text-gray-400"></i>
                   </div>
-                  <input
-                    type="text"
-                    className="form-control pl-10"
-                    placeholder="Cari parameter, metode, atau standar..."
-                    value={search}
-                    onChange={(e) => setSearch(e.target.value)}
-                  />
                 </div>
-                <div className="w-full md:w-64">
-                  <select className="form-select">
+                
+                <div>
+                  <label className="text-xs font-semibold text-gray-600 mb-1 block">Kategori</label>
+                  <select className="form-select text-sm h-[38px] w-full" value={kategori} onChange={(e) => setKategori(e.target.value)}>
                     <option value="">Semua Kategori</option>
                     <option value="Fisiologis">Fisiologis</option>
                     <option value="Fisik">Fisik</option>
                     <option value="Kesehatan">Kesehatan</option>
                   </select>
+                </div>
+
+                <div className="flex gap-2">
+                  <ResetButton className="w-full h-[38px] py-0" onClick={() => { setSearch(''); setKategori(''); }} label="Reset Filter" />
                 </div>
               </div>
               <div className="mt-4">
@@ -380,11 +431,15 @@ export default function StandarMetodeUjiPage() {
                 <div className="box-body flex flex-col h-full">
                   {selectedItem ? (
                     <div className="space-y-4 flex-grow">
-                      {activeTab !== 'standard' && activeTab !== 'document' && (
+                      {activeTab === 'parameter' && (
                         <>
                           <div>
-                            <span className="text-xs text-gray-500 block">{activeTab === 'parameter' ? 'Parameter Uji' : 'Nama Metode'}</span>
+                            <span className="text-xs text-gray-500 block">Parameter Uji</span>
                             <span className="text-sm font-semibold text-gray-800">{selectedItem.nama}</span>
+                          </div>
+                          <div>
+                            <span className="text-xs text-gray-500 block">Kode Parameter</span>
+                            <span className="text-sm font-semibold text-gray-800">{selectedItem.kode || '-'}</span>
                           </div>
                           <div>
                             <span className="text-xs text-gray-500 block">Kategori</span>
@@ -394,12 +449,6 @@ export default function StandarMetodeUjiPage() {
                             <span className="text-xs text-gray-500 block">Metode Default</span>
                             <span className="text-sm font-semibold text-gray-800">
                               {selectedItem.metode?.kode ? `${selectedItem.metode.kode} - ${selectedItem.metode.nama}` : '-'}
-                            </span>
-                          </div>
-                          <div>
-                            <span className="text-xs text-gray-500 block">Standar Acuan</span>
-                            <span className="text-sm font-semibold text-gray-800">
-                              {selectedItem.standar?.nama ? `${selectedItem.standar.nama} (${selectedItem.standar.deskripsi || ''})` : '-'}
                             </span>
                           </div>
                           <div>
@@ -420,8 +469,96 @@ export default function StandarMetodeUjiPage() {
                           </div>
                           <div className="mt-auto pt-4">
                             <EditButton
-                              label={`Edit ${activeTab === 'parameter' ? 'Parameter' : 'Metode'}`}
+                              label="Edit Parameter"
                               className="w-full"
+                              onClick={() => handleOpenEditModal(selectedItem)}
+                            />
+                          </div>
+                        </>
+                      )}
+
+                      {activeTab === 'method' && (
+                        <>
+                          <div className="flex gap-4 items-center mb-4">
+                            <div className="w-16 h-16 bg-[#10b981] text-white rounded-md flex items-center justify-center font-bold text-2xl italic">
+                              {selectedItem.organisasi}
+                            </div>
+                            <div>
+                              <div className="text-lg font-bold text-gray-800">{selectedItem.kode}</div>
+                              <div className="text-sm text-gray-600">{selectedItem.nama}</div>
+                            </div>
+                          </div>
+
+                          <div className="grid grid-cols-3 gap-2 text-sm">
+                            <div className="text-gray-500">Organisasi</div>
+                            <div className="col-span-2 text-gray-800">{selectedItem.organisasi}</div>
+
+                            <div className="text-gray-500">Tahun</div>
+                            <div className="col-span-2 text-gray-800">{selectedItem.versiTahun}</div>
+
+                            <div className="text-gray-500">Standar Acuan</div>
+                            <div className="col-span-2 text-gray-800">{selectedItem.standar?.nama ? `${selectedItem.standar.kode} - ${selectedItem.standar.nama}` : '-'}</div>
+
+                            <div className="text-gray-500">Kategori</div>
+                            <div className="col-span-2 text-gray-800">{selectedItem.kategori || '-'}</div>
+
+                            <div className="text-gray-500">Deskripsi Singkat</div>
+                            <div className="col-span-2 text-gray-800">{selectedItem.deskripsi}</div>
+                          </div>
+
+                          <div className="mt-4 border-t pt-4">
+                            {(() => {
+                              const linkedParams = selectedItem.testParameters || [];
+                              return linkedParams.length > 0 ? (
+                                <div className="mb-4">
+                                  <div className="flex items-center justify-between mb-2">
+                                    <span className="text-xs text-gray-500 font-medium">
+                                      Parameter Uji Terkait
+                                    </span>
+                                    <span className="text-xs bg-success/10 text-success px-2 py-0.5 rounded-full font-semibold">
+                                      Total {linkedParams.length} Parameter
+                                    </span>
+                                  </div>
+                                  <div className="space-y-1.5">
+                                    {linkedParams.map((p: any) => (
+                                      <div
+                                        key={p.id}
+                                        className="flex items-center justify-between p-2 rounded-md bg-gray-50 border border-defaultborder"
+                                      >
+                                        <div className="flex items-center gap-2 min-w-0">
+                                          <i className="ri-book-open-line text-success text-base shrink-0" />
+                                          <div className="min-w-0">
+                                            <div className="text-xs font-semibold text-gray-800 truncate">
+                                              {p.nama}
+                                            </div>
+                                            <div className="text-xs text-gray-400">
+                                              {p.kode}
+                                            </div>
+                                          </div>
+                                        </div>
+                                      </div>
+                                    ))}
+                                  </div>
+                                </div>
+                              ) : (
+                                <div className="mb-4 text-xs text-gray-400 text-center py-3 bg-gray-50 rounded-md border border-dashed border-gray-200">
+                                  <i className="ri-book-open-line block text-xl mb-1 text-gray-300" />
+                                  Belum ada parameter yang terhubung
+                                </div>
+                              );
+                            })()}
+                            <ManageButton
+                              label="Kelola Parameter dalam Metode Ini"
+                              className="w-full"
+                              onClick={() => setIsManageParametersOpen(true)}
+                            />
+                          </div>
+
+                          <div className="mt-auto pt-4">
+                            <EditButton
+                              label="Edit Metode Uji"
+                              className="w-full"
+                              onClick={() => handleOpenEditModal(selectedItem)}
                             />
                           </div>
                         </>
@@ -709,6 +846,14 @@ export default function StandarMetodeUjiPage() {
         allMethods={methods}
         onSave={handleSaveMethods}
         isSaving={isSavingMethods}
+      />
+      <ManageParametersModal
+        isOpen={isManageParametersOpen}
+        onClose={() => setIsManageParametersOpen(false)}
+        method={selectedItem}
+        allParameters={parameters}
+        onSave={handleSaveParameters}
+        isSaving={isSavingParameters}
       />
     </>
   );

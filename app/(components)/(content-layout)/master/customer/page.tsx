@@ -1,21 +1,17 @@
 "use client"
-import React, { useState, useEffect, Fragment } from 'react';
-import { useRouter } from 'next/navigation';
+import React, { Fragment } from 'react';
 import Pageheader from '../../../../../shared/layouts-components/page-header/pageheader';
 
 
 import { useCustomer } from '@/app/hooks/useCustomer';
-import AddBtn from './component/AddBtn';
-import Table from './component/Table';
 import StatsWidgets from '../../shared/StatsWidgets';
 import FilterRow, { FilterSelectConfig } from '../../shared/FilterRow';
 import DataTable from '../../shared/DataTable';
 
 import {CustData} from '@/app/types/customer';
-import EditBtn from './component/EditBtn';
-import RemoveBtn from './component/RemoveBtn';
+import { TableEditBtn, TableRemoveBtn } from '../../shared/ActionButtons';
 import DetailPanel, { DetailAction, TabConfig } from '../../shared/DetailPanel';
-import DetailInfo from './component/DetInfo';
+import DetailInfo, { DetailItem } from '../../shared/DetailInfo';
 import SpkButton from '@/shared/@spk-reusable-components/uielements/spk-button';
 import CrudModal from '../../shared/CrudModal';
 
@@ -140,8 +136,8 @@ const CATEGORY_LABEL: Record<string, string> = {
               </span>
           </td>
           <td>
-              <EditBtn id={item.kodeCust} onClick={handleEdit} />
-              <RemoveBtn id={item.kodeCust} onClick={handleDelete} />
+              <TableEditBtn id={item.kodeCust} onClick={handleEdit} />
+              <TableRemoveBtn id={item.kodeCust} onClick={handleDelete} />
           </td>
       </tr>
     );
@@ -179,9 +175,32 @@ const CATEGORY_LABEL: Record<string, string> = {
     if (!viewed) return null;
     switch (tabId) {
       case 'info':
-        return (
-          <DetailInfo viewed={viewed} />
-        );
+        const infoItems: DetailItem[] = [
+          { label: 'Nama Customer', value: viewed.namaCust },
+          { label: 'Kategori', value: viewed.kategori },
+          { label: 'NPWP', value: viewed.NPWP },
+          { label: 'Alamat', value: viewed.alamat },
+          { label: 'Kota', value: viewed.kota },
+          { label: 'Kode Pos', value: viewed.kodePos },
+          { label: 'No. Telepon', value: viewed.noTelepon },
+          { label: 'Email', value: viewed.email },
+          { label: 'Top Customer', value: viewed.isTop ? 'Ya' : 'Tidak' },
+          { label: 'Limit Credit', value: viewed.limitKredit?.toLocaleString('id-ID', { style: 'currency', currency: 'IDR' }) },
+          { label: 'Sisa Credit', value: viewed.remainKredit?.toLocaleString('id-ID', { style: 'currency', currency: 'IDR' }) },
+          { label: 'Tanggal Bergabung', value: viewed.createdAt ? new Date(viewed.createdAt).toLocaleDateString('id-ID') : '-' },
+          { label: 'Status', value: (
+              <span className={`badge rounded font-bold px-1.5 py-0.5 text-[10px] ${viewed.status === 'Aktif'
+                ? 'bg-success/10 text-success'
+                : viewed.status === 'Maintenance'
+                  ? 'bg-danger/10 text-danger'
+                  : 'bg-gray-100 text-gray-500'
+                }`}>
+                {viewed.status}
+              </span>
+            )
+          }
+        ];
+        return <DetailInfo items={infoItems} layout="grid" />;
       case 'kondisi':
         return (
           <div className="space-y-4 py-2">
@@ -270,18 +289,7 @@ const CATEGORY_LABEL: Record<string, string> = {
           activepage="Customers" 
           mainpage="Customer" 
           description="Kelola Data Customer" 
-          customButton={
-              <SpkButton
-                {...({
-                  onclickfunc: handleOpenAddModal,
-                  style: { backgroundColor: '#078836', color: 'white' },
-                  className: "hover:bg-[#06732d] hover:text-white",
-                  customClass: "ti-btn !border-0 btn-wave !me-0 flex items-center gap-1.5"
-                } as any)}
-              >
-                <i className="ri-add-line text-lg"></i> Tambah Customer
-              </SpkButton>
-            } />
+        />
         
         {/* Summary Cards */}
         <StatsWidgets items={statItems} />
@@ -297,6 +305,8 @@ const CATEGORY_LABEL: Record<string, string> = {
               selectFilters={filterConfig}
               onReset={handleResetFilters}
               onExport={handleExportData}
+              onAdd={handleOpenAddModal}
+              addLabel="Tambah Customer"
             />
   
             {/* Table list with pagination */}

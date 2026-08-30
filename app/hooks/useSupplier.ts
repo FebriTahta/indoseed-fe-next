@@ -13,6 +13,16 @@ export function useSupplier() {
   // Filters State
   const [search, setSearch] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
+  
+  // Debounce search input
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedSearch(search);
+      setCurrentPage(1);
+    }, 500);
+    return () => clearTimeout(handler);
+  }, [search]);
+
   const [filterKategori, setFilterKategori] = useState<any>(null);
   const [filterStatus, setFilterStatus] = useState<any>(null);
   const [filterWilayah, setFilterWilayah] = useState<any>(null);
@@ -174,6 +184,7 @@ export function useSupplier() {
 
   const handleDelete = (id: string) => {
     console.log("Delete supplier", id);
+    toast.success('Data supplier berhasil dihapus');
   };
 
   // Open Edit Modal

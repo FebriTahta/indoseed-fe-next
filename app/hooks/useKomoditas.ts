@@ -383,9 +383,12 @@ export function useKomoditas() {
   };
 
   // File Upload handler
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+  const handleFileChange = (file: File | null) => {
+    if (!file) {
+      setImageFile(null);
+      setPreviewUrl('');
+      return;
+    }
 
     const maxSize = 5 * 1024 * 1024;
     if (file.size > maxSize) {

@@ -2,7 +2,7 @@ import React from 'react';
 import SpkButton from '@/shared/@spk-reusable-components/uielements/spk-button';
 
 interface BaseButtonProps {
-  onClick?: () => void;
+  onClick?: (e?: any) => void;
   className?: string;
   disabled?: boolean;
 }
@@ -67,10 +67,10 @@ export const ViewIconButton: React.FC<IconButtonProps> = ({ onClick, title = "Li
   return (
     <button
       onClick={onClick}
-      className={`btn btn-sm btn-icon btn-primary-light rounded-full hover:scale-110 transition-transform shadow-sm ${className}`}
+      className={`w-8 h-8 flex items-center justify-center rounded-md bg-emerald-50 text-emerald-600 hover:bg-emerald-100 hover:text-emerald-700 hover:scale-110 transition-all duration-200 shadow-sm border border-emerald-100 ${className}`}
       title={title}
     >
-      <i className="ri-eye-line"></i>
+      <i className="ri-eye-line text-lg"></i>
     </button>
   );
 };
@@ -79,10 +79,10 @@ export const EditIconButton: React.FC<IconButtonProps> = ({ onClick, title = "Ed
   return (
     <button
       onClick={onClick}
-      className={`btn btn-sm btn-icon btn-info-light rounded-full hover:scale-110 transition-transform shadow-sm ${className}`}
+      className={`w-8 h-8 flex items-center justify-center rounded-md bg-blue-50 text-blue-600 hover:bg-blue-100 hover:text-blue-700 hover:scale-110 transition-all duration-200 shadow-sm border border-blue-100 ${className}`}
       title={title}
     >
-      <i className="ri-edit-line"></i>
+      <i className="ri-edit-line text-lg"></i>
     </button>
   );
 };
@@ -120,5 +120,50 @@ export const ResetButton: React.FC<BaseButtonProps & { label?: string }> = ({ on
     >
       <i className="ri-refresh-line text-lg"></i> {label}
     </SpkButton>
+  );
+};
+
+export const TableEditBtn = ({ onClick, id }: { onClick?: (id: string) => void; id: string }) => {
+  return (
+    <button
+      onClick={() => onClick && onClick(id)}
+      className="ti-btn ti-btn-sm ti-btn-info me-1"
+    >
+      <i className="ri-edit-line"></i>
+    </button>
+  );
+};
+
+export const TableRemoveBtn = ({ onClick, id }: { onClick?: (id: string) => void; id: string }) => {
+  return (
+    <button
+      onClick={() => onClick && onClick(id)}
+      className="ti-btn ti-btn-sm ti-btn-danger"
+    >
+      <i className="ri-delete-bin-line"></i>
+    </button>
+  );
+};
+
+export const TableViewBtn = ({ onClick, id }: { onClick?: (id: string) => void; id: string }) => {
+  return (
+    <button
+      onClick={() => onClick && onClick(id)}
+      className="ti-btn ti-btn-sm ti-btn-success me-1"
+    >
+      <i className="ri-eye-line"></i>
+    </button>
+  );
+};
+
+export const DeleteIconButton: React.FC<IconButtonProps> = ({ onClick, title = "Hapus", className = '' }) => {
+  return (
+    <button
+      onClick={onClick}
+      className={`w-8 h-8 flex items-center justify-center rounded-md bg-rose-50 text-rose-600 hover:bg-rose-100 hover:text-rose-700 hover:scale-110 transition-all duration-200 shadow-sm border border-rose-100 ${className}`}
+      title={title}
+    >
+      <i className="ri-delete-bin-line text-lg"></i>
+    </button>
   );
 };

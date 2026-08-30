@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import SpkButton from '@/shared/@spk-reusable-components/uielements/spk-button';
 import SpkSelect from '@/shared/@spk-reusable-components/spk-packages/spk-reactselect';
 
@@ -17,6 +17,8 @@ interface FilterRowProps {
   selectFilters: FilterSelectConfig[];
   onReset: () => void;
   onExport: () => void;
+  onAdd?: () => void;
+  addLabel?: string;
 }
 
 export default function FilterRow({
@@ -25,67 +27,108 @@ export default function FilterRow({
   searchPlaceholder = 'Cari...',
   selectFilters,
   onReset,
-  onExport
+  onExport,
+  onAdd,
+  addLabel = 'Tambah Data'
 }: FilterRowProps) {
+  const [mounted, setMounted] = useState(false);
+  const [localSearch, setLocalSearch] = useState(search);
+
+  // Sync local search when external search is reset/changed
+  useEffect(() => {
+    setLocalSearch(search);
+  }, [search]);
+
+  // Debounce logic for search
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      if (search !== localSearch) {
+        onSearchChange(localSearch);
+      }
+    }, 500);
+
+    return () => {
+      clearTimeout(handler);
+    };
+  }, [localSearch, search, onSearchChange]);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   return (
-    <div className="box border border-defaultborder/60 bg-white shadow-sm rounded-md mb-6">
-      <div className="box-body p-4 flex flex-col md:flex-row justify-between items-center gap-4 flex-wrap">
-        <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
+    <div className="box border border-defaultborder/60 bg-white shadow-sm rounded-lg mb-6 transition-all z-20 relative">
+      <div className="box-body p-4 flex flex-col md:flex-row justify-between items-center gap-4 flex-wrap bg-gray-50/50">
+        <div className="flex flex-col sm:flex-row flex-wrap items-center gap-3 w-full md:w-auto">
           {/* Search Field */}
-          <div className="relative w-full sm:w-56">
+          <div className="relative w-full sm:w-64 group">
             <input
               type="text"
-              value={search}
-              onChange={(e) => onSearchChange(e.target.value)}
-              className="form-control w-full pl-9 pr-3 py-1.5 border border-defaultborder rounded-md text-sm"
+              value={localSearch}
+              onChange={(e) => setLocalSearch(e.target.value)}
+              className="form-control w-full pl-3 pr-9 py-2 border border-defaultborder rounded-md text-sm transition-all duration-300 focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 bg-white shadow-sm hover:border-emerald-400"
               placeholder={searchPlaceholder}
             />
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
+            <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none text-gray-400 group-hover:text-emerald-500 transition-colors duration-300">
               <i className="ri-search-2-line text-sm"></i>
             </div>
           </div>
 
-          {/* Filter Label */}
-          <div className="hidden lg:flex items-center gap-1.5 text-textmuted border border-defaultborder px-3 py-1.5 bg-gray-50 text-xs font-semibold rounded-md">
-            <i className="ri-filter-3-line"></i> Filter
-          </div>
-
           {/* Dynamic Select Filters */}
           {selectFilters.map((config, index) => (
-            <div key={index} className={`w-full ${config.widthClass || 'sm:w-36'} text-xs`}>
-              <SpkSelect
-                {...({
-                  option: config.options,
-                  placeholder: config.placeholder,
-                  onfunchange: config.onChange,
-                  getValue: config.value,
-                  classNameprefix: "react-select",
-                  clearable: true
-                } as any)}
-              />
+            <div key={index} className={`w-full ${config.widthClass || 'sm:w-40'} text-xs relative z-10`}>
+              {mounted ? (
+                <SpkSelect
+                  {...({
+                    id: (config as any).id || `filter-select-${index}`,
+                    option: config.options,
+                    placeholder: config.placeholder,
+                    onfunchange: config.onChange,
+                    getValue: config.value,
+                    classNameprefix: "react-select",
+                    clearable: true
+                  } as any)}
+                />
+              ) : (
+                <div className="h-[38px] w-full bg-white shadow-sm border border-defaultborder rounded-md animate-pulse"></div>
+              )}
             </div>
           ))}
-        </div>
 
-        {/* Reset & Export Actions */}
-        <div className="flex items-center justify-between md:justify-end gap-4 w-full md:w-auto border-t md:border-t-0 pt-3 md:pt-0">
+          {/* Reset Action */}
           <button
             onClick={onReset}
-            className="flex items-center gap-1 text-xs text-textmuted hover:text-danger font-medium transition-colors"
+            className="flex items-center gap-1 text-xs text-gray-500 hover:text-danger font-medium transition-all duration-200 px-3 py-2 rounded-md hover:bg-red-50"
           >
-            <i className="ri-refresh-line"></i> Reset
+            <i className="ri-refresh-line text-sm"></i> Reset Filter
           </button>
+        </div>
 
+        {/* Add & Export Actions */}
+        <div className="flex items-center justify-between sm:justify-end gap-3 w-full md:w-auto border-t border-gray-200 md:border-t-0 pt-4 md:pt-0">
           <SpkButton
             {...({
               onclickfunc: onExport,
-              style: { borderColor: '#078836', color: '#078836' },
-              className: "hover:bg-emerald-50 text-xs font-semibold py-1.5 px-3 border rounded flex items-center gap-1",
-              customClass: "ti-btn border-emerald-500 bg-white"
+              style: { backgroundColor: '#1B4E3B', color: 'white' },
+              className: "hover:bg-[#1B4E3B]/80 shadow-sm hover:shadow text-xs font-semibold py-2 px-4 border-0 rounded-md flex items-center gap-1.5 transition-all duration-300",
+              customClass: "ti-btn"
             } as any)}
           >
-            <i className="ri-share-forward-line"></i> Export
+            <i className="ri-file-excel-2-line text-sm"></i> Export Data
           </SpkButton>
+
+          {onAdd && (
+            <SpkButton
+              {...({
+                onclickfunc: onAdd,
+                style: { backgroundColor: '#1B4E3B', color: 'white' },
+                className: "hover:bg-[#1B4E3B]/80 shadow-sm hover:shadow text-xs font-semibold py-2 px-4 border-0 rounded-md flex items-center gap-1.5 transition-all duration-300",
+                customClass: "ti-btn"
+              } as any)}
+            >
+              <i className="ri-add-line text-sm"></i> {addLabel}
+            </SpkButton>
+          )}
         </div>
       </div>
     </div>

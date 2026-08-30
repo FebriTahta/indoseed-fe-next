@@ -1,16 +1,31 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import SpkDatepickr from "@/shared/@spk-reusable-components/spk-packages/datepicker-component";
 import { FilterButton, ResetButton } from '../../shared/ActionButtons';
 
-interface FilterProps {
-  methods: any[];
-  commodities: any[];
-  varieties: any[];
-  onFilter: (filters: any) => void;
-  onReset: () => void;
+export interface FilterOption {
+  value: string;
+  label: string;
 }
 
-export default function FilterSection({ methods, commodities, varieties, onFilter, onReset }: FilterProps) {
+export interface SharedFilterProps {
+  methods?: any[];
+  methodValueKey?: string;
+  commodities?: any[];
+  varieties?: any[];
+  statusOptions?: FilterOption[];
+  onFilter: (filters: any) => void;
+  onReset?: () => void;
+}
+
+export default function SharedFilterSection({ 
+  methods = [], 
+  methodValueKey = 'id',
+  commodities = [], 
+  varieties = [], 
+  statusOptions = [],
+  onFilter, 
+  onReset 
+}: SharedFilterProps) {
   const [dateRange, setDateRange] = useState<[Date | null, Date | null]>([null, null]);
   const [startDate, endDate] = dateRange;
   const [search, setSearch] = useState('');
@@ -19,12 +34,28 @@ export default function FilterSection({ methods, commodities, varieties, onFilte
   const [methodId, setMethodId] = useState('');
   const [status, setStatus] = useState('');
 
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      onFilter({
+        search,
+        commodityId,
+        varietyId,
+        methodId,
+        status,
+        startDate: startDate ? startDate.toISOString() : undefined,
+        endDate: endDate ? endDate.toISOString() : undefined
+      });
+    }, 500);
+    return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [search, commodityId, varietyId, methodId, status, startDate, endDate]);
+
   const handleFilter = () => {
     onFilter({
       search,
       commodityId,
       varietyId,
-      qcMethodId: methodId,
+      methodId,
       status,
       startDate: startDate ? startDate.toISOString() : undefined,
       endDate: endDate ? endDate.toISOString() : undefined
@@ -38,7 +69,7 @@ export default function FilterSection({ methods, commodities, varieties, onFilte
     setMethodId('');
     setStatus('');
     setDateRange([null, null]);
-    onReset();
+    if (onReset) onReset();
   };
 
   return (
@@ -83,8 +114,8 @@ export default function FilterSection({ methods, commodities, varieties, onFilte
             <label className="text-xs font-semibold text-gray-600 mb-1 block">Metode Uji</label>
             <select className="form-select text-sm h-[38px] w-full" value={methodId} onChange={e => setMethodId(e.target.value)}>
               <option value="">Semua Metode</option>
-              {methods.map((m: any) => (
-                <option key={m.id} value={m.kode}>{m.nama}</option>
+              {methods?.map((m: any) => (
+                <option key={m.id || m.kode} value={m[methodValueKey]}>{m.nama}</option>
               ))}
             </select>
           </div>
@@ -92,8 +123,9 @@ export default function FilterSection({ methods, commodities, varieties, onFilte
             <label className="text-xs font-semibold text-gray-600 mb-1 block">Status</label>
             <select className="form-select text-sm h-[38px] w-full" value={status} onChange={e => setStatus(e.target.value)}>
               <option value="">Semua Status</option>
-              <option value="Lulus">Lulus</option>
-              <option value="Tidak Lulus">Tidak Lulus</option>
+              {statusOptions?.map(opt => (
+                <option key={opt.value} value={opt.value}>{opt.label}</option>
+              ))}
             </select>
           </div>
           <div className="flex gap-2">

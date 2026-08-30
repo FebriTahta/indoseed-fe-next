@@ -510,6 +510,7 @@ export function useVarietas() {
     handleViewDetail,
     handleFileChange,
     handleClearImage,
+    setImageFile,
   };
 }
 export default useVarietas;

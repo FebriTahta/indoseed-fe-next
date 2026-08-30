@@ -631,6 +631,7 @@ export function useGreenhouse() {
     handleViewDetail,
     handleFileChange,
     handleClearImage,
+    setImageFile,
   };
 }
 export default useGreenhouse;

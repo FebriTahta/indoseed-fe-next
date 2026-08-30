@@ -1,6 +1,5 @@
 "use client"
-import React, { useState, useMemo, Fragment, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import React, { Fragment } from 'react';
 import Pageheader from '@/shared/layouts-components/page-header/pageheader';
 import Seo from '@/shared/layouts-components/seo/seo';
 import SpkButton from '@/shared/@spk-reusable-components/uielements/spk-button';
@@ -13,6 +12,8 @@ import FilterRow, { FilterSelectConfig } from '../../shared/FilterRow';
 import DataTable from '../../shared/DataTable';
 import DetailPanel, { TabConfig, DetailAction } from '../../shared/DetailPanel';
 import CrudModal from '../../shared/CrudModal';
+import ImageUpload from '../../shared/ImageUpload';
+import { TableViewBtn, TableEditBtn, TableRemoveBtn } from '../../shared/ActionButtons';
 
 import { Variety } from '@/app/types/variety';
 import { useVarietas } from '@/app/hooks/useVarietas';
@@ -74,6 +75,7 @@ export default function VarietasPage() {
     handleViewDetail,
     handleFileChange,
     handleClearImage,
+    setImageFile,
   } = useVarietas();
 
   // Shared Filters Configuration
@@ -142,28 +144,10 @@ export default function VarietasPage() {
           {item.deskripsi || '-'}
         </td>
         <td className="p-4 text-center">
-          <div className="flex items-center justify-center gap-3">
-            <button
-              onClick={() => handleViewDetail(item)}
-              className="text-gray-400 hover:text-emerald-600 transition-colors"
-              title="Lihat Detail Varietas"
-            >
-              <i className="ri-eye-line text-lg"></i>
-            </button>
-            <button
-              onClick={() => handleOpenEditModal(item)}
-              className="text-gray-400 hover:text-blue-600 transition-colors"
-              title="Edit Varietas"
-            >
-              <i className="ri-edit-line text-lg"></i>
-            </button>
-            <button
-              onClick={() => handleDeleteVariety(item.id)}
-              className="text-gray-400 hover:text-red-500 transition-colors"
-              title="Hapus Varietas"
-            >
-              <i className="ri-trash-line text-lg"></i>
-            </button>
+          <div className="flex items-center justify-center">
+            <TableViewBtn id={item.id} onClick={() => handleViewDetail(item)} />
+            <TableEditBtn id={item.id} onClick={() => handleOpenEditModal(item)} />
+            <TableRemoveBtn id={item.id} onClick={() => handleDeleteVariety(item.id)} />
           </div>
         </td>
       </tr>
@@ -245,6 +229,19 @@ export default function VarietasPage() {
             <div className="col-span-4 font-semibold text-textmuted py-1 flex items-center">Dibuat Oleh</div>
             <div className="col-span-8 py-1 text-gray-600 flex items-center">
               <span className="mr-2">:</span>{viewedVariety.dibuatOleh || 'Admin'}
+            </div>
+
+            <div className="col-span-12 py-2">
+              <p className="font-semibold text-textmuted mb-2">Foto Varietas</p>
+              <div className="w-24 h-24 rounded border bg-gray-50 flex items-center justify-center overflow-hidden">
+                {viewedVariety.image ? (
+                  <img src={viewedVariety.image} alt={viewedVariety.namaVarietas} className="w-full h-full object-cover" />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center bg-gray-100 text-gray-400">
+                    <i className="ri-image-line text-2xl"></i>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         );
@@ -361,19 +358,7 @@ export default function VarietasPage() {
         title="Master Data"
         currentpage="Varietas"
         activepage="Varietas"
-        description="Kelola master data varietas benih"
-        customButton={
-          <SpkButton
-            {...({
-              onclickfunc: handleOpenAddModal,
-              style: { backgroundColor: '#078836', color: 'white' },
-              className: "hover:bg-[#06732d] hover:text-white",
-              customClass: "ti-btn !border-0 btn-wave !me-0 flex items-center gap-1.5"
-            } as any)}
-          >
-            <i className="ri-add-line text-lg"></i> Tambah Varietas
-          </SpkButton>
-        }
+        description="Kelola data varietas benih perusahaan"
       />
 
       {/* Summary Cards */}
@@ -390,6 +375,8 @@ export default function VarietasPage() {
             selectFilters={filterConfig}
             onReset={handleResetFilters}
             onExport={handleExportData}
+            onAdd={handleOpenAddModal}
+            addLabel="Tambah Varietas"
           />
 
           {/* Table list with pagination */}
@@ -604,45 +591,13 @@ export default function VarietasPage() {
           </div>
         </div>
         <div>
-          {/* Image file upload */}
-          <div>
-            <label className="block text-xs font-bold text-gray-700 mb-1.5">Gambar Varietas / Benih (Maks. 5MB)</label>
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 rounded-md border border-defaultborder overflow-hidden bg-gray-50 flex-shrink-0 flex items-center justify-center relative group">
-                {previewUrl ? (
-                  <>
-                    <img src={previewUrl} alt="Preview" className="w-full h-full object-cover" />
-                    <button
-                      type="button"
-                      onClick={handleClearImage}
-                      className="absolute inset-0 bg-black/40 text-white opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity"
-                      disabled={isSubmitLoading}
-                    >
-                      <i className="ri-delete-bin-line text-sm"></i>
-                    </button>
-                  </>
-                ) : (
-                  <i className="ri-image-line text-lg text-gray-300"></i>
-                )}
-              </div>
-
-              <div className="flex-1">
-                <input
-                  type="file"
-                  accept="image/jpeg,image/png,image/gif,image/webp"
-                  onChange={handleFileChange}
-                  className="block w-full text-xs text-gray-500
-                    file:mr-3 file:py-1 file:px-2
-                    file:rounded-md file:border-0
-                    file:text-[10px] file:font-semibold
-                    file:bg-emerald-50 file:text-emerald-700
-                    hover:file:bg-emerald-100
-                    cursor-pointer disabled:opacity-50"
-                  disabled={isSubmitLoading}
-                />
-              </div>
-            </div>
-          </div>
+          <ImageUpload
+            label="Gambar Varietas / Benih (Maks. 5MB)"
+            imageUrl={previewUrl}
+            onImageChange={setImageFile}
+            disabled={isSubmitLoading}
+            className="mb-4"
+          />
         </div>
 
         <div>

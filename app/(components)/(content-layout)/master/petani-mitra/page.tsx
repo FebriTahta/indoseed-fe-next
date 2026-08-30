@@ -1,6 +1,5 @@
 "use client"
-import React, { useState, useMemo, Fragment, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import React, { useMemo, Fragment } from 'react';
 import Pageheader from '@/shared/layouts-components/page-header/pageheader';
 import Seo from '@/shared/layouts-components/seo/seo';
 import SpkButton from '@/shared/@spk-reusable-components/uielements/spk-button';
@@ -13,6 +12,8 @@ import FilterRow, { FilterSelectConfig } from '../../shared/FilterRow';
 import DataTable from '../../shared/DataTable';
 import DetailPanel, { TabConfig, DetailAction } from '../../shared/DetailPanel';
 import CrudModal from '../../shared/CrudModal';
+import ImageUpload from '../../shared/ImageUpload';
+import { TableViewBtn, TableEditBtn, TableRemoveBtn } from '../../shared/ActionButtons';
 
 import { Partner } from '@/app/types/partner';
 import { usePetaniMitra } from '@/app/hooks/usePetaniMitra';
@@ -65,6 +66,7 @@ export default function PetaniMitraPage() {
     handleViewDetail,
     handleFileChange,
     handleClearImage,
+    setImageFile,
   } = usePetaniMitra();
 
   // Shared Filters Configuration
@@ -139,28 +141,10 @@ export default function PetaniMitraPage() {
           </span>
         </td>
         <td className="p-4 text-center">
-          <div className="flex items-center justify-center gap-3">
-            <button
-              onClick={() => handleViewDetail(item)}
-              className="text-gray-400 hover:text-emerald-600 transition-colors"
-              title="Lihat Detail Petani"
-            >
-              <i className="ri-eye-line text-lg"></i>
-            </button>
-            <button
-              onClick={() => handleOpenEditModal(item)}
-              className="text-gray-400 hover:text-blue-600 transition-colors"
-              title="Edit Petani"
-            >
-              <i className="ri-edit-line text-lg"></i>
-            </button>
-            <button
-              onClick={() => handleDeletePartner(item.id)}
-              className="text-gray-400 hover:text-red-500 transition-colors"
-              title="Hapus Petani"
-            >
-              <i className="ri-trash-line text-lg"></i>
-            </button>
+          <div className="flex items-center justify-center">
+            <TableViewBtn id={item.id} onClick={() => handleViewDetail(item)} />
+            <TableEditBtn id={item.id} onClick={() => handleOpenEditModal(item)} />
+            <TableRemoveBtn id={item.id} onClick={() => handleDeletePartner(item.id)} />
           </div>
         </td>
       </tr>
@@ -268,6 +252,19 @@ export default function PetaniMitraPage() {
                 }`}>
                 {viewedPartner.status === 'Aktif' ? 'Aktif' : 'Non Aktif'}
               </span>
+            </div>
+
+            <div className="col-span-12 py-2">
+              <p className="font-semibold text-textmuted mb-2">Foto Profil</p>
+              <div className="w-24 h-24 rounded border bg-gray-50 flex items-center justify-center overflow-hidden">
+                {viewedPartner.image ? (
+                  <img src={viewedPartner.image} alt={viewedPartner.namaPetani} className="w-full h-full object-cover" />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center bg-emerald-50 text-emerald-600">
+                    <i className="ri-user-line text-2xl"></i>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         );
@@ -413,24 +410,11 @@ export default function PetaniMitraPage() {
       <Seo title="Petani Mitra" />
       <ToastContainer position="top-right" autoClose={3000} theme="colored" />
 
-      {/* Header */}
       <Pageheader
         title="Master Data"
         currentpage="Petani Mitra"
         activepage="Petani Mitra"
         description="Kelola data petani mitra perusahaan"
-        customButton={
-          <SpkButton
-            {...({
-              onclickfunc: handleOpenAddModal,
-              style: { backgroundColor: '#078836', color: 'white' },
-              className: "hover:bg-[#06732d] hover:text-white",
-              customClass: "ti-btn !border-0 btn-wave !me-0 flex items-center gap-1.5"
-            } as any)}
-          >
-            <i className="ri-add-line text-lg"></i> Tambah Petani Mitra
-          </SpkButton>
-        }
       />
 
       {/* Summary Cards */}
@@ -447,6 +431,8 @@ export default function PetaniMitraPage() {
             selectFilters={filterConfig}
             onReset={handleResetFilters}
             onExport={handleExportData}
+            onAdd={handleOpenAddModal}
+            addLabel="Tambah Petani Mitra"
           />
 
           {/* Table list with pagination */}
@@ -636,45 +622,13 @@ export default function PetaniMitraPage() {
         </div>
 
         <div>
-          {/* Profile image upload */}
-          <div>
-            <label className="block text-xs font-bold text-gray-700 mb-1.5">Foto Profil Petani (Maks. 5MB)</label>
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 rounded-md border border-defaultborder overflow-hidden bg-gray-50 flex-shrink-0 flex items-center justify-center relative group">
-                {previewUrl ? (
-                  <>
-                    <img src={previewUrl} alt="Preview" className="w-full h-full object-cover" />
-                    <button
-                      type="button"
-                      onClick={handleClearImage}
-                      className="absolute inset-0 bg-black/40 text-white opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity"
-                      disabled={isSubmitLoading}
-                    >
-                      <i className="ri-delete-bin-line text-sm"></i>
-                    </button>
-                  </>
-                ) : (
-                  <i className="ri-user-line text-lg text-gray-300"></i>
-                )}
-              </div>
-
-              <div className="flex-1">
-                <input
-                  type="file"
-                  accept="image/jpeg,image/png,image/gif,image/webp"
-                  onChange={handleFileChange}
-                  className="block w-full text-xs text-gray-500
-                    file:mr-3 file:py-1 file:px-2
-                    file:rounded-md file:border-0
-                    file:text-[10px] file:font-semibold
-                    file:bg-emerald-50 file:text-emerald-700
-                    hover:file:bg-emerald-100
-                    cursor-pointer disabled:opacity-50"
-                  disabled={isSubmitLoading}
-                />
-              </div>
-            </div>
-          </div>
+          <ImageUpload
+            label="Foto Profil Petani (Maks. 5MB)"
+            imageUrl={previewUrl}
+            onImageChange={setImageFile}
+            disabled={isSubmitLoading}
+            className="mb-4"
+          />
         </div>
 
         <div>

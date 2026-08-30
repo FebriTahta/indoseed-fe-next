@@ -20137,3 +20137,97 @@ ul.analytics-activity li:last-child {
 }
 
 /*# sourceMappingURL=styles.css.map */
+
+.side-custom
+{
+  opacity: 25%;
+}
+
+.leaf-left
+{
+  width: 250px;
+  height: 250px;
+  position: fixed;
+  top: 9%;
+  left: -151px;
+  background: url(/assets/images/leaf.png);
+  background-size: 100%;
+  background-repeat: no-repeat;
+  filter: invert(1);
+  rotate: 30deg;
+}
+
+.leaf-right
+{
+  width: 250px;
+  height: 250px;
+  position: fixed;
+  top: 40%;
+  left: 110px;
+  background: url(/assets/images/leaf.png);
+  background-size: 100%;
+  background-repeat: no-repeat;
+  filter: invert(1);
+  rotate: -8deg;
+  transform: scaleX(-1);
+}
+
+.padi-field
+{
+  height: 200px;
+  position: fixed;
+  bottom: -1em;
+  width: 200px;
+  background: url(/assets/images/padi.png);
+  background-size: 100%;
+  background-repeat: no-repeat;
+  filter: invert(1);
+  
+}
+
+.grass-field
+{
+  height: 100px;
+  position: fixed;
+  bottom: -60px;
+  width: 100%;
+  background-size: 5em 5em;
+  background: url(/assets/images/grass.png) 10px 0px / 4em, url(/assets/images/grass.png) 20px 0px / 4em, url(/assets/images/grass.png) 30px 0px / 4em, url(/assets/images/grass.png) 40px 0px / 4em, url(/assets/images/grass.png) 50px 0px / 4em;
+  filter: invert(1);
+  
+}
+/* Custom override for active menu link (hijau sedikit tua) */
+.app-sidebar .side-menu__item.active,
+.app-sidebar .side-menu__item.active .side-menu__label,
+.app-sidebar .side-menu__item.active .side-menu__angle,
+.app-sidebar .side-menu__item.active .side-menu__icon,
+.app-sidebar .slide-menu.child1 .side-menu__item.active,
+.app-sidebar .slide-menu.child2 .side-menu__item.active,
+.app-sidebar .slide-menu.child3 .side-menu__item.active {
+    color: #0f7a24 !important;
+}
+
+
+/* Remove background from active submenu links */
+.app-sidebar .slide-menu .side-menu__item.active {
+    background-color: transparent !important;
+}
+
+
+/* Force transparent bg for all submenu levels */
+.app-sidebar .slide-menu.child1 .side-menu__item.active,
+.app-sidebar .slide-menu.child2 .side-menu__item.active,
+.app-sidebar .slide-menu.child3 .side-menu__item.active {
+    background-color: transparent !important;
+}
+
+/* Force transparent bg for all submenu levels MORE aggressively */
+html body .app-sidebar .slide-menu .side-menu__item.active,
+html body .app-sidebar .slide-menu .slide.has-sub .side-menu__item.active,
+html body .app-sidebar .slide-menu .slide.has-sub.open > .side-menu__item,
+html body .app-sidebar .slide-menu .slide .side-menu__item.active,
+html body .app-sidebar .slide-menu .slide.active,
+html body .app-sidebar .slide-menu .slide.open {
+    background-color: transparent !important;
+    background: transparent !important;
+}

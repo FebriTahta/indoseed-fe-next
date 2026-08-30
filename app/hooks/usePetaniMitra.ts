@@ -515,6 +515,7 @@ export function usePetaniMitra() {
     handleViewDetail,
     handleFileChange,
     handleClearImage,
+    setImageFile,
   };
 }
 export default usePetaniMitra;
