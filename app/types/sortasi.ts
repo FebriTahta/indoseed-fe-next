@@ -2,6 +2,8 @@ export interface SortasiBatchItem {
   id?: string;
   no?: number;
   kodeBatch: string;
+  pengeringanId?: string;
+  referensiPengeringan?: string;
   komoditas: string;
   varietas: string;
   alatSortasi: string;

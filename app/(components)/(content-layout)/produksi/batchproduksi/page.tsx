@@ -42,6 +42,7 @@ export default function BatchProduksiPage() {
     sumberBahanOptions,
     statusOptions,
     lokasiOptions,
+    treatmentOptions,
     handleApplyFilters,
     handleResetFilters,
     statItems,
@@ -316,6 +317,7 @@ export default function BatchProduksiPage() {
         varietasOptions={varietasOptions}
         sumberBahanOptions={sumberBahanOptions}
         lokasiOptions={lokasiOptions}
+        treatmentOptions={treatmentOptions}
       />
 
       {/* Edit Modal */}
@@ -329,6 +331,7 @@ export default function BatchProduksiPage() {
         varietasOptions={varietasOptions}
         sumberBahanOptions={sumberBahanOptions}
         lokasiOptions={lokasiOptions}
+        treatmentOptions={treatmentOptions}
       />
 
       {/* Detail Modal */}

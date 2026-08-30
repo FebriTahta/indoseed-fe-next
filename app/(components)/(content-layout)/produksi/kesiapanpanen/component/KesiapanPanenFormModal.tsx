@@ -209,24 +209,61 @@ export default function KesiapanPanenFormModal({
         setSelectedJadwalId('');
       }
     } else if (mode === 'add') {
-      setSelectedJadwalId('');
+      const firstJadwal = (jadwalTanamOptions || [])[0];
       const todayStr = formatDateToStr(new Date());
       const nextNo = (existingCount || 0) + 1;
-      setFormData({
-        kodeLahan: generateKodeKP(nextNo),
-        lokasi: '',
-        komoditas: '',
-        varietas: '',
-        tanggalTanam: todayStr,
-        umurHst: 0,
-        prediksiPanen: todayStr,
-        statusKesiapan: calculateStatusKesiapan(todayStr),
-        yieldEst: 0,
-        kadarAir: 0,
-        kuningDaun: 0,
-        kekerasanBiji: '',
-        catatan: '',
-      });
+
+      if (firstJadwal) {
+        const val = firstJadwal.id || firstJadwal.kodeJadwalTanam || firstJadwal.informasiUmum?.kodeJadwalTanam || '';
+        setSelectedJadwalId(val);
+        const lahan = firstJadwal.greenhouse?.namaLahan || firstJadwal.lahanKomoditas?.namaLahan || firstJadwal.lahanKomoditas?.idLahan || firstJadwal.lokasi || '';
+        const kom = firstJadwal.commodity?.namaKomoditas || firstJadwal.lahanKomoditas?.namaKomoditas || firstJadwal.lahanKomoditas?.komoditas || '';
+        const varName = firstJadwal.variety?.namaVarietas || firstJadwal.lahanKomoditas?.namaVarietas || firstJadwal.lahanKomoditas?.varietas || '';
+        const tglTanamRaw = firstJadwal.tanggalTanam || firstJadwal.rencanaTanam?.tanggalTanam || todayStr;
+        const predPanenRaw = firstJadwal.perkiraanPanen || firstJadwal.rencanaTanam?.perkiraanPanen || todayStr;
+
+        const tglTanamFormatted = formatDateToDisplay(tglTanamRaw);
+        const predPanenFormatted = formatDateToDisplay(predPanenRaw);
+        const calculatedHst = calculateHstFromDate(tglTanamRaw);
+        const autoStatus = calculateStatusKesiapan(predPanenRaw);
+
+        setFormData({
+          kodeLahan: generateKodeKP(nextNo),
+          lokasi: lahan,
+          komoditas: kom,
+          varietas: varName,
+          greenhouseId: firstJadwal.greenhouseId || firstJadwal.greenhouse?.id || firstJadwal.lahanKomoditas?.idLahan,
+          commodityId: firstJadwal.commodityId || firstJadwal.commodity?.id,
+          varietyId: firstJadwal.varietyId || firstJadwal.variety?.id,
+          jadwalTanamId: firstJadwal.id,
+          tanggalTanam: tglTanamFormatted,
+          prediksiPanen: predPanenFormatted,
+          umurHst: calculatedHst,
+          statusKesiapan: autoStatus,
+          yieldEst: 0,
+          kadarAir: 0,
+          kuningDaun: 0,
+          kekerasanBiji: '',
+          catatan: '',
+        });
+      } else {
+        setSelectedJadwalId('');
+        setFormData({
+          kodeLahan: generateKodeKP(nextNo),
+          lokasi: '',
+          komoditas: '',
+          varietas: '',
+          tanggalTanam: todayStr,
+          umurHst: 0,
+          prediksiPanen: todayStr,
+          statusKesiapan: calculateStatusKesiapan(todayStr),
+          yieldEst: 0,
+          kadarAir: 0,
+          kuningDaun: 0,
+          kekerasanBiji: '',
+          catatan: '',
+        });
+      }
     }
   }, [initialData, mode, isOpen, jadwalTanamOptions, existingCount]);
 
@@ -358,34 +395,33 @@ export default function KesiapanPanenFormModal({
 
         {/* Body */}
         <form onSubmit={handleSubmit} className="p-5 overflow-y-auto space-y-4 text-xs">
-          {/* Option: Pick Jadwal Tanam Reference */}
-          <div className="bg-emerald-50/80 border border-emerald-200 rounded-lg p-3 space-y-1.5 shadow-2xs">
-            <label className="font-bold text-xs text-emerald-950 flex items-center gap-1.5">
-              <i className="ri-[#078836] ri-seedling-line text-emerald-700"></i> Ambil dari Jadwal Tanam (Isi Otomatis)
+          {/* Referensi Jadwal Tanam Dropdown */}
+          <div>
+            <label className="font-semibold text-gray-700 mb-1 flex items-center justify-between">
+              <span>Referensi Jadwal Tanam</span>
+              <span className="text-[10px] text-emerald-600 font-medium flex items-center gap-1 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
+                <i className="ri-links-line"></i> Auto-fill Komoditas & Varietas
+              </span>
             </label>
             <select
               value={selectedJadwalId}
               onChange={(e) => handleSelectJadwalTanam(e.target.value)}
-              className="form-select text-xs border border-emerald-300 rounded px-3 py-2 w-full bg-white font-semibold text-gray-800"
+              className="form-select text-xs border border-gray-300 rounded px-3 py-2 w-full bg-white font-medium focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500"
             >
-              <option value="">-- Pilih Jadwal Tanam / Lahan --</option>
+              <option value="">-- Pilih Referensi Jadwal Tanam --</option>
               {(jadwalTanamOptions || []).map((jt: any, idx: number) => {
                 const kode = jt.kodeJadwalTanam || jt.informasiUmum?.kodeJadwalTanam || `JT-${idx + 1}`;
                 const lahan = jt.greenhouse?.namaLahan || jt.lahanKomoditas?.namaLahan || jt.lahanKomoditas?.idLahan || jt.lokasi || 'Lahan';
                 const kom = jt.commodity?.namaKomoditas || jt.lahanKomoditas?.namaKomoditas || jt.lahanKomoditas?.komoditas || '';
                 const varName = jt.variety?.namaVarietas || jt.lahanKomoditas?.namaVarietas || jt.lahanKomoditas?.varietas || '';
-                const label = `${kode} - ${lahan} (${kom} ${varName})`.trim();
                 const val = jt.id || kode;
                 return (
                   <option key={val || idx} value={val}>
-                    {label}
+                    {kode} | {kom || 'Komoditas'} - {varName || 'Varietas'} ({lahan || 'Lahan'})
                   </option>
                 );
               })}
             </select>
-            <span className="text-[10px] text-emerald-700 italic block">
-              * Memilih jadwal tanam akan otomatis mengisi Lokasi/Lahan, Komoditas, Varietas, Tanggal Tanam, Umur (HST), dan Prediksi Panen.
-            </span>
           </div>
 
           <div className="grid grid-cols-2 gap-4">
@@ -410,34 +446,44 @@ export default function KesiapanPanenFormModal({
                 disabled
                 readOnly
                 value={formData.lokasi || ''}
-                className="w-full px-3 py-2 border border-gray-200 bg-gray-100 text-gray-600 cursor-not-allowed rounded-lg focus:outline-none placeholder:text-amber-700/70 placeholder:italic"
-                placeholder="Mohon pilih dari Jadwal Tanam"
+                className="form-control text-xs border border-gray-200 bg-gray-100 text-gray-600 rounded px-3 py-2 w-full cursor-not-allowed font-medium select-none"
+                placeholder="Terisi otomatis dari Jadwal Tanam"
               />
             </div>
           </div>
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="font-semibold text-gray-700 mb-1 block">Komoditas</label>
+              <label className="font-semibold text-gray-700 mb-1 flex items-center justify-between">
+                <span>Komoditas</span>
+                <span className="text-[10px] text-gray-400 font-normal flex items-center gap-1">
+                  <i className="ri-lock-2-line"></i> Tidak dapat dipilih
+                </span>
+              </label>
               <input
                 type="text"
                 disabled
                 readOnly
                 value={formData.komoditas || ''}
-                className="w-full px-3 py-2 border border-gray-200 bg-gray-100 text-gray-600 cursor-not-allowed rounded-lg focus:outline-none placeholder:text-amber-700/70 placeholder:italic"
-                placeholder="Mohon pilih dari Jadwal Tanam"
+                className="form-control text-xs border border-gray-200 bg-gray-100 text-gray-600 rounded px-3 py-2 w-full cursor-not-allowed font-medium select-none"
+                placeholder="Terisi otomatis dari Jadwal Tanam"
               />
             </div>
 
             <div>
-              <label className="font-semibold text-gray-700 mb-1 block">Varietas</label>
+              <label className="font-semibold text-gray-700 mb-1 flex items-center justify-between">
+                <span>Varietas</span>
+                <span className="text-[10px] text-gray-400 font-normal flex items-center gap-1">
+                  <i className="ri-lock-2-line"></i> Tidak dapat dipilih
+                </span>
+              </label>
               <input
                 type="text"
                 disabled
                 readOnly
                 value={formData.varietas || ''}
-                className="w-full px-3 py-2 border border-gray-200 bg-gray-100 text-gray-600 cursor-not-allowed rounded-lg focus:outline-none placeholder:text-amber-700/70 placeholder:italic"
-                placeholder="Mohon pilih dari Jadwal Tanam"
+                className="form-control text-xs border border-gray-200 bg-gray-100 text-gray-600 rounded px-3 py-2 w-full cursor-not-allowed font-medium select-none"
+                placeholder="Terisi otomatis dari Jadwal Tanam"
               />
             </div>
           </div>

@@ -2,6 +2,15 @@
 
 import React, { useEffect, useState } from 'react';
 import { BatchProduksiItem } from '@/app/types/batchProduksi';
+import { TreatmentBatchItem } from '@/app/types/treatment';
+
+const DEFAULT_TREATMENT_LIST: TreatmentBatchItem[] = [
+  { id: 'tr-1', kodeBatch: 'TR-2606-0001', komoditas: 'Padi', varietas: 'Inpari 32', treatment: 'Fungisida + Insektisida', dosis: '2.5 ml/kg', operator: 'Slamet Riyadi', beratAwal: 9120, beratAkhir: 9050, loss: 0.77, tanggalSelesai: '11/06/2026', status: 'Selesai' },
+  { id: 'tr-2', kodeBatch: 'TR-2606-0002', komoditas: 'Jagung', varietas: 'Pioneer 21', treatment: 'Fungisida Systemic', dosis: '3.0 ml/kg', operator: 'Rina Agustina', beratAwal: 7250, beratAkhir: 7190, loss: 0.83, tanggalSelesai: '11/06/2026', status: 'Selesai' },
+  { id: 'tr-3', kodeBatch: 'TR-2606-0003', komoditas: 'Kedelai', varietas: 'Anjasmoro', treatment: 'Inokulan Rhizobium', dosis: '5.0 gram/kg', operator: 'Budi Santoso', beratAwal: 4720, beratAkhir: 4680, loss: 0.85, tanggalSelesai: '10/06/2026', status: 'Selesai' },
+  { id: 'tr-4', kodeBatch: 'TR-2606-0004', komoditas: 'Padi', varietas: 'Inpari 42', treatment: 'Fungisida + ZPT', dosis: '2.0 ml/kg', operator: 'Slamet Riyadi', beratAwal: 7550, beratAkhir: 7490, loss: 0.79, tanggalSelesai: '10/06/2026', status: 'Selesai' },
+  { id: 'tr-5', kodeBatch: 'TR-2606-0005', komoditas: 'Jagung', varietas: 'Bisi 18', treatment: 'Insektisida Kontak', dosis: '3.5 ml/kg', operator: 'Ahmad Dahlan', beratAwal: 5820, beratAkhir: 5770, loss: 0.86, tanggalSelesai: '09/06/2026', status: 'Selesai' },
+];
 
 interface BatchProduksiFormModalProps {
   isOpen: boolean;
@@ -13,6 +22,7 @@ interface BatchProduksiFormModalProps {
   varietasOptions: { value: string; label: string }[];
   sumberBahanOptions: { value: string; label: string }[];
   lokasiOptions: { value: string; label: string }[];
+  treatmentOptions?: TreatmentBatchItem[];
 }
 
 export default function BatchProduksiFormModal({
@@ -25,15 +35,20 @@ export default function BatchProduksiFormModal({
   varietasOptions,
   sumberBahanOptions,
   lokasiOptions,
+  treatmentOptions,
 }: BatchProduksiFormModalProps) {
+  const availableTreatmentList = treatmentOptions && treatmentOptions.length > 0 ? treatmentOptions : DEFAULT_TREATMENT_LIST;
+
   const [formData, setFormData] = useState<Partial<BatchProduksiItem>>({
     kodeBatch: '',
+    treatmentId: '',
+    referensiTreatment: '',
     komoditas: 'Padi',
     varietas: 'Inpari 32',
-    sumberBahan: 'PN-2605-0150',
+    sumberBahan: 'TR-2606-0001',
     tanggalMulai: '01/06/2026',
     tanggalSelesai: '07/06/2026',
-    targetKg: 10000,
+    targetKg: 9050,
     hasilKg: 8750,
     status: 'Proses',
     lokasi: 'Blok A',
@@ -46,23 +61,49 @@ export default function BatchProduksiFormModal({
     if (initialData && mode === 'edit') {
       setFormData({ ...initialData });
     } else if (mode === 'add') {
+      const firstTreatment = availableTreatmentList[0];
+      const defaultTargetKg = firstTreatment?.beratAkhir || firstTreatment?.beratAwal || 9050;
       setFormData({
+        treatmentId: firstTreatment?.id,
+        referensiTreatment: firstTreatment?.kodeBatch,
         kodeBatch: `BP-2606-${String(Math.floor(Math.random() * 9000) + 1000)}`,
-        komoditas: 'Padi',
-        varietas: 'Inpari 32',
-        sumberBahan: 'PN-2605-0150',
+        komoditas: firstTreatment?.komoditas || 'Padi',
+        varietas: firstTreatment?.varietas || 'Inpari 32',
+        sumberBahan: firstTreatment?.kodeBatch || 'TR-2606-0001',
         tanggalMulai: '01/06/2026',
         tanggalSelesai: '07/06/2026',
-        targetKg: 10000,
+        targetKg: defaultTargetKg,
         hasilKg: 0,
         status: 'Proses',
         lokasi: 'Blok A',
         catatan: '',
       });
     }
-  }, [initialData, mode, isOpen]);
+  }, [initialData, mode, isOpen, treatmentOptions]);
 
   if (!isOpen) return null;
+
+  const handleTreatmentChange = (treatmentIdOrKode: string) => {
+    const treatment = availableTreatmentList.find((t) => t.id === treatmentIdOrKode || t.kodeBatch === treatmentIdOrKode);
+    if (treatment) {
+      const tKg = treatment.beratAkhir || treatment.beratAwal || 9050;
+      setFormData((prev) => ({
+        ...prev,
+        treatmentId: treatment.id,
+        referensiTreatment: treatment.kodeBatch,
+        sumberBahan: treatment.kodeBatch,
+        komoditas: treatment.komoditas,
+        varietas: treatment.varietas,
+        targetKg: tKg,
+      }));
+    } else {
+      setFormData((prev) => ({
+        ...prev,
+        treatmentId: '',
+        referensiTreatment: '',
+      }));
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -101,6 +142,28 @@ export default function BatchProduksiFormModal({
 
         {/* Body */}
         <form onSubmit={handleSubmit} className="p-5 overflow-y-auto space-y-4 text-xs">
+          {/* Referensi Treatment Dropdown */}
+          <div>
+            <label className="font-semibold text-gray-700 mb-1 flex items-center justify-between">
+              <span>Referensi Treatment</span>
+              <span className="text-[10px] text-emerald-600 font-medium flex items-center gap-1 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
+                <i className="ri-links-line"></i> Auto-fill Komoditas & Varietas
+              </span>
+            </label>
+            <select
+              value={formData.treatmentId || formData.referensiTreatment || ''}
+              onChange={(e) => handleTreatmentChange(e.target.value)}
+              className="form-select text-xs border border-gray-300 rounded px-3 py-2 w-full bg-white font-medium focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500"
+            >
+              <option value="">-- Pilih Referensi Treatment --</option>
+              {availableTreatmentList.map((item) => (
+                <option key={item.id || item.kodeBatch} value={item.id || item.kodeBatch}>
+                  {item.kodeBatch} | {item.komoditas} - {item.varietas} ({item.treatment || 'Treatment'}) [{(item.beratAkhir || item.beratAwal || 0).toLocaleString('id-ID')} Kg]
+                </option>
+              ))}
+            </select>
+          </div>
+
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="font-semibold text-gray-700 mb-1 block">Kode Batch Produksi</label>
@@ -115,73 +178,49 @@ export default function BatchProduksiFormModal({
             </div>
 
             <div>
-              <label className="font-semibold text-gray-700 mb-1 block">Sumber Bahan / Lot Panen</label>
+              <label className="font-semibold text-gray-700 mb-1 block">Sumber Bahan / Lot Treatment</label>
               <input
                 type="text"
                 required
                 value={formData.sumberBahan || ''}
                 onChange={(e) => setFormData({ ...formData, sumberBahan: e.target.value })}
-                className="form-control text-xs border border-gray-300 rounded px-3 py-2 w-full"
-                placeholder="PN-2605-0150"
+                className="form-control text-xs border border-gray-300 rounded px-3 py-2 w-full font-medium"
+                placeholder="TR-2606-0001"
               />
             </div>
           </div>
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="font-semibold text-gray-700 mb-1 block">Komoditas</label>
-              <select
+              <label className="font-semibold text-gray-700 mb-1 flex items-center justify-between">
+                <span>Komoditas</span>
+                <span className="text-[10px] text-gray-400 font-normal flex items-center gap-1">
+                  <i className="ri-lock-2-line"></i> Tidak dapat dipilih
+                </span>
+              </label>
+              <input
+                type="text"
+                disabled
                 value={formData.komoditas || ''}
-                onChange={(e) => setFormData({ ...formData, komoditas: e.target.value })}
-                className="form-select text-xs border border-gray-300 rounded px-3 py-2 w-full bg-white"
-              >
-                <option value="Padi">Padi</option>
-                <option value="Jagung">Jagung</option>
-                <option value="Kedelai">Kedelai</option>
-                {komoditasOptions
-                  .filter((opt) => opt.value && !['Padi', 'Jagung', 'Kedelai'].includes(opt.value))
-                  .map((opt, idx) => (
-                    <option key={idx} value={opt.value}>
-                      {opt.label}
-                    </option>
-                  ))}
-              </select>
+                className="form-control text-xs border border-gray-200 bg-gray-100 text-gray-600 rounded px-3 py-2 w-full cursor-not-allowed font-medium select-none"
+                placeholder="Terisi otomatis dari Treatment"
+              />
             </div>
 
             <div>
-              <label className="font-semibold text-gray-700 mb-1 block">Varietas</label>
-              <select
+              <label className="font-semibold text-gray-700 mb-1 flex items-center justify-between">
+                <span>Varietas</span>
+                <span className="text-[10px] text-gray-400 font-normal flex items-center gap-1">
+                  <i className="ri-lock-2-line"></i> Tidak dapat dipilih
+                </span>
+              </label>
+              <input
+                type="text"
+                disabled
                 value={formData.varietas || ''}
-                onChange={(e) => setFormData({ ...formData, varietas: e.target.value })}
-                className="form-select text-xs border border-gray-300 rounded px-3 py-2 w-full bg-white"
-              >
-                <option value="Inpari 32">Inpari 32</option>
-                <option value="Pioneer 21">Pioneer 21</option>
-                <option value="Anjasmoro">Anjasmoro</option>
-                <option value="Inpari 42">Inpari 42</option>
-                <option value="Bisi 18">Bisi 18</option>
-                <option value="Dega 1">Dega 1</option>
-                <option value="Ciherang">Ciherang</option>
-                {varietasOptions
-                  .filter(
-                    (opt) =>
-                      opt.value &&
-                      ![
-                        'Inpari 32',
-                        'Pioneer 21',
-                        'Anjasmoro',
-                        'Inpari 42',
-                        'Bisi 18',
-                        'Dega 1',
-                        'Ciherang',
-                      ].includes(opt.value)
-                  )
-                  .map((opt, idx) => (
-                    <option key={idx} value={opt.value}>
-                      {opt.label}
-                    </option>
-                  ))}
-              </select>
+                className="form-control text-xs border border-gray-200 bg-gray-100 text-gray-600 rounded px-3 py-2 w-full cursor-not-allowed font-medium select-none"
+                placeholder="Terisi otomatis dari Treatment"
+              />
             </div>
           </div>
 
@@ -218,7 +257,7 @@ export default function BatchProduksiFormModal({
                 value={formData.targetKg || ''}
                 onChange={(e) => setFormData({ ...formData, targetKg: parseFloat(e.target.value) || 0 })}
                 className="form-control text-xs border border-gray-300 rounded px-3 py-2 w-full"
-                placeholder="10000"
+                placeholder="9050"
               />
             </div>
 

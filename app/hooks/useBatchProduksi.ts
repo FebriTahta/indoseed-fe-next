@@ -6,6 +6,16 @@ import useVarietas from './useVarietas';
 import { Commodity } from '../types/commodity';
 import { Variety } from '../types/variety';
 import { batchProduksiService } from '../services/batchProduksiService';
+import { treatmentService } from '../services/treatmentService';
+import { TreatmentBatchItem } from '../types/treatment';
+
+export const DEFAULT_TREATMENT_OPTIONS: TreatmentBatchItem[] = [
+  { id: 'tr-1', kodeBatch: 'TR-2606-0001', komoditas: 'Padi', varietas: 'Inpari 32', treatment: 'Fungisida + Insektisida', dosis: '2.5 ml/kg', operator: 'Slamet Riyadi', beratAwal: 9120, beratAkhir: 9050, loss: 0.77, tanggalSelesai: '11/06/2026', status: 'Selesai' },
+  { id: 'tr-2', kodeBatch: 'TR-2606-0002', komoditas: 'Jagung', varietas: 'Pioneer 21', treatment: 'Fungisida Systemic', dosis: '3.0 ml/kg', operator: 'Rina Agustina', beratAwal: 7250, beratAkhir: 7190, loss: 0.83, tanggalSelesai: '11/06/2026', status: 'Selesai' },
+  { id: 'tr-3', kodeBatch: 'TR-2606-0003', komoditas: 'Kedelai', varietas: 'Anjasmoro', treatment: 'Inokulan Rhizobium', dosis: '5.0 gram/kg', operator: 'Budi Santoso', beratAwal: 4720, beratAkhir: 4680, loss: 0.85, tanggalSelesai: '10/06/2026', status: 'Selesai' },
+  { id: 'tr-4', kodeBatch: 'TR-2606-0004', komoditas: 'Padi', varietas: 'Inpari 42', treatment: 'Fungisida + ZPT', dosis: '2.0 ml/kg', operator: 'Slamet Riyadi', beratAwal: 7550, beratAkhir: 7490, loss: 0.79, tanggalSelesai: '10/06/2026', status: 'Selesai' },
+  { id: 'tr-5', kodeBatch: 'TR-2606-0005', komoditas: 'Jagung', varietas: 'Bisi 18', treatment: 'Insektisida Kontak', dosis: '3.5 ml/kg', operator: 'Ahmad Dahlan', beratAwal: 5820, beratAkhir: 5770, loss: 0.86, tanggalSelesai: '09/06/2026', status: 'Selesai' },
+];
 
 export const INITIAL_BATCH_PRODUKSI_LIST: BatchProduksiItem[] = [
   { no: 1, kodeBatch: 'BP-2606-0001', komoditas: 'Padi', varietas: 'Inpari 32', sumberBahan: 'PN-2605-0150', tanggalMulai: '01/06/2026', tanggalSelesai: '07/06/2026', targetKg: 10000, hasilKg: 8750, yieldPercent: 87.50, status: 'Selesai' },
@@ -46,8 +56,26 @@ export function useBatchProduksi() {
   const { varieties } = useVarietas();
 
   const [batchList, setBatchList] = useState<BatchProduksiItem[]>(INITIAL_BATCH_PRODUKSI_LIST);
+  const [treatmentOptions, setTreatmentOptions] = useState<TreatmentBatchItem[]>(DEFAULT_TREATMENT_OPTIONS);
   const [loading, setLoading] = useState(false);
   const [apiStats, setApiStats] = useState<any>(null);
+
+  // Fetch Treatment List for Reference Dropdown
+  const fetchTreatmentOptions = useCallback(async () => {
+    try {
+      const res = await treatmentService.getTreatmentList({ limit: 100 });
+      const list = res?.data || [];
+      if (list.length > 0) {
+        setTreatmentOptions(list);
+      }
+    } catch (err) {
+      console.error('Error fetching Treatment options:', err);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchTreatmentOptions();
+  }, [fetchTreatmentOptions]);
 
   // Filter states
   const [filterPeriode, setFilterPeriode] = useState('01/06/2026 - 30/06/2026');
@@ -327,6 +355,7 @@ export function useBatchProduksi() {
     sumberBahanOptions,
     statusOptions,
     lokasiOptions,
+    treatmentOptions,
     handleApplyFilters,
     handleResetFilters,
     statItems,

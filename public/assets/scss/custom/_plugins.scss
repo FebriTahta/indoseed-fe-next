@@ -292,7 +292,7 @@
   @apply stroke-defaultborder;
 }
 .apexcharts-pie text {
-  @apply fill-white #{!important};
+  fill: #000000 !important;
 }
 .apexcharts-canvas .apexcharts-toolbar {
   @apply z-[1];

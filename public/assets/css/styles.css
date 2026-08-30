@@ -4962,6 +4962,11 @@ div:where(.swal2-container) div:where(.swal2-validation-message) {
   @apply border-0 !important;
 }
 
+/* Custom override for pie chart text to black */
+.apexcharts-pie text {
+  fill: #000000 !important;
+}
+
 /* Start:: dashboard_styles */
 /* New Styles */
 #referrals-chart .apexcharts-pie text, #job-acceptance .apexcharts-pie text, #portfolio .apexcharts-pie text, #patients-chart .apexcharts-pie text, #follow-on-device .apexcharts-pie text {
@@ -6240,7 +6245,7 @@ ul.analytics-activity li {
 }
 
 .apexcharts-pie text {
-  @apply fill-white !important;
+  fill: #000000 !important;
 }
 
 .apexcharts-canvas .apexcharts-toolbar {
@@ -10818,10 +10823,14 @@ select.tabulator-page-size option {
 }
 .app-sidebar .main-sidebar-header .header-logo .desktop-dark,
 .app-sidebar .main-sidebar-header .header-logo .toggle-logo,
-.app-sidebar .main-sidebar-header .header-logo .toggle-dark, .app-sidebar .main-sidebar-header .header-logo .toggle-white, .app-sidebar .main-sidebar-header .header-logo .desktop-white {
+.app-sidebar .main-sidebar-header .header-logo .toggle-dark,
+.app-sidebar .main-sidebar-header .header-logo .toggle-white,
+.app-sidebar .main-sidebar-header .header-logo .desktop-white {
   @apply hidden;
 }
-.app-sidebar .slide-menu.child1 .side-menu__item:hover, .app-sidebar .slide-menu.child2 .side-menu__item:hover, .app-sidebar .slide-menu.child3 .side-menu__item:hover {
+.app-sidebar .slide-menu.child1 .side-menu__item:hover,
+.app-sidebar .slide-menu.child2 .side-menu__item:hover,
+.app-sidebar .slide-menu.child3 .side-menu__item:hover {
   @apply text-primary;
 }
 .app-sidebar .slide__category {
@@ -10834,14 +10843,14 @@ select.tabulator-page-size option {
   @apply relative flex items-center no-underline text-[0.8rem] text-menuprimecolor font-normal border px-5 py-[0.65rem] rounded-lg border-solid border-transparent;
 }
 .app-sidebar .side-menu__item.active {
-  @apply text-[#0f7a24] font-semibold;
+  @apply text-primary;
 }
 .app-sidebar .side-menu__item.active .side-menu__label,
 .app-sidebar .side-menu__item.active .side-menu__angle {
-  @apply text-[#0f7a24];
+  @apply text-menuprimecolor;
 }
 .app-sidebar .side-menu__item.active .side-menu__icon {
-  @apply text-[#0f7a24];
+  @apply text-menuprimecolor;
 }
 .app-sidebar .side-menu__item:hover {
   @apply bg-transparent;
@@ -10992,7 +11001,11 @@ select.tabulator-page-size option {
 
 /* Go Premium Button */
 @media (min-width: 992px) {
-  [data-toggled=icon-click-closed]:not([data-nav-layout=horizontal]) .app-content, [data-toggled=icon-hover-closed]:not([data-nav-layout=horizontal]) .app-content, [data-toggled=icon-text-close]:not([data-nav-layout=horizontal]) .app-content, [data-toggled=menu-click-closed]:not([data-nav-layout=horizontal]) .app-content, [data-toggled=menu-hover-closed]:not([data-nav-layout=horizontal]) .app-content {
+  [data-toggled=icon-click-closed]:not([data-nav-layout=horizontal]) .app-content,
+  [data-toggled=icon-hover-closed]:not([data-nav-layout=horizontal]) .app-content,
+  [data-toggled=icon-text-close]:not([data-nav-layout=horizontal]) .app-content,
+  [data-toggled=menu-click-closed]:not([data-nav-layout=horizontal]) .app-content,
+  [data-toggled=menu-hover-closed]:not([data-nav-layout=horizontal]) .app-content {
     @apply min-h-[calc(100vh_+_50rem)];
   }
 }
@@ -11023,7 +11036,9 @@ select.tabulator-page-size option {
 .customer-sidebar .side-menu__item.active, .customer-sidebar .side-menu__item:hover {
   @apply text-primary bg-transparent;
 }
-.customer-sidebar .side-menu__item.active .side-menu__label, .customer-sidebar .side-menu__item.active .side-menu__angle, .customer-sidebar .side-menu__item:hover .side-menu__label, .customer-sidebar .side-menu__item:hover .side-menu__angle {
+.customer-sidebar .side-menu__item.active .side-menu__label,
+.customer-sidebar .side-menu__item.active .side-menu__angle, .customer-sidebar .side-menu__item:hover .side-menu__label,
+.customer-sidebar .side-menu__item:hover .side-menu__angle {
   @apply text-primary;
 }
 .customer-sidebar .side-menu__item.active .side-menu__icon, .customer-sidebar .side-menu__item:hover .side-menu__icon {

@@ -2,6 +2,14 @@
 
 import React, { useEffect, useState } from 'react';
 import { MonitoringGreenhouseItem } from '@/app/types/monitoringGreenhouse';
+import { MonitoringLahanItem } from '@/app/types/monitoringLahan';
+
+const DEFAULT_LAHAN_LIST: MonitoringLahanItem[] = [
+  { id: 'la-1', kodeLahan: 'LA-2605-0001', lokasi: 'Blok A - Petak 1', komoditas: 'Padi', varietas: 'Inpari 32', luas: 12.50, tanggalTanam: '01/05/2026', umurHst: '41 HST', kondisi: 'Baik', status: 'Aktif' },
+  { id: 'la-2', kodeLahan: 'LA-2605-0002', lokasi: 'Blok A - Petak 2', komoditas: 'Jagung', varietas: 'Pioneer 21', luas: 8.20, tanggalTanam: '05/05/2026', umurHst: '37 HST', kondisi: 'Baik', status: 'Aktif' },
+  { id: 'la-3', kodeLahan: 'LA-2605-0003', lokasi: 'Blok B - Petak 1', komoditas: 'Kedelai', varietas: 'Anjasmoro', luas: 10.00, tanggalTanam: '10/05/2026', umurHst: '32 HST', kondisi: 'Perlu Perhatian', status: 'Aktif' },
+  { id: 'la-4', kodeLahan: 'LA-2605-0004', lokasi: 'Blok B - Petak 2', komoditas: 'Padi', varietas: 'Inpari 42', luas: 9.75, tanggalTanam: '02/05/2026', umurHst: '40 HST', kondisi: 'Baik', status: 'Aktif' },
+];
 
 interface MonitoringGreenhouseFormModalProps {
   isOpen: boolean;
@@ -12,6 +20,7 @@ interface MonitoringGreenhouseFormModalProps {
   lokasiOptions: { value: string; label: string }[];
   komoditasOptions: { value: string; label: string }[];
   varietasOptions: { value: string; label: string }[];
+  lahanOptions?: MonitoringLahanItem[];
 }
 
 export default function MonitoringGreenhouseFormModal({
@@ -23,9 +32,14 @@ export default function MonitoringGreenhouseFormModal({
   lokasiOptions,
   komoditasOptions,
   varietasOptions,
+  lahanOptions,
 }: MonitoringGreenhouseFormModalProps) {
+  const availableLahanList = lahanOptions && lahanOptions.length > 0 ? lahanOptions : DEFAULT_LAHAN_LIST;
+
   const [formData, setFormData] = useState<Partial<MonitoringGreenhouseItem>>({
     kodeGreenhouse: '',
+    lahanId: '',
+    referensiLahan: '',
     lokasi: 'Blok A - Greenhouse 1',
     komoditas: 'Padi',
     varietas: 'Inpari 32',
@@ -42,11 +56,14 @@ export default function MonitoringGreenhouseFormModal({
     if (initialData && mode === 'edit') {
       setFormData({ ...initialData });
     } else if (mode === 'add') {
+      const firstLahan = availableLahanList[0];
       setFormData({
+        lahanId: firstLahan?.id,
+        referensiLahan: firstLahan?.kodeLahan,
         kodeGreenhouse: `GH-${String(Math.floor(Math.random() * 90) + 10)}`,
-        lokasi: 'Blok A - Greenhouse 1',
-        komoditas: 'Padi',
-        varietas: 'Inpari 32',
+        lokasi: firstLahan?.lokasi || 'Blok A - Greenhouse 1',
+        komoditas: firstLahan?.komoditas || 'Padi',
+        varietas: firstLahan?.varietas || 'Inpari 32',
         luas: 500,
         status: 'Aktif',
         kondisi: 'Baik',
@@ -54,9 +71,29 @@ export default function MonitoringGreenhouseFormModal({
         catatan: '',
       });
     }
-  }, [initialData, mode, isOpen]);
+  }, [initialData, mode, isOpen, lahanOptions]);
 
   if (!isOpen) return null;
+
+  const handleLahanChange = (lahanIdOrKode: string) => {
+    const lahan = availableLahanList.find((l) => l.id === lahanIdOrKode || l.kodeLahan === lahanIdOrKode);
+    if (lahan) {
+      setFormData((prev) => ({
+        ...prev,
+        lahanId: lahan.id,
+        referensiLahan: lahan.kodeLahan,
+        lokasi: lahan.lokasi || prev.lokasi,
+        komoditas: lahan.komoditas,
+        varietas: lahan.varietas,
+      }));
+    } else {
+      setFormData((prev) => ({
+        ...prev,
+        lahanId: '',
+        referensiLahan: '',
+      }));
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -95,6 +132,28 @@ export default function MonitoringGreenhouseFormModal({
 
         {/* Body */}
         <form onSubmit={handleSubmit} className="p-5 overflow-y-auto space-y-4 text-xs">
+          {/* Referensi Monitoring Lahan Dropdown */}
+          <div>
+            <label className="font-semibold text-gray-700 mb-1 flex items-center justify-between">
+              <span>Referensi Monitoring Lahan</span>
+              <span className="text-[10px] text-emerald-600 font-medium flex items-center gap-1 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
+                <i className="ri-links-line"></i> Auto-fill Komoditas & Varietas
+              </span>
+            </label>
+            <select
+              value={formData.lahanId || formData.referensiLahan || ''}
+              onChange={(e) => handleLahanChange(e.target.value)}
+              className="form-select text-xs border border-gray-300 rounded px-3 py-2 w-full bg-white font-medium focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500"
+            >
+              <option value="">-- Pilih Referensi Monitoring Lahan --</option>
+              {availableLahanList.map((item) => (
+                <option key={item.id || item.kodeLahan} value={item.id || item.kodeLahan}>
+                  {item.kodeLahan} | {item.komoditas} - {item.varietas} ({item.lokasi || 'Lahan'})
+                </option>
+              ))}
+            </select>
+          </div>
+
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="font-semibold text-gray-700 mb-1 block">Kode Greenhouse</label>
@@ -115,7 +174,7 @@ export default function MonitoringGreenhouseFormModal({
                 required
                 value={formData.lokasi || ''}
                 onChange={(e) => setFormData({ ...formData, lokasi: e.target.value })}
-                className="form-control text-xs border border-gray-300 rounded px-3 py-2 w-full"
+                className="form-control text-xs border border-gray-300 rounded px-3 py-2 w-full font-medium"
                 placeholder="Blok A - Greenhouse 1"
               />
             </div>
@@ -123,63 +182,35 @@ export default function MonitoringGreenhouseFormModal({
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="font-semibold text-gray-700 mb-1 block">Komoditas</label>
-              <select
+              <label className="font-semibold text-gray-700 mb-1 flex items-center justify-between">
+                <span>Komoditas</span>
+                <span className="text-[10px] text-gray-400 font-normal flex items-center gap-1">
+                  <i className="ri-lock-2-line"></i> Tidak dapat dipilih
+                </span>
+              </label>
+              <input
+                type="text"
+                disabled
                 value={formData.komoditas || ''}
-                onChange={(e) => setFormData({ ...formData, komoditas: e.target.value })}
-                className="form-select text-xs border border-gray-300 rounded px-3 py-2 w-full bg-white"
-              >
-                <option value="Padi">Padi</option>
-                <option value="Jagung">Jagung</option>
-                <option value="Kedelai">Kedelai</option>
-                <option value="Tomat">Tomat</option>
-                <option value="Cabai">Cabai</option>
-                <option value="Mentimun">Mentimun</option>
-                <option value="Melon">Melon</option>
-                {komoditasOptions
-                  .filter((opt) => opt.value && !['Padi', 'Jagung', 'Kedelai', 'Tomat', 'Cabai', 'Mentimun', 'Melon'].includes(opt.value))
-                  .map((opt, idx) => (
-                    <option key={idx} value={opt.value}>
-                      {opt.label}
-                    </option>
-                  ))}
-              </select>
+                className="form-control text-xs border border-gray-200 bg-gray-100 text-gray-600 rounded px-3 py-2 w-full cursor-not-allowed font-medium select-none"
+                placeholder="Terisi otomatis dari Monitoring Lahan"
+              />
             </div>
 
             <div>
-              <label className="font-semibold text-gray-700 mb-1 block">Varietas</label>
-              <select
+              <label className="font-semibold text-gray-700 mb-1 flex items-center justify-between">
+                <span>Varietas</span>
+                <span className="text-[10px] text-gray-400 font-normal flex items-center gap-1">
+                  <i className="ri-lock-2-line"></i> Tidak dapat dipilih
+                </span>
+              </label>
+              <input
+                type="text"
+                disabled
                 value={formData.varietas || ''}
-                onChange={(e) => setFormData({ ...formData, varietas: e.target.value })}
-                className="form-select text-xs border border-gray-300 rounded px-3 py-2 w-full bg-white"
-              >
-                <option value="Inpari 32">Inpari 32</option>
-                <option value="Pioneer 21">Pioneer 21</option>
-                <option value="Servo">Servo</option>
-                <option value="Laris">Laris</option>
-                <option value="Mistar">Mistar</option>
-                <option value="Anjasmoro">Anjasmoro</option>
-                <option value="Golden">Golden</option>
-                {varietasOptions
-                  .filter(
-                    (opt) =>
-                      opt.value &&
-                      ![
-                        'Inpari 32',
-                        'Pioneer 21',
-                        'Servo',
-                        'Laris',
-                        'Mistar',
-                        'Anjasmoro',
-                        'Golden',
-                      ].includes(opt.value)
-                  )
-                  .map((opt, idx) => (
-                    <option key={idx} value={opt.value}>
-                      {opt.label}
-                    </option>
-                  ))}
-              </select>
+                className="form-control text-xs border border-gray-200 bg-gray-100 text-gray-600 rounded px-3 py-2 w-full cursor-not-allowed font-medium select-none"
+                placeholder="Terisi otomatis dari Monitoring Lahan"
+              />
             </div>
           </div>
 

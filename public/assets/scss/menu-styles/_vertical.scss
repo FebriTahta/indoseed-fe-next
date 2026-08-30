@@ -1,6 +1,6 @@
 /* Start:: vertical */
 .main-sidebar {
-  @apply h-screen relative overflow-auto shadow-[6px_0px_16px_0px_rgba(0, 0, 0, 0.05)] mt-[4.25rem] pt-2 pb-20;
+  @apply h-screen relative overflow-auto shadow-[6px_0px_16px_0px_rgba(0,0,0,0.05)] mt-[4.25rem] pt-2 pb-20;
 }
 
 [data-nav-layout="vertical"] {
@@ -290,7 +290,7 @@
 
 /* Responsive Overlay Start */
 #responsive-overlay {
-  @apply invisible fixed z-[101] bg-[rgba(15, 23, 42, 0.5)] transition-all ease-in-out duration-100 inset-0;
+  @apply invisible fixed z-[101] bg-[rgba(15,23,42,0.5)] transition-all ease-in-out duration-100 inset-0;
 
   &.active {
     @apply visible;
@@ -539,7 +539,7 @@
     //  @apply bg-[rgb(32,41,71)];
     //}
     .main-sidebar-header {
-      @apply bg-[rgb(32, 41, 71)];
+      @apply bg-[rgb(32,41,71)];
     }
   }
 }

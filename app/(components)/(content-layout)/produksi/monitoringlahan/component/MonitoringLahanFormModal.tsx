@@ -1,10 +1,7 @@
 "use client";
 
-import React, { useEffect, useState, useMemo } from 'react';
-import dynamic from 'next/dynamic';
+import React, { useEffect, useState } from 'react';
 import { MonitoringLahanItem } from '@/app/types/monitoringLahan';
-
-const SpkSelect = dynamic(() => import('@/shared/@spk-reusable-components/spk-packages/spk-reactselect'), { ssr: false });
 
 interface MonitoringLahanFormModalProps {
   isOpen: boolean;
@@ -110,19 +107,45 @@ export default function MonitoringLahanFormModal({
         setSelectedJadwalId('');
       }
     } else if (mode === 'add') {
-      setSelectedJadwalId('');
-      setFormData({
-        kodeLahan: `LA-2605-${String(Math.floor(Math.random() * 9000) + 1000)}`,
-        lokasi: 'Blok A - Petak 1',
-        komoditas: 'Padi',
-        varietas: 'Inpari 32',
-        luas: 10.0,
-        tanggalTanam: '01/06/2026',
-        umurHst: '30 HST',
-        kondisi: 'Baik',
-        status: 'Aktif',
-        catatan: '',
-      });
+      const firstJadwal = (jadwalTanamOptions || [])[0];
+      if (firstJadwal) {
+        const firstId = firstJadwal.id || firstJadwal.kodeJadwalTanam || firstJadwal.informasiUmum?.kodeJadwalTanam || '';
+        setSelectedJadwalId(firstId);
+        const kode = firstJadwal.kodeJadwalTanam || firstJadwal.informasiUmum?.kodeJadwalTanam || `LA-2605-${String(Math.floor(Math.random() * 9000) + 1000)}`;
+        const lahan = firstJadwal.greenhouse?.namaLahan || firstJadwal.lahanKomoditas?.namaLahan || firstJadwal.lokasi || 'Blok A - Petak 1';
+        const kom = firstJadwal.commodity?.namaKomoditas || firstJadwal.lahanKomoditas?.namaKomoditas || firstJadwal.komoditas || 'Padi';
+        const varName = firstJadwal.variety?.namaVarietas || firstJadwal.lahanKomoditas?.namaVarietas || firstJadwal.varietas || 'Inpari 32';
+        const luas = firstJadwal.lahanKomoditas?.luasTanam || firstJadwal.luasTanam || 10.0;
+        const tglTanamRaw = firstJadwal.tanggalTanam || firstJadwal.rencanaTanam?.tanggalTanam || '01/06/2026';
+        const hstVal = calculateHstFromDate(tglTanamRaw);
+
+        setFormData({
+          kodeLahan: kode,
+          lokasi: lahan,
+          komoditas: kom,
+          varietas: varName,
+          luas: Number(luas) || 10.0,
+          tanggalTanam: formatDateToDisplay(tglTanamRaw) || '01/06/2026',
+          umurHst: hstVal > 0 ? `${hstVal} HST` : '30 HST',
+          kondisi: 'Baik',
+          status: 'Aktif',
+          catatan: '',
+        });
+      } else {
+        setSelectedJadwalId('');
+        setFormData({
+          kodeLahan: `LA-2605-${String(Math.floor(Math.random() * 9000) + 1000)}`,
+          lokasi: 'Blok A - Petak 1',
+          komoditas: 'Padi',
+          varietas: 'Inpari 32',
+          luas: 10.0,
+          tanggalTanam: '01/06/2026',
+          umurHst: '30 HST',
+          kondisi: 'Baik',
+          status: 'Aktif',
+          catatan: '',
+        });
+      }
     }
   }, [initialData, mode, isOpen, jadwalTanamOptions]);
 
@@ -140,8 +163,8 @@ export default function MonitoringLahanFormModal({
     if (jt) {
       const kode = jt.kodeJadwalTanam || jt.informasiUmum?.kodeJadwalTanam || formData.kodeLahan;
       const lahan = jt.greenhouse?.namaLahan || jt.lahanKomoditas?.namaLahan || jt.lahanKomoditas?.idLahan || jt.lokasi || formData.lokasi;
-      const kom = jt.commodity?.namaKomoditas || jt.lahanKomoditas?.namaKomoditas || jt.lahanKomoditas?.komoditas || formData.komoditas;
-      const varName = jt.variety?.namaVarietas || jt.lahanKomoditas?.namaVarietas || jt.lahanKomoditas?.varietas || formData.varietas;
+      const kom = jt.commodity?.namaKomoditas || jt.lahanKomoditas?.namaKomoditas || jt.lahanKomoditas?.komoditas || jt.komoditas || formData.komoditas;
+      const varName = jt.variety?.namaVarietas || jt.lahanKomoditas?.namaVarietas || jt.lahanKomoditas?.varietas || jt.varietas || formData.varietas;
       const luas = jt.lahanKomoditas?.luasTanam || jt.luasTanam || formData.luas;
       const tglTanamRaw = jt.tanggalTanam || jt.rencanaTanam?.tanggalTanam || formData.tanggalTanam;
 
@@ -165,23 +188,6 @@ export default function MonitoringLahanFormModal({
       }));
     }
   };
-
-  const allLokasiOptions = useMemo(() => {
-    const list = [...(lokasiOptions || [])];
-    if (formData.lokasi && !list.some((o) => o.value === formData.lokasi || o.label === formData.lokasi)) {
-      list.unshift({ value: formData.lokasi, label: formData.lokasi });
-    }
-    if (list.length === 0) {
-      list.push({ value: formData.lokasi || 'Lahan 1', label: formData.lokasi || 'Lahan 1' });
-    }
-    return list;
-  }, [lokasiOptions, formData.lokasi]);
-
-  const selectedLokasiValue = useMemo(() => {
-    return allLokasiOptions.find(
-      (opt) => opt.value === formData.lokasi || opt.label === formData.lokasi
-    ) || (formData.lokasi ? { value: formData.lokasi, label: formData.lokasi } : null);
-  }, [allLokasiOptions, formData.lokasi]);
 
   if (!isOpen) return null;
 
@@ -222,35 +228,35 @@ export default function MonitoringLahanFormModal({
 
         {/* Body */}
         <form onSubmit={handleSubmit} className="p-5 overflow-y-auto space-y-4 text-xs">
-          {/* Referensi Jadwal Tanam Selector */}
-          <div className="bg-emerald-50/70 p-3 rounded-lg border border-emerald-200/80">
-            <label className="font-semibold text-emerald-800 mb-1 flex items-center gap-1.5">
-              <i className="ri-calendar-event-line text-emerald-600 text-sm"></i>
-              Referensi Jadwal Tanam (Opsional)
+          {/* Referensi Jadwal Tanam Dropdown */}
+          <div>
+            <label className="font-semibold text-gray-700 mb-1 flex items-center justify-between">
+              <span>Referensi Jadwal Tanam</span>
+              <span className="text-[10px] text-emerald-600 font-medium flex items-center gap-1 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
+                <i className="ri-links-line"></i> Auto-fill Komoditas & Varietas
+              </span>
             </label>
             <select
               value={selectedJadwalId}
               onChange={(e) => handleSelectJadwalTanam(e.target.value)}
-              className="form-select text-xs border border-emerald-300 rounded px-3 py-2 w-full bg-white text-gray-800 font-medium cursor-pointer"
+              className="form-select text-xs border border-gray-300 rounded px-3 py-2 w-full bg-white font-medium focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500"
             >
-              <option value="">-- Pilih Jadwal Tanam untuk Auto-Fill --</option>
+              <option value="">-- Pilih Referensi Jadwal Tanam --</option>
               {jadwalTanamOptions.map((jt: any) => {
                 const id = jt.id || jt.kodeJadwalTanam || jt.informasiUmum?.kodeJadwalTanam;
                 const kode = jt.kodeJadwalTanam || jt.informasiUmum?.kodeJadwalTanam || id;
-                const lahan = jt.greenhouse?.namaLahan || jt.lahanKomoditas?.namaLahan || jt.lahanKomoditas?.komoditas || '';
-                const kom = jt.commodity?.namaKomoditas || jt.lahanKomoditas?.namaKomoditas || jt.lahanKomoditas?.komoditas || '';
-                const varName = jt.variety?.namaVarietas || jt.lahanKomoditas?.namaVarietas || jt.lahanKomoditas?.varietas || '';
+                const lahan = jt.greenhouse?.namaLahan || jt.lahanKomoditas?.namaLahan || jt.lokasi || '';
+                const kom = jt.commodity?.namaKomoditas || jt.lahanKomoditas?.namaKomoditas || jt.lahanKomoditas?.komoditas || jt.komoditas || '';
+                const varName = jt.variety?.namaVarietas || jt.lahanKomoditas?.namaVarietas || jt.lahanKomoditas?.varietas || jt.varietas || '';
                 return (
                   <option key={id} value={id}>
-                    {kode} {lahan ? `- ${lahan}` : ''} {kom ? `(${kom} ${varName})` : ''}
+                    {kode} | {kom || 'Komoditas'} - {varName || 'Varietas'} {lahan ? `(${lahan})` : ''}
                   </option>
                 );
               })}
             </select>
-            <p className="text-[11px] text-emerald-700/80 mt-1">
-              Pilih Jadwal Tanam untuk otomatis mengisi Kode Lahan, Lokasi, Komoditas, Varietas, Luas, dan Tanggal Tanam.
-            </p>
           </div>
+
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="font-semibold text-gray-700 mb-1 block">Kode Lahan</label>
@@ -265,96 +271,49 @@ export default function MonitoringLahanFormModal({
             </div>
 
             <div>
-              <label className="font-semibold text-gray-700 mb-1 block">Lokasi</label>
-              <SpkSelect
-                name="lokasi"
-                option={allLokasiOptions}
-                getValue={selectedLokasiValue}
-                onfunchange={(selected: any) =>
-                  setFormData({ ...formData, lokasi: selected ? selected.value : '' })
-                }
-                disabled={true}
-                classNameprefix="Select2"
-                mainClass="basic-multi-select text-xs cursor-not-allowed opacity-75"
-                placeholder="Pilih Lokasi"
+              <label className="font-semibold text-gray-700 mb-1 block">Lokasi Lahan</label>
+              <input
+                type="text"
+                required
+                value={formData.lokasi || ''}
+                onChange={(e) => setFormData({ ...formData, lokasi: e.target.value })}
+                className="form-control text-xs border border-gray-300 rounded px-3 py-2 w-full font-medium"
+                placeholder="Blok A - Petak 1"
               />
             </div>
           </div>
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="font-semibold text-gray-700 mb-1 block">Komoditas</label>
-              <select
+              <label className="font-semibold text-gray-700 mb-1 flex items-center justify-between">
+                <span>Komoditas</span>
+                <span className="text-[10px] text-gray-400 font-normal flex items-center gap-1">
+                  <i className="ri-lock-2-line"></i> Tidak dapat dipilih
+                </span>
+              </label>
+              <input
+                type="text"
                 disabled
                 value={formData.komoditas || ''}
-                onChange={(e) => setFormData({ ...formData, komoditas: e.target.value })}
-                className="form-select text-xs border border-gray-300 rounded px-3 py-2 w-full bg-gray-100 text-gray-500 cursor-not-allowed"
-              >
-                {formData.komoditas && !['Padi', 'Jagung', 'Kedelai'].includes(formData.komoditas) && (
-                  <option value={formData.komoditas}>{formData.komoditas}</option>
-                )}
-                <option value="Padi">Padi</option>
-                <option value="Jagung">Jagung</option>
-                <option value="Kedelai">Kedelai</option>
-                {komoditasOptions
-                  .filter((opt) => opt.value && !['Padi', 'Jagung', 'Kedelai'].includes(opt.value))
-                  .map((opt, idx) => (
-                    <option key={idx} value={opt.value}>
-                      {opt.label}
-                    </option>
-                  ))}
-              </select>
+                className="form-control text-xs border border-gray-200 bg-gray-100 text-gray-600 rounded px-3 py-2 w-full cursor-not-allowed font-medium select-none"
+                placeholder="Terisi otomatis dari Jadwal Tanam"
+              />
             </div>
 
             <div>
-              <label className="font-semibold text-gray-700 mb-1 block">Varietas</label>
-              <select
+              <label className="font-semibold text-gray-700 mb-1 flex items-center justify-between">
+                <span>Varietas</span>
+                <span className="text-[10px] text-gray-400 font-normal flex items-center gap-1">
+                  <i className="ri-lock-2-line"></i> Tidak dapat dipilih
+                </span>
+              </label>
+              <input
+                type="text"
                 disabled
                 value={formData.varietas || ''}
-                onChange={(e) => setFormData({ ...formData, varietas: e.target.value })}
-                className="form-select text-xs border border-gray-300 rounded px-3 py-2 w-full bg-gray-100 text-gray-500 cursor-not-allowed"
-              >
-                {formData.varietas && ![
-                  'Inpari 32',
-                  'Pioneer 21',
-                  'Anjasmoro',
-                  'Inpari 42',
-                  'Bisi 18',
-                  'Ciherang',
-                  'Dega 1',
-                  'Mekongga',
-                ].includes(formData.varietas) && (
-                  <option value={formData.varietas}>{formData.varietas}</option>
-                )}
-                <option value="Inpari 32">Inpari 32</option>
-                <option value="Pioneer 21">Pioneer 21</option>
-                <option value="Anjasmoro">Anjasmoro</option>
-                <option value="Inpari 42">Inpari 42</option>
-                <option value="Bisi 18">Bisi 18</option>
-                <option value="Ciherang">Ciherang</option>
-                <option value="Dega 1">Dega 1</option>
-                <option value="Mekongga">Mekongga</option>
-                {varietasOptions
-                  .filter(
-                    (opt) =>
-                      opt.value &&
-                      ![
-                        'Inpari 32',
-                        'Pioneer 21',
-                        'Anjasmoro',
-                        'Inpari 42',
-                        'Bisi 18',
-                        'Ciherang',
-                        'Dega 1',
-                        'Mekongga',
-                      ].includes(opt.value)
-                  )
-                  .map((opt, idx) => (
-                    <option key={idx} value={opt.value}>
-                      {opt.label}
-                    </option>
-                  ))}
-              </select>
+                className="form-control text-xs border border-gray-200 bg-gray-100 text-gray-600 rounded px-3 py-2 w-full cursor-not-allowed font-medium select-none"
+                placeholder="Terisi otomatis dari Jadwal Tanam"
+              />
             </div>
           </div>
 
@@ -455,7 +414,7 @@ export default function MonitoringLahanFormModal({
                 </>
               ) : (
                 <>
-                  <i className="ri-[#078836] ri-save-line"></i> Simpan Data
+                  <i className="ri-save-line"></i> Simpan Data
                 </>
               )}
             </button>

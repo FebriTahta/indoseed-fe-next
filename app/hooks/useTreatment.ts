@@ -8,6 +8,16 @@ import { Land } from '../types/greenhouse';
 import { Commodity } from '../types/commodity';
 import { Variety } from '../types/variety';
 import { treatmentService } from '../services/treatmentService';
+import { sortasiService } from '../services/sortasiService';
+import { SortasiBatchItem } from '../types/sortasi';
+
+export const DEFAULT_SORTASI_OPTIONS: SortasiBatchItem[] = [
+  { id: 'sr-1', kodeBatch: 'SR-2606-0001', komoditas: 'Padi', varietas: 'Inpari 32', alatSortasi: 'Air Screen Cleaner 01', beratMasuk: 9650, hasilLulus: 9120, hasilTolak: 530, recovery: 94.51, tanggalSortasi: '11/06/2026', status: 'Selesai' },
+  { id: 'sr-2', kodeBatch: 'SR-2606-0002', komoditas: 'Jagung', varietas: 'Pioneer 21', alatSortasi: 'Gravity Separator 02', beratMasuk: 7720, hasilLulus: 7250, hasilTolak: 470, recovery: 93.91, tanggalSortasi: '11/06/2026', status: 'Selesai' },
+  { id: 'sr-3', kodeBatch: 'SR-2606-0003', komoditas: 'Kedelai', varietas: 'Anjasmoro', alatSortasi: 'Color Sorter 01', beratMasuk: 5050, hasilLulus: 4720, hasilTolak: 330, recovery: 93.47, tanggalSortasi: '10/06/2026', status: 'Selesai' },
+  { id: 'sr-4', kodeBatch: 'SR-2606-0004', komoditas: 'Padi', varietas: 'Inpari 42', alatSortasi: 'Air Screen Cleaner 02', beratMasuk: 7960, hasilLulus: 7550, hasilTolak: 410, recovery: 94.85, tanggalSortasi: '10/06/2026', status: 'Selesai' },
+  { id: 'sr-5', kodeBatch: 'SR-2606-0005', komoditas: 'Jagung', varietas: 'Bisi 18', alatSortasi: 'Indent Cylinder 01', beratMasuk: 6180, hasilLulus: 5820, hasilTolak: 360, recovery: 94.17, tanggalSortasi: '09/06/2026', status: 'Selesai' },
+];
 
 export const INITIAL_RIWAYAT_TREATMENT_LIST: TreatmentBatchItem[] = [
   {
@@ -155,8 +165,26 @@ export function useTreatment() {
   const { varieties } = useVarietas();
 
   const [batchList, setBatchList] = useState<TreatmentBatchItem[]>(INITIAL_RIWAYAT_TREATMENT_LIST);
+  const [sortasiOptions, setSortasiOptions] = useState<SortasiBatchItem[]>(DEFAULT_SORTASI_OPTIONS);
   const [loading, setLoading] = useState(false);
   const [apiStats, setApiStats] = useState<any>(null);
+
+  // Fetch Sortasi List for Reference Dropdown
+  const fetchSortasiOptions = useCallback(async () => {
+    try {
+      const res = await sortasiService.getSortasiList({ limit: 100 });
+      const list = res?.data || [];
+      if (list.length > 0) {
+        setSortasiOptions(list);
+      }
+    } catch (err) {
+      console.error('Error fetching Sortasi options:', err);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchSortasiOptions();
+  }, [fetchSortasiOptions]);
 
   // Filter states
   const [filterPeriode, setFilterPeriode] = useState('01/06/2026 - 30/06/2026');
@@ -439,6 +467,7 @@ export function useTreatment() {
     jenisTreatmentOptions,
     statusOptions,
     lokasiOptions,
+    sortasiOptions,
     handleApplyFilters,
     handleResetFilters,
     statItems,
