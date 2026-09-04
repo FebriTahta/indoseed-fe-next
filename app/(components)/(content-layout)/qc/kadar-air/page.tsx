@@ -10,6 +10,8 @@ import 'react-toastify/dist/ReactToastify.css';
 import ClientChart from '../../shared/ClientChart';
 import CreateKadarAirModal from './CreateKadarAirModal';
 import SharedFilterSection from '../shared/SharedFilterSection';
+import TrendChart from '../shared/TrendChart';
+import Top5Chart from '../shared/Top5Chart';
 import { qcService } from '@/app/services/qcService';
 import { commodityService } from '@/app/services/commodityService';
 import { varietyService } from '@/app/services/varietyService';
@@ -163,21 +165,6 @@ export default function KadarAirPage() {
     totalUji > 0 ? (memenuhiCount / totalUji) * 100 : 0,
     totalUji > 0 ? (mendekatiCount / totalUji) * 100 : 0,
     totalUji > 0 ? (tidakMemenuhiCount / totalUji) * 100 : 0
-  ];
-
-  const trenOptions: any = {
-    chart: { type: 'line', id: 'tren-ka', toolbar: { show: false }, sparkline: { enabled: false } },
-    colors: ['#10b981'],
-    stroke: { curve: 'smooth', width: [2] },
-    xaxis: { categories: ['01/06', '06/06', '11/06', '16/06', '21/06', '26/06', '30/06'], labels: { style: { colors: '#9ca3af', fontSize: '11px' } }, axisBorder: { show: false }, axisTicks: { show: false } },
-    yaxis: { min: 0, max: 20, labels: { style: { colors: '#9ca3af', fontSize: '11px' } } },
-    grid: { borderColor: '#f3f4f6', strokeDashArray: 4, yaxis: { lines: { show: true } } },
-    markers: { size: 4, colors: ['#fff'], strokeColors: ['#10b981'], strokeWidth: 2, hover: { size: 6 } },
-    legend: { show: true, position: 'bottom' },
-    tooltip: { theme: 'light' }
-  };
-  const trenSeries = [
-    { name: 'Rata-rata Kadar Air (%)', data: [15, 12, 10, 14, 11, 13, 12] }
   ];
 
   const handleSelectRow = (row: any) => {
@@ -375,30 +362,21 @@ export default function KadarAirPage() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="box shadow-sm">
-              <div className="box-header border-b border-gray-100 flex justify-between items-center">
-                <h5 className="box-title text-base font-semibold">Tren Rata-rata Kadar Air (%)</h5>
-                <select className="form-select text-xs py-1"><option>30 Hari Terakhir</option></select>
-              </div>
-              <div className="box-body p-4">
-                <ClientChart id="tren-chart-ka" dataKey={tests.length} options={trenOptions} series={trenSeries} type="line" height={200} />
-              </div>
-            </div>
-            <div className="box shadow-sm">
-              <div className="box-header border-b border-gray-100 flex justify-between items-center">
-                <h5 className="box-title text-base font-semibold">Top 5 Komoditas (Rata-rata Kadar Air)</h5>
-              </div>
-              <div className="box-body p-4">
-                <div className="space-y-4">
-                  {/* Dummy Top 5 */}
-                  <div><div className="flex justify-between text-xs mb-1"><span className="font-semibold text-gray-600">Jagung</span><span className="font-bold">14,51%</span></div><div className="w-full h-3 bg-gray-100 rounded-full overflow-hidden"><div className="bg-success h-full" style={{ width: '90%' }}></div></div></div>
-                  <div><div className="flex justify-between text-xs mb-1"><span className="font-semibold text-gray-600">Padi</span><span className="font-bold">12,28%</span></div><div className="w-full h-3 bg-gray-100 rounded-full overflow-hidden"><div className="bg-success h-full" style={{ width: '80%' }}></div></div></div>
-                  <div><div className="flex justify-between text-xs mb-1"><span className="font-semibold text-gray-600">Kedelai</span><span className="font-bold">9,87%</span></div><div className="w-full h-3 bg-gray-100 rounded-full overflow-hidden"><div className="bg-success h-full" style={{ width: '60%' }}></div></div></div>
-                  <div><div className="flex justify-between text-xs mb-1"><span className="font-semibold text-gray-600">Kacang Hijau</span><span className="font-bold">8,96%</span></div><div className="w-full h-3 bg-gray-100 rounded-full overflow-hidden"><div className="bg-success h-full" style={{ width: '50%' }}></div></div></div>
-                  <div><div className="flex justify-between text-xs mb-1"><span className="font-semibold text-gray-600">Kacang Tanah</span><span className="font-bold">8,21%</span></div><div className="w-full h-3 bg-gray-100 rounded-full overflow-hidden"><div className="bg-success h-full" style={{ width: '45%' }}></div></div></div>
-                </div>
-              </div>
-            </div>
+            <TrendChart
+              data={tests}
+              dateKey="tanggalUji"
+              valueKey="kadarAir"
+              title="Tren Rata-rata Kadar Air (%)"
+              seriesName="Rata-rata Kadar Air (%)"
+              id="tren-chart-ka"
+              color="#10b981"
+            />
+            <Top5Chart 
+              data={tests} 
+              title="Top 5 Komoditas (Rata-rata Kadar Air)" 
+              nameExtractor={(item) => item?.commodity?.namaKomoditas || ''} 
+              valueExtractor={(item) => item?.kadarAir} 
+            />
           </div>
         </div>
 

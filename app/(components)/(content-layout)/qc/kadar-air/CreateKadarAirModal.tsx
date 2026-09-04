@@ -292,9 +292,9 @@ export default function CreateKadarAirModal({ isOpen, onClose, onSuccess, method
          if (onSuccess) onSuccess();
          onClose();
       }
-    } catch (e) {
+    } catch (e: any) {
        console.error(e);
-       toast.error('Gagal menyimpan.');
+       toast.error(e.response?.data?.message || 'Gagal menyimpan.');
     } finally {
        setIsSubmitting(false);
     }
