@@ -503,9 +503,12 @@ const Header = () => {
     setCartItemCount(updatedCart.length);
   };
 
+  const apiBase = (process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8080/api').replace(/\/api\/?$/, '');
+  const baseUrl = process.env.NEXT_PUBLIC_API_URL || apiBase || 'http://localhost:8080';
+
   const logoUrl = settings?.logoWebsite
-    ? (settings.logoWebsite.startsWith('http') ? settings.logoWebsite : `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080'}${settings.logoWebsite}`)
-    : null;
+    ? (settings.logoWebsite.startsWith('http') ? settings.logoWebsite : `${baseUrl}${settings.logoWebsite}`)
+    : (settings?.logoKotak ? (settings.logoKotak.startsWith('http') ? settings.logoKotak : `${baseUrl}${settings.logoKotak}`) : null);
 
   return (
     <Fragment>

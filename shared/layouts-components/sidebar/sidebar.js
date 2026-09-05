@@ -765,13 +765,18 @@ const Sidebar = () => {
 
 	};
 
-	const logoUrl = settings?.logoWebsite
-		? (settings.logoWebsite.startsWith('http') ? settings.logoWebsite : `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080'}${settings.logoWebsite}`)
-		: null;
+	const apiBase = (process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8080/api').replace(/\/api\/?$/, '');
+	const baseUrl = process.env.NEXT_PUBLIC_API_URL || apiBase || 'http://localhost:8080';
 
 	const logoKotakUrl = settings?.logoKotak
-		? (settings.logoKotak.startsWith('http') ? settings.logoKotak : `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080'}${settings.logoKotak}`)
-		: logoUrl; // Fallback ke logoUrl jika tidak ada logoKotak
+		? (settings.logoKotak.startsWith('http') ? settings.logoKotak : `${baseUrl}${settings.logoKotak}`)
+		: null;
+
+	const logoUrl = settings?.logoWebsite
+		? (settings.logoWebsite.startsWith('http') ? settings.logoWebsite : `${baseUrl}${settings.logoWebsite}`)
+		: logoKotakUrl;
+
+	const finalLogoKotakUrl = logoKotakUrl || logoUrl;
 
 	return (
 		<Fragment>
@@ -786,20 +791,20 @@ const Sidebar = () => {
 									<div className="absolute inset-0" style={{ WebkitMaskImage: `url(${logoUrl})`, maskImage: `url(${logoUrl})`, WebkitMaskSize: 'contain', maskSize: 'contain', WebkitMaskRepeat: 'no-repeat', maskRepeat: 'no-repeat', WebkitMaskPosition: 'center', maskPosition: 'center', backgroundColor: settings.logoColor || '#11b238' }}></div>
 								</div>
 								<div className="relative flex toggle-dark w-28 h-14 items-center justify-center -mt-4">
-									<img src={logoKotakUrl} alt="logo" className="!w-full !h-full object-contain opacity-0" />
-									<div className="absolute inset-0" style={{ WebkitMaskImage: `url(${logoKotakUrl})`, maskImage: `url(${logoKotakUrl})`, WebkitMaskSize: 'contain', maskSize: 'contain', WebkitMaskRepeat: 'no-repeat', maskRepeat: 'no-repeat', WebkitMaskPosition: 'center', maskPosition: 'center', backgroundColor: settings.logoColor || '#11b238' }}></div>
+									<img src={finalLogoKotakUrl} alt="logo" className="!w-full !h-full object-contain opacity-0" />
+									<div className="absolute inset-0" style={{ WebkitMaskImage: `url(${finalLogoKotakUrl})`, maskImage: `url(${finalLogoKotakUrl})`, WebkitMaskSize: 'contain', maskSize: 'contain', WebkitMaskRepeat: 'no-repeat', maskRepeat: 'no-repeat', WebkitMaskPosition: 'center', maskPosition: 'center', backgroundColor: settings.logoColor || '#11b238' }}></div>
 								</div>
 								<div className="relative flex desktop-dark w-48 h-14 items-center justify-center">
 									<img src={logoUrl} alt="logo" className="!w-full !h-full object-contain opacity-0" />
 									<div className="absolute inset-0" style={{ WebkitMaskImage: `url(${logoUrl})`, maskImage: `url(${logoUrl})`, WebkitMaskSize: 'contain', maskSize: 'contain', WebkitMaskRepeat: 'no-repeat', maskRepeat: 'no-repeat', WebkitMaskPosition: 'center', maskPosition: 'center', backgroundColor: settings.logoColor || '#11b238' }}></div>
 								</div>
 								<div className="relative flex toggle-logo w-28 h-14 items-center justify-center -mt-4">
-									<img src={logoKotakUrl} alt="logo" className="!w-full !h-full object-contain opacity-0" />
-									<div className="absolute inset-0" style={{ WebkitMaskImage: `url(${logoKotakUrl})`, maskImage: `url(${logoKotakUrl})`, WebkitMaskSize: 'contain', maskSize: 'contain', WebkitMaskRepeat: 'no-repeat', maskRepeat: 'no-repeat', WebkitMaskPosition: 'center', maskPosition: 'center', backgroundColor: settings.logoColor || '#11b238' }}></div>
+									<img src={finalLogoKotakUrl} alt="logo" className="!w-full !h-full object-contain opacity-0" />
+									<div className="absolute inset-0" style={{ WebkitMaskImage: `url(${finalLogoKotakUrl})`, maskImage: `url(${finalLogoKotakUrl})`, WebkitMaskSize: 'contain', maskSize: 'contain', WebkitMaskRepeat: 'no-repeat', maskRepeat: 'no-repeat', WebkitMaskPosition: 'center', maskPosition: 'center', backgroundColor: settings.logoColor || '#11b238' }}></div>
 								</div>
 								<div className="relative flex toggle-white w-28 h-14 items-center justify-center -mt-4">
-									<img src={logoKotakUrl} alt="logo" className="!w-full !h-full object-contain opacity-0" />
-									<div className="absolute inset-0" style={{ WebkitMaskImage: `url(${logoKotakUrl})`, maskImage: `url(${logoKotakUrl})`, WebkitMaskSize: 'contain', maskSize: 'contain', WebkitMaskRepeat: 'no-repeat', maskRepeat: 'no-repeat', WebkitMaskPosition: 'center', maskPosition: 'center', backgroundColor: settings.logoColor || '#11b238' }}></div>
+									<img src={finalLogoKotakUrl} alt="logo" className="!w-full !h-full object-contain opacity-0" />
+									<div className="absolute inset-0" style={{ WebkitMaskImage: `url(${finalLogoKotakUrl})`, maskImage: `url(${finalLogoKotakUrl})`, WebkitMaskSize: 'contain', maskSize: 'contain', WebkitMaskRepeat: 'no-repeat', maskRepeat: 'no-repeat', WebkitMaskPosition: 'center', maskPosition: 'center', backgroundColor: settings.logoColor || '#11b238' }}></div>
 								</div>
 								<div className="relative flex desktop-white w-48 h-14 items-center justify-center">
 									<img src={logoUrl} alt="logo" className="!w-full !h-full object-contain opacity-0" />

@@ -9,14 +9,15 @@ import Backtotop from '../../../shared/layouts-components/backtotop/backtotop'
 import Footer from '@/shared/layouts-components/footer/footer';
 import Loader from '@/shared/layouts-components/loader/loader';
 import Switcher from '@/shared/layouts-components/switcher/switcher';
+import api from '@/app/lib/axios';
 
 const Layout = ({ children, local_varaiable, ThemeChanger, setSettings }) => {
     
     useEffect(() => {
         const fetchSettings = async () => {
             try {
-                const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080'}/api/settings`);
-                const data = await res.json();
+                const res = await api.get('/settings');
+                const data = res.data;
                 if (data.status === 'success' && data.data) {
                     setSettings(data.data);
                 }
