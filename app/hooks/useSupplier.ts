@@ -182,9 +182,23 @@ export function useSupplier() {
     setIsModalOpen(true);
   };
 
-  const handleDelete = (id: string) => {
-    console.log("Delete supplier", id);
-    toast.success('Data supplier berhasil dihapus');
+  const handleDelete = async (id: string) => {
+    try {
+      const result = await supplierService.deleteSupplier(id);
+      if (result && result.status === 'error') {
+        throw new Error(result.message || 'Gagal menghapus data');
+      }
+      toast.success('Data supplier berhasil dihapus');
+      if (viewed && viewed.kodeSupplier === id) {
+        setViewed(null);
+      }
+      await fetchSuppliers();
+      await fetchSuppliersList(currentPage);
+    } catch (err: any) {
+      console.error(err);
+      const errMsg = err.response?.data?.message || err.message || 'Gagal menghapus data supplier';
+      toast.error(errMsg);
+    }
   };
 
   // Open Edit Modal
@@ -204,6 +218,10 @@ export function useSupplier() {
   // Save Modal Data (Create & Update)
   const handleSaveModal = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (modalMode === 'add' && !formValues.id.trim()) {
+      toast.error('Kode supplier harus diisi');
+      return;
+    }
     if (!formValues.namaSupplier.trim()) {
       toast.error('Nama supplier harus diisi');
       return;
@@ -215,22 +233,20 @@ export function useSupplier() {
     
     setIsSubmitLoading(true);
     try {
-      const formData = new FormData();
+      const payload = {
+        kodeSupplier: formValues.id.trim(),
+        namaSupplier: formValues.namaSupplier.trim(),
+        kategori: formValues.kategori,
+        status: formValues.status,
+      };
 
-      console.log("=1=> Supplier form values:", formValues);
-
-      formData.append('kodeSupplier', formValues.id);
-      formData.append('namaSupplier', formValues.namaSupplier);
-      formData.append('kategori', formValues.kategori);
-      formData.append('status', formValues.status);
-
-      console.log("=2=> Supplier form values:", formData);
+      console.log("==> Submitting supplier payload:", payload);
       
       let result;
       if (modalMode === 'add') {
-        result = await supplierService.createSupplier(formData);
+        result = await supplierService.createSupplier(payload);
       } else {
-        result = await supplierService.updateSupplier(formValues.id, formData);
+        result = await supplierService.updateSupplier(formValues.id, payload);
       }
 
       if (result.status === 'error') {
@@ -251,7 +267,8 @@ export function useSupplier() {
       await fetchSuppliersList(currentPage);
     } catch (err: any) {
       console.error(err);
-      toast.error(err.message || 'Terjadi kesalahan saat menyimpan data');
+      const errMsg = err.response?.data?.message || err.message || 'Terjadi kesalahan saat menyimpan data';
+      toast.error(errMsg);
     } finally {
       setIsSubmitLoading(false);
     }
@@ -263,10 +280,11 @@ export function useSupplier() {
     const newStatus: SupplierData['status'] = supplier.status === 'Aktif' ? 'Tidak Aktif' : 'Aktif';
     setIsDetailLoading(true);
     try {
-      const formData = new FormData();
-      formData.append('status', newStatus);
+      const payload = {
+        status: newStatus
+      };
 
-      const result = await supplierService.updateSupplier(supplier.kodeSupplier, formData);
+      const result = await supplierService.updateSupplier(supplier.kodeSupplier, payload);
       if (result.status === 'error') {
         throw new Error(result.message || 'Gagal merubah status');
       }
@@ -277,7 +295,8 @@ export function useSupplier() {
       await fetchSuppliers();
     } catch (err: any) {
       console.error(err);
-      toast.error(err.message || 'Terjadi kesalahan saat mengubah status');
+      const errMsg = err.response?.data?.message || err.message || 'Terjadi kesalahan saat mengubah status';
+      toast.error(errMsg);
     } finally {
       setIsDetailLoading(false);
     }
