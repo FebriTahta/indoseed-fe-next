@@ -20231,3 +20231,101 @@ html body .app-sidebar .slide-menu .slide.open {
     background-color: transparent !important;
     background: transparent !important;
 }
+
+/* ================================================================
+   FINAL OVERRIDE: Sidebar Active & Hover = Dark Green (#166534)
+   Overrides --primary variable within ALL sidebar menu-style scopes
+   so text-primary !important rules also resolve to dark green.
+   ================================================================ */
+
+/* Override --primary scoped to sidebar for ALL data-menu-styles */
+[data-menu-styles] .app-sidebar,
+[data-menu-styles=light] .app-sidebar,
+[data-menu-styles=color] .app-sidebar,
+[data-menu-styles=transparent] .app-sidebar,
+.app-sidebar {
+    --primary: 22 101 52 !important;
+    --primary-rgb: 22, 101, 52 !important;
+}
+
+/* Active main menu */
+[data-menu-styles=light] .app-sidebar .side-menu__item.active,
+[data-menu-styles=light] .app-sidebar .side-menu__item:hover,
+.app-sidebar .side-menu__item.active,
+.app-sidebar .side-menu__item:hover {
+    color: #166534 !important;
+}
+
+/* Active main menu children */
+[data-menu-styles=light] .app-sidebar .side-menu__item.active .side-menu__label,
+[data-menu-styles=light] .app-sidebar .side-menu__item.active .side-menu__angle,
+[data-menu-styles=light] .app-sidebar .side-menu__item.active .side-menu__icon,
+[data-menu-styles=light] .app-sidebar .side-menu__item:hover .side-menu__label,
+[data-menu-styles=light] .app-sidebar .side-menu__item:hover .side-menu__angle,
+[data-menu-styles=light] .app-sidebar .side-menu__item:hover .side-menu__icon,
+.app-sidebar .side-menu__item.active .side-menu__label,
+.app-sidebar .side-menu__item.active .side-menu__angle,
+.app-sidebar .side-menu__item.active .side-menu__icon,
+.app-sidebar .side-menu__item:hover .side-menu__label,
+.app-sidebar .side-menu__item:hover .side-menu__angle,
+.app-sidebar .side-menu__item:hover .side-menu__icon {
+    color: #166534 !important;
+    fill: #166534 !important;
+}
+
+/* Active + hover submenu items */
+[data-menu-styles=light] .app-sidebar .slide-menu.child1 .side-menu__item.active,
+[data-menu-styles=light] .app-sidebar .slide-menu.child1 .side-menu__item:active,
+[data-menu-styles=light] .app-sidebar .slide-menu.child1 .side-menu__item:hover,
+[data-menu-styles=light] .app-sidebar .slide-menu.child1 .side-menu__item.hover,
+[data-menu-styles=light] .app-sidebar .slide-menu.child2 .side-menu__item.active,
+[data-menu-styles=light] .app-sidebar .slide-menu.child2 .side-menu__item:active,
+[data-menu-styles=light] .app-sidebar .slide-menu.child2 .side-menu__item:hover,
+[data-menu-styles=light] .app-sidebar .slide-menu.child2 .side-menu__item.hover,
+[data-menu-styles=light] .app-sidebar .slide-menu.child3 .side-menu__item.active,
+[data-menu-styles=light] .app-sidebar .slide-menu.child3 .side-menu__item:active,
+[data-menu-styles=light] .app-sidebar .slide-menu.child3 .side-menu__item:hover,
+[data-menu-styles=light] .app-sidebar .slide-menu.child3 .side-menu__item.hover,
+.app-sidebar .slide-menu.child1 .side-menu__item.active,
+.app-sidebar .slide-menu.child1 .side-menu__item:hover,
+.app-sidebar .slide-menu.child2 .side-menu__item.active,
+.app-sidebar .slide-menu.child2 .side-menu__item:hover,
+.app-sidebar .slide-menu.child3 .side-menu__item.active,
+.app-sidebar .slide-menu.child3 .side-menu__item:hover {
+    color: #166534 !important;
+}
+
+/* Submenu ::before dot + label + angle + icon */
+[data-menu-styles=light] .app-sidebar .slide-menu.child1 .side-menu__item.active .side-menu__angle,
+[data-menu-styles=light] .app-sidebar .slide-menu.child1 .side-menu__item:active .side-menu__angle,
+[data-menu-styles=light] .app-sidebar .slide-menu.child1 .side-menu__item:hover .side-menu__angle,
+[data-menu-styles=light] .app-sidebar .slide-menu.child1 .side-menu__item.hover .side-menu__angle,
+[data-menu-styles=light] .app-sidebar .slide-menu.child2 .side-menu__item.active .side-menu__angle,
+[data-menu-styles=light] .app-sidebar .slide-menu.child2 .side-menu__item:active .side-menu__angle,
+[data-menu-styles=light] .app-sidebar .slide-menu.child2 .side-menu__item:hover .side-menu__angle,
+[data-menu-styles=light] .app-sidebar .slide-menu.child2 .side-menu__item.hover .side-menu__angle,
+[data-menu-styles=light] .app-sidebar .slide-menu.child3 .side-menu__item.active .side-menu__angle,
+[data-menu-styles=light] .app-sidebar .slide-menu.child3 .side-menu__item:active .side-menu__angle,
+[data-menu-styles=light] .app-sidebar .slide-menu.child3 .side-menu__item:hover .side-menu__angle,
+[data-menu-styles=light] .app-sidebar .slide-menu.child3 .side-menu__item.hover .side-menu__angle,
+[data-menu-styles=light] .app-sidebar .slide-menu.child1 .side-menu__item.active::before,
+[data-menu-styles=light] .app-sidebar .slide-menu.child2 .side-menu__item.active::before,
+[data-menu-styles=light] .app-sidebar .slide-menu.child3 .side-menu__item.active::before,
+[data-menu-styles=light] .app-sidebar .slide-menu.child1 .side-menu__item:hover::before,
+[data-menu-styles=light] .app-sidebar .slide-menu.child2 .side-menu__item:hover::before,
+[data-menu-styles=light] .app-sidebar .slide-menu.child3 .side-menu__item:hover::before,
+.app-sidebar .slide-menu.child1 .side-menu__item.active .side-menu__angle,
+.app-sidebar .slide-menu.child2 .side-menu__item.active .side-menu__angle,
+.app-sidebar .slide-menu.child3 .side-menu__item.active .side-menu__angle,
+.app-sidebar .slide-menu.child1 .side-menu__item:hover .side-menu__angle,
+.app-sidebar .slide-menu.child2 .side-menu__item:hover .side-menu__angle,
+.app-sidebar .slide-menu.child3 .side-menu__item:hover .side-menu__angle,
+.app-sidebar .slide-menu.child1 .side-menu__item.active::before,
+.app-sidebar .slide-menu.child2 .side-menu__item.active::before,
+.app-sidebar .slide-menu.child3 .side-menu__item.active::before,
+.app-sidebar .slide-menu.child1 .side-menu__item:hover::before,
+.app-sidebar .slide-menu.child2 .side-menu__item:hover::before,
+.app-sidebar .slide-menu.child3 .side-menu__item:hover::before {
+    color: #166534 !important;
+    fill: #166534 !important;
+}

@@ -3001,3 +3001,53 @@ div:where(.swal2-container) div:where(.swal2-validation-message) {
 .apexcharts-pie text {
   fill: #000000 !important;
 }
+
+/* ================================================================
+   Sidebar Active Menu & Submenu - Dark Green Color
+   ================================================================ */
+
+/* Main menu item active state */
+.app-sidebar .side-menu__item.active {
+  color: #166534 !important;
+
+  .side-menu__label,
+  .side-menu__angle {
+    color: #166534 !important;
+  }
+
+  .side-menu__icon {
+    color: #166534 !important;
+  }
+}
+
+/* Submenu active items (child1, child2, child3) */
+.app-sidebar .slide-menu.child1 .side-menu__item.active,
+.app-sidebar .slide-menu.child2 .side-menu__item.active,
+.app-sidebar .slide-menu.child3 .side-menu__item.active {
+  color: #166534 !important;
+
+  .side-menu__label {
+    color: #166534 !important;
+  }
+
+  &:before {
+    color: #166534 !important;
+  }
+}
+
+/* Submenu hover active dot */
+.app-sidebar .slide-menu.child1 .side-menu__item:hover,
+.app-sidebar .slide-menu.child2 .side-menu__item:hover,
+.app-sidebar .slide-menu.child3 .side-menu__item:hover {
+  color: #166534 !important;
+}
+
+/* Override for dark menu style active text (keep white on dark bg) */
+[data-menu-styles="dark"] {
+  .app-sidebar .side-menu__item.active .side-menu__label,
+  .app-sidebar .side-menu__item.active .side-menu__angle,
+  .app-sidebar .side-menu__item.active,
+  .app-sidebar .side-menu__item:hover {
+    color: #fff !important;
+  }
+}
