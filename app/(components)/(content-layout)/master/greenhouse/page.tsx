@@ -1,5 +1,5 @@
 "use client"
-import React, {Fragment } from 'react';
+import React, { Fragment } from 'react';
 import Pageheader from '@/shared/layouts-components/page-header/pageheader';
 import Seo from '@/shared/layouts-components/seo/seo';
 import SpkButton from '@/shared/@spk-reusable-components/uielements/spk-button';
@@ -454,6 +454,7 @@ export default function GreenhousePage() {
         submitText="Simpan Data"
         cancelText="Batal"
         isLoading={isSubmitLoading}
+        maxWidthClass="max-w-2xl"
       >
         <div className="grid grid-cols-2 gap-4">
           <div>

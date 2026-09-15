@@ -35,6 +35,7 @@ export const MENUITEMS = [
     active: false,
     selected: false,
     children: [
+      { path: "/master/parameter", type: "link", active: false, selected: false, title: "Master Parameter" },
       { path: "/master/varietas", type: "link", active: false, selected: false, title: "Daftar Varietas" },
       { path: "/master/komoditas", type: "link", active: false, selected: false, title: "Daftar Komoditas" },
       { path: "/master/greenhouse", type: "link", active: false, selected: false, title: "Greenhouse" },

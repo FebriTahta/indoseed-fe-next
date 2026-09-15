@@ -285,17 +285,16 @@ export default function PetaniMitraPage() {
                         <h4 className="font-bold text-gray-800 text-[13px]">{lahan.namaLahan}</h4>
                         <span className="text-[10px] text-textmuted font-mono bg-gray-50 px-1.5 py-0.5 rounded border border-gray-200/50 mt-0.5 inline-block">{lahan.kodeLahan}</span>
                       </div>
-                      <span className={`badge rounded px-1.5 py-0.5 text-[10px] font-semibold ${
-                        lahan.status === 'Aktif'
+                      <span className={`badge rounded px-1.5 py-0.5 text-[10px] font-semibold ${lahan.status === 'Aktif'
                           ? 'bg-success/10 text-success'
                           : lahan.status === 'Maintenance'
                             ? 'bg-danger/10 text-danger'
                             : 'bg-gray-100 text-gray-500'
-                      }`}>
+                        }`}>
                         {lahan.status}
                       </span>
                     </div>
-                    
+
                     {/* Grid Details */}
                     <div className="grid grid-cols-2 gap-x-3 gap-y-2 text-[11px] text-gray-600">
                       <div>
@@ -483,6 +482,7 @@ export default function PetaniMitraPage() {
         submitText="Simpan Data"
         cancelText="Batal"
         isLoading={isSubmitLoading}
+        maxWidthClass="max-w-2xl"
       >
         <div className="grid grid-cols-2 gap-4">
           <div>
@@ -535,6 +535,7 @@ export default function PetaniMitraPage() {
               required
               disabled={isSubmitLoading}
             >
+              <option value="" disabled>Pilih Komoditas</option>
               {komoditasOptions.map((opt) => (
                 <option key={opt.value} value={opt.value}>{opt.label}</option>
               ))}

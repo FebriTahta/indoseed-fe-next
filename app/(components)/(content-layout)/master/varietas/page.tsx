@@ -17,6 +17,7 @@ import { TableViewBtn, TableEditBtn, TableRemoveBtn } from '../../shared/ActionB
 
 import { Variety } from '@/app/types/variety';
 import { useVarietas } from '@/app/hooks/useVarietas';
+import VarietyParameterModal from './VarietyParameterModal';
 
 const CATEGORY_COLORS: Record<string, string> = {
   'Serealia': 'success',
@@ -33,6 +34,18 @@ const CATEGORY_ICONS: Record<string, string> = {
 };
 
 export default function VarietasPage() {
+  const [isParamModalOpen, setIsParamModalOpen] = React.useState(false);
+  const [selectedVarietyForParam, setSelectedVarietyForParam] = React.useState<{ id: string; namaVarietas: string; kodeVarietas: string } | null>(null);
+
+  const handleOpenParamModal = (item: Variety) => {
+    setSelectedVarietyForParam({
+      id: item.id,
+      namaVarietas: item.namaVarietas,
+      kodeVarietas: item.kodeVarietas,
+    });
+    setIsParamModalOpen(true);
+  };
+
   const {
     loading,
     error,
@@ -144,7 +157,15 @@ export default function VarietasPage() {
           {item.deskripsi || '-'}
         </td>
         <td className="p-4 text-center">
-          <div className="flex items-center justify-center">
+          <div className="flex items-center justify-center gap-1">
+            <button
+              type="button"
+              className="ti-btn ti-btn-sm ti-btn-primary me-1"
+              onClick={() => handleOpenParamModal(item)}
+              title="Kelola Parameter Standard Varietas"
+            >
+              <i className="ri-settings-4-line"></i>
+            </button>
             <TableViewBtn id={item.id} onClick={() => handleViewDetail(item)} />
             <TableEditBtn id={item.id} onClick={() => handleOpenEditModal(item)} />
             <TableRemoveBtn id={item.id} onClick={() => handleDeleteVariety(item.id)} />
@@ -427,6 +448,7 @@ export default function VarietasPage() {
         submitText="Simpan Data"
         cancelText="Batal"
         isLoading={isSubmitLoading}
+        maxWidthClass="max-w-2xl"
       >
         <div className="grid grid-cols-2 gap-4">
           <div>
@@ -612,6 +634,14 @@ export default function VarietasPage() {
           />
         </div>
       </CrudModal>
+
+      {/* Variety Parameter Modal */}
+      <VarietyParameterModal
+        isOpen={isParamModalOpen}
+        onClose={() => setIsParamModalOpen(false)}
+        variety={selectedVarietyForParam}
+      />
     </Fragment>
   );
 }
+
