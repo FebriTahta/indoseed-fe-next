@@ -39,6 +39,7 @@ export const MENUITEMS = [
       { path: "/master/varietas", type: "link", active: false, selected: false, title: "Daftar Varietas" },
       { path: "/master/komoditas", type: "link", active: false, selected: false, title: "Daftar Komoditas" },
       { path: "/master/greenhouse", type: "link", active: false, selected: false, title: "Greenhouse" },
+      { path: "/master/tipe-panen", type: "link", active: false, selected: false, title: "Tipe Panen" },
       { path: "/master/petani-mitra", type: "link", active: false, selected: false, title: "Petani Mitra" },
       { path: "/master/supplier", type: "link", active: false, selected: false, title: "Daftar Supplier" },
       { path: "/master/customer", type: "link", active: false, selected: false, title: "Daftar Pelanggan" },
