@@ -6,10 +6,12 @@ interface DetailPanelProps {
   onEdit: (item: PerencanaanProduksi) => void;
   onCetak: (item: PerencanaanProduksi) => void;
   onViewDetail: (item: PerencanaanProduksi) => void;
+  onDelete?: (id: string, no: string) => void;
+  onClose?: () => void;
 }
 
-export default function DetailPanel({ item, onEdit, onCetak, onViewDetail }: DetailPanelProps) {
-  const [activeTab, setActiveTab] = useState<'info' | 'rincian' | 'jadwal' | 'riwayat'>('info');
+export default function DetailPanel({ item, onEdit, onCetak, onViewDetail, onDelete, onClose }: DetailPanelProps) {
+  const [activeTab, setActiveTab] = useState<'info' | 'rincian' | 'petani' | 'jadwal' | 'riwayat'>('info');
 
   if (!item) {
     return (
@@ -72,7 +74,20 @@ export default function DetailPanel({ item, onEdit, onCetak, onViewDetail }: Det
             <p className="text-[11px] text-gray-400 font-medium">ID: {item.noPerencanaan}</p>
           </div>
         </div>
-        <div>{renderStatusBadge(item.status)}</div>
+        <div className="flex items-center gap-2">
+          {renderStatusBadge(item.status)}
+          {onClose && (
+            <button
+              onClick={onClose}
+              className="text-gray-400 hover:text-gray-600 p-1.5 rounded-lg hover:bg-gray-100 transition-colors ml-1"
+              title="Tutup Detail"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Tabs */}
@@ -96,6 +111,16 @@ export default function DetailPanel({ item, onEdit, onCetak, onViewDetail }: Det
           }`}
         >
           Rincian Target
+        </button>
+        <button
+          onClick={() => setActiveTab('petani')}
+          className={`pb-2 px-2.5 transition-colors border-b-2 ${
+            activeTab === 'petani'
+              ? 'border-emerald-600 text-emerald-700 font-semibold'
+              : 'border-transparent text-gray-500 hover:text-gray-800'
+          }`}
+        >
+          Petani {item.petaniDistribusi && item.petaniDistribusi.length > 0 ? `(${item.petaniDistribusi.length})` : ''}
         </button>
         <button
           onClick={() => setActiveTab('jadwal')}
@@ -131,8 +156,8 @@ export default function DetailPanel({ item, onEdit, onCetak, onViewDetail }: Det
                 </svg>
               </div>
               <div className="flex-1">
-                <span className="text-[10px] uppercase font-semibold text-emerald-700 tracking-wider">Produk</span>
-                <h4 className="text-sm font-bold text-gray-900 leading-tight">{item.produk}</h4>
+                <span className="text-[10px] uppercase font-semibold text-emerald-700 tracking-wider">Komoditas & Varietas</span>
+                <h4 className="text-sm font-bold text-gray-900 leading-tight">{item.komoditas} - {item.varietas}</h4>
                 <div className="grid grid-cols-2 gap-2 mt-2 pt-2 border-t border-emerald-200/40 text-[11px]">
                   <div>
                     <span className="text-gray-400 block text-[10px]">Komoditas</span>
@@ -349,6 +374,35 @@ export default function DetailPanel({ item, onEdit, onCetak, onViewDetail }: Det
         </div>
       )}
 
+      {/* Tab: Distribusi Petani */}
+      {activeTab === 'petani' && (
+        <div className="space-y-2 text-xs py-1">
+          {item.petaniDistribusi && item.petaniDistribusi.length > 0 ? (
+            item.petaniDistribusi.map((p, idx) => (
+              <div key={idx} className="p-2.5 bg-gray-50/80 rounded-lg border border-gray-200/70 text-[11px] space-y-1">
+                <div className="flex justify-between items-center">
+                  <span className="font-bold text-gray-800">{p.namaPetani}</span>
+                  <span className="text-[10px] px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 font-semibold">
+                    {p.targetProduksi} kg
+                  </span>
+                </div>
+                <div className="text-gray-500 text-[10px] flex justify-between">
+                  <span>Lahan: {p.namaLahan || '-'}</span>
+                  <span>Luas: {p.luasLahan} ha</span>
+                </div>
+                {p.tanggalTanam && (
+                  <div className="text-[10px] text-gray-400">
+                    Tanam: {new Date(p.tanggalTanam).toLocaleDateString('id-ID')}
+                  </div>
+                )}
+              </div>
+            ))
+          ) : (
+            <p className="text-gray-400 text-center py-6 text-xs">Belum ada data distribusi petani.</p>
+          )}
+        </div>
+      )}
+
       {/* Tab: Jadwal Tanam */}
       {activeTab === 'jadwal' && (
         <div className="space-y-3 text-xs py-2">
@@ -388,10 +442,10 @@ export default function DetailPanel({ item, onEdit, onCetak, onViewDetail }: Det
       )}
 
       {/* Action Buttons */}
-      <div className="grid grid-cols-3 gap-2 mt-5 pt-3 border-t border-gray-100">
+      <div className={`grid ${onDelete ? 'grid-cols-4' : 'grid-cols-3'} gap-2 mt-5 pt-3 border-t border-gray-100`}>
         <button
           onClick={() => onEdit(item)}
-          className="px-2.5 py-2 text-xs font-semibold text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 flex items-center justify-center gap-1.5 transition-colors shadow-xs"
+          className="px-2 py-2 text-xs font-semibold text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 flex items-center justify-center gap-1 transition-colors shadow-xs"
         >
           <svg className="w-3.5 h-3.5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
@@ -401,7 +455,7 @@ export default function DetailPanel({ item, onEdit, onCetak, onViewDetail }: Det
 
         <button
           onClick={() => onCetak(item)}
-          className="px-2.5 py-2 text-xs font-semibold text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 flex items-center justify-center gap-1.5 transition-colors shadow-xs"
+          className="px-2 py-2 text-xs font-semibold text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 flex items-center justify-center gap-1 transition-colors shadow-xs"
         >
           <svg className="w-3.5 h-3.5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
@@ -411,14 +465,27 @@ export default function DetailPanel({ item, onEdit, onCetak, onViewDetail }: Det
 
         <button
           onClick={() => onViewDetail(item)}
-          className="px-2.5 py-2 text-xs font-semibold text-white bg-[#078836] hover:bg-[#06732e] rounded-lg flex items-center justify-center gap-1.5 transition-colors shadow-xs"
+          className="px-2 py-2 text-xs font-semibold text-white bg-[#078836] hover:bg-[#06732e] rounded-lg flex items-center justify-center gap-1 transition-colors shadow-xs"
         >
           <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
           </svg>
-          <span>Lihat Detail</span>
+          <span>Detail</span>
         </button>
+
+        {onDelete && (
+          <button
+            onClick={() => onDelete(item.id, item.noPerencanaan)}
+            className="px-2 py-2 text-xs font-semibold text-red-600 bg-red-50 hover:bg-red-100 border border-red-200 rounded-lg flex items-center justify-center gap-1 transition-colors shadow-xs"
+            title="Hapus Rencana Produksi"
+          >
+            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+            </svg>
+            <span>Hapus</span>
+          </button>
+        )}
       </div>
     </div>
   );

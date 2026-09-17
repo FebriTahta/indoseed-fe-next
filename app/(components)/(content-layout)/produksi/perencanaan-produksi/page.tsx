@@ -1,17 +1,18 @@
 "use client";
 
 import React, { Fragment, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { usePerencanaanProduksi } from '@/app/hooks/usePerencanaanProduksi';
 import StatCards from './component/StatCards';
 import FilterCard from './component/FilterCard';
 import DetailPanel from './component/DetailPanel';
-import ModalTambahRencana from './component/ModalTambahRencana';
 import ModalEditRencana from './component/ModalEditRencana';
 import ModalDetailRencana from './component/ModalDetailRencana';
 import ModalCetakRencana from './component/ModalCetakRencana';
 import { PerencanaanProduksi } from '@/app/types/perencanaanProduksi';
 
 export default function PerencanaanProduksiPage() {
+  const router = useRouter();
   const {
     items,
     loading,
@@ -58,11 +59,11 @@ export default function PerencanaanProduksiPage() {
 
   const [activeActionItem, setActiveActionItem] = useState<PerencanaanProduksi | null>(null);
 
-  const getProductEmoji = (namaProduk: string) => {
-    const lower = namaProduk.toLowerCase();
+  const getCommodityEmoji = (namaKomoditas: string) => {
+    const lower = (namaKomoditas || '').toLowerCase();
     if (lower.includes('kangkung')) return '🌿';
-    if (lower.includes('bayam')) return '🥬';
-    if (lower.includes('tomat')) return '🍅';
+    if (lower.includes('bayam') || lower.includes('daun')) return '🥬';
+    if (lower.includes('tomat') || lower.includes('buah')) return '🍅';
     if (lower.includes('cabe') || lower.includes('cabai')) return '🌶️';
     if (lower.includes('brokoli')) return '🥦';
     if (lower.includes('padi')) return '🌾';
@@ -151,8 +152,8 @@ export default function PerencanaanProduksiPage() {
       {/* 5 Top Stat Cards */}
       <StatCards stats={stats} />
 
-      <div className='grid grid-cols-12 gap-6'>
-        <div className='col-span-8 items-start'>
+      <div className="grid grid-cols-12 gap-6">
+        <div className={selectedItem ? "col-span-12 xl:col-span-8 transition-all duration-300" : "col-span-12 transition-all duration-300"}>
 
           {/* Cari & Filter Card */}
           <FilterCard
@@ -171,12 +172,11 @@ export default function PerencanaanProduksiPage() {
             namaPetaniOption={partnersOption}
             onReset={handleResetFilters}
             onApply={handleApplyFilters}
-            onOpenTambah={() => setIsTambahModalOpen(true)}
+            onOpenTambah={() => router.push('/produksi/perencanaan-produksi/tambah')}
           />
 
-          {/* Left Column: Daftar Perencanaan Produksi Table */}
-          <div className="col-span-12 xl:col-span-8">
-            <div className="bg-white rounded-xl border border-gray-200/80 shadow-sm overflow-hidden mb-6">
+          {/* Table Container */}
+          <div className="bg-white rounded-xl border border-gray-200/80 shadow-sm overflow-hidden mb-6">
               {/* Table Header */}
               <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
                 <div className="flex items-center gap-2">
@@ -241,7 +241,7 @@ export default function PerencanaanProduksiPage() {
                       items.map((row, idx) => {
                         const isSelected = selectedItem?.id === row.id;
                         const rowNumber = (currentPage - 1) * pageSize + idx + 1;
-                        const emoji = getProductEmoji(row.produk);
+                        const emoji = getCommodityEmoji(row.komoditas);
 
                         return (
                           <tr
@@ -274,45 +274,25 @@ export default function PerencanaanProduksiPage() {
                               {renderStatusBadge(row.status)}
                             </td>
                             <td className="py-3 px-3 text-center">
-                              <div className="flex items-center justify-center gap-1.5">
-                                <button
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    handleDetailClick(row);
-                                  }}
-                                  className="p-1 text-gray-400 hover:text-emerald-600 transition-colors"
-                                  title="Lihat Detail"
-                                >
-                                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                                  </svg>
-                                </button>
-                                <button
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    handleEditClick(row);
-                                  }}
-                                  className="p-1 text-gray-400 hover:text-sky-600 transition-colors"
-                                  title="Edit Rencana"
-                                >
-                                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-                                  </svg>
-                                </button>
-                                <button
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    handleDelete(row.id, row.noPerencanaan);
-                                  }}
-                                  className="p-1 text-gray-400 hover:text-red-600 transition-colors"
-                                  title="Hapus Rencana"
-                                >
-                                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                  </svg>
-                                </button>
-                              </div>
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setSelectedItem((prev) => (prev?.id === row.id ? null : row));
+                                }}
+                                className={`w-8 h-8 rounded-lg inline-flex items-center justify-center transition-all ${
+                                  isSelected
+                                    ? 'bg-[#078836] text-white shadow-xs'
+                                    : 'text-gray-400 hover:text-emerald-700 hover:bg-emerald-50'
+                                }`}
+                                title={isSelected ? "Tutup detail perencanaan" : "Lihat detail perencanaan di sebelah kanan"}
+                              >
+                                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                                  <circle cx="12" cy="5" r="1.75" />
+                                  <circle cx="12" cy="12" r="1.75" />
+                                  <circle cx="12" cy="19" r="1.75" />
+                                </svg>
+                              </button>
                             </td>
                           </tr>
                         );
@@ -372,28 +352,25 @@ export default function PerencanaanProduksiPage() {
               </div>
             </div>
           </div>
-        </div>
 
         {/* Right Column: Detail Perencanaan Produksi Panel */}
-        <div className="col-span-4 xl:col-span-4">
-          <DetailPanel
-            item={selectedItem}
-            onEdit={handleEditClick}
-            onCetak={handleCetakClick}
-            onViewDetail={handleDetailClick}
-          />
-        </div>
+        {selectedItem && (
+          <div className="col-span-12 xl:col-span-4 animate-in fade-in slide-in-from-right-4 duration-200">
+            <DetailPanel
+              item={selectedItem}
+              onClose={() => setSelectedItem(null)}
+              onEdit={handleEditClick}
+              onCetak={handleCetakClick}
+              onViewDetail={handleDetailClick}
+              onDelete={handleDelete}
+            />
+          </div>
+        )}
       </div>
 
 
 
       {/* Modals */}
-      <ModalTambahRencana
-        isOpen={isTambahModalOpen}
-        onClose={() => setIsTambahModalOpen(false)}
-        onSuccess={refreshData}
-      />
-
       <ModalEditRencana
         isOpen={isEditModalOpen}
         onClose={() => setIsEditModalOpen(false)}

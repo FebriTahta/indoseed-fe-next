@@ -1,6 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { PerencanaanProduksi } from '@/app/types/perencanaanProduksi';
 import { perencanaanProduksiService } from '@/app/services/perencanaanProduksiService';
+import { commodityService } from '@/app/services/commodityService';
+import { varietyService } from '@/app/services/varietyService';
+import { partnerService } from '@/app/services/partnerService';
+import { Commodity } from '@/app/types/commodity';
+import { Variety } from '@/app/types/variety';
+import { Partner } from '@/app/types/partner';
 import Swal from 'sweetalert2';
 
 interface ModalEditRencanaProps {
@@ -13,14 +19,104 @@ interface ModalEditRencanaProps {
 export default function ModalEditRencana({ isOpen, onClose, onSuccess, item }: ModalEditRencanaProps) {
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState<Partial<PerencanaanProduksi>>({});
+  const [commodities, setCommodities] = useState<Commodity[]>([]);
+  const [varieties, setVarieties] = useState<Variety[]>([]);
+  const [partners, setPartners] = useState<Partner[]>([]);
+  const [loadingMaster, setLoadingMaster] = useState(false);
 
   useEffect(() => {
-    if (item) {
+    if (item && isOpen) {
       setFormData({ ...item });
-    }
-  }, [item]);
 
-  if (!isOpen || !item) return null;
+      setLoadingMaster(true);
+      Promise.all([
+        commodityService.getCommodities({ status: 'Aktif' }).catch(() => ({ data: [] })),
+        partnerService.getPartners({ pageSize: 100, status: 'Aktif' }).catch(() => ({ data: [] })),
+      ])
+        .then(([commRes, partRes]) => {
+          setCommodities(commRes.data || []);
+          setPartners(partRes.data || []);
+        })
+        .finally(() => {
+          setLoadingMaster(false);
+        });
+
+      const commId = item.commodityId || item.commodity?.id;
+      if (commId) {
+        varietyService
+          .getVarieties({ commodityId: commId, status: 'Aktif' })
+          .then((res) => setVarieties(res.data || []))
+          .catch(() => setVarieties([]));
+      } else {
+        setVarieties([]);
+      }
+    }
+  }, [item, isOpen]);
+
+  const handleCommodityChange = async (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const selectedId = e.target.value;
+    const selectedObj = commodities.find((c) => c.id === selectedId);
+    const commName = selectedObj ? selectedObj.namaKomoditas : '';
+
+    setFormData((prev) => ({
+      ...prev,
+      commodityId: selectedId || null,
+      komoditas: commName || prev.komoditas || '',
+      varietyId: null,
+      varietas: '',
+    }));
+
+    if (selectedId) {
+      try {
+        const res = await varietyService.getVarieties({ commodityId: selectedId, status: 'Aktif' });
+        setVarieties(res.data || []);
+      } catch (err) {
+        console.error('Error loading varieties:', err);
+        setVarieties([]);
+      }
+    } else {
+      setVarieties([]);
+    }
+  };
+
+  const handleVarietyChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const selectedId = e.target.value;
+    const selectedObj = varieties.find((v) => v.id === selectedId);
+    setFormData((prev) => ({
+      ...prev,
+      varietyId: selectedId || null,
+      varietas: selectedObj ? selectedObj.namaVarietas : prev.varietas || '',
+    }));
+  };
+
+  const filteredPartners = useMemo(() => {
+    const commId = formData.commodityId;
+    const commName = formData.komoditas;
+
+    if (!commId && !commName) return partners;
+
+    const matched = partners.filter((p) => {
+      if (p.commodityId && commId && p.commodityId === commId) return true;
+      if (p.komoditasUtama && commName) {
+        const pKom = p.komoditasUtama.toLowerCase();
+        const sKom = commName.toLowerCase();
+        if (pKom.includes(sKom) || sKom.includes(pKom)) return true;
+      }
+      return false;
+    });
+
+    return matched.length > 0 ? matched : partners;
+  }, [partners, formData.commodityId, formData.komoditas]);
+
+  const handlePartnerChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const selectedId = e.target.value;
+    const selectedObj = partners.find((p) => p.id === selectedId);
+    setFormData((prev) => ({
+      ...prev,
+      partnerId: selectedId || null,
+      namaPetani: selectedObj ? selectedObj.namaPetani : prev.namaPetani || '',
+    }));
+  };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -39,13 +135,37 @@ export default function ModalEditRencana({ isOpen, onClose, onSuccess, item }: M
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!item.id) return;
+    if (!item?.id) return;
     setLoading(true);
     try {
+      const {
+        id: _id,
+        createdAt: _createdAt,
+        updatedAt: _updatedAt,
+        commodity: _commodity,
+        variety: _variety,
+        partner: _partner,
+        greenhouse: _greenhouse,
+        petaniDistribusi: _petaniDistribusi,
+        produk: _produk,
+        ...cleanData
+      } = formData as any;
+
+      const target = Number(formData.targetProduksi) || 0;
+      const actual = Number(formData.aktualProduksi) || 0;
+      const terpenuhi = target > 0 ? Number(((actual / target) * 100).toFixed(1)) : 0;
+
       const res = await perencanaanProduksiService.update(item.id, {
-        ...formData,
-        targetProduksi: Number(formData.targetProduksi) || 0,
-        aktualProduksi: Number(formData.aktualProduksi) || 0,
+        ...cleanData,
+        commodityId: formData.commodityId || null,
+        komoditas: formData.komoditas || '',
+        varietyId: formData.varietyId || null,
+        varietas: formData.varietas || '',
+        partnerId: formData.partnerId || null,
+        namaPetani: formData.namaPetani || null,
+        targetProduksi: target,
+        aktualProduksi: actual,
+        produksiTerpenuhi: formData.produksiTerpenuhi !== undefined ? Number(formData.produksiTerpenuhi) : terpenuhi,
         targetLuasLahan: Number(formData.targetLuasLahan) || 0,
         lahanTersedia: Number(formData.lahanTersedia) || 0,
         realisasiTanam: Number(formData.realisasiTanam) || 0,
@@ -59,7 +179,7 @@ export default function ModalEditRencana({ isOpen, onClose, onSuccess, item }: M
           text: `Rencana produksi ${item.noPerencanaan} berhasil diperbarui.`,
           icon: 'success',
           timer: 1500,
-          showConfirmButton: false
+          showConfirmButton: false,
         });
         onSuccess();
         onClose();
@@ -71,6 +191,8 @@ export default function ModalEditRencana({ isOpen, onClose, onSuccess, item }: M
     }
   };
 
+  if (!isOpen || !item) return null;
+
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto bg-black/50 backdrop-blur-xs flex items-center justify-center p-4">
       <div className="bg-white rounded-2xl shadow-xl border border-gray-200 w-full max-w-2xl overflow-hidden animate-in fade-in zoom-in duration-200">
@@ -79,7 +201,12 @@ export default function ModalEditRencana({ isOpen, onClose, onSuccess, item }: M
           <div className="flex items-center gap-2.5">
             <div className="w-8 h-8 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center">
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="2"
+                  d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"
+                />
               </svg>
             </div>
             <div>
@@ -100,19 +227,6 @@ export default function ModalEditRencana({ isOpen, onClose, onSuccess, item }: M
         {/* Form */}
         <form onSubmit={handleSubmit} className="p-6 space-y-4 max-h-[80vh] overflow-y-auto text-xs">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {/* Produk */}
-            <div>
-              <label className="block font-semibold text-gray-700 mb-1">Nama Produk Benih *</label>
-              <input
-                type="text"
-                name="produk"
-                required
-                value={formData.produk || ''}
-                onChange={handleChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500"
-              />
-            </div>
-
             {/* No Perencanaan */}
             <div>
               <label className="block font-semibold text-gray-700 mb-1">No. Perencanaan</label>
@@ -126,26 +240,60 @@ export default function ModalEditRencana({ isOpen, onClose, onSuccess, item }: M
 
             {/* Komoditas */}
             <div>
-              <label className="block font-semibold text-gray-700 mb-1">Komoditas</label>
-              <input
-                type="text"
-                name="komoditas"
-                value={formData.komoditas || ''}
-                onChange={handleChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500"
-              />
+              <label className="block font-semibold text-gray-700 mb-1">Komoditas *</label>
+              {commodities.length > 0 ? (
+                <select
+                  name="commodityId"
+                  value={formData.commodityId || ''}
+                  onChange={handleCommodityChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 bg-white"
+                >
+                  <option value="">-- Pilih Komoditas --</option>
+                  {commodities.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.namaKomoditas}
+                    </option>
+                  ))}
+                </select>
+              ) : (
+                <input
+                  type="text"
+                  name="komoditas"
+                  value={formData.komoditas || ''}
+                  onChange={handleChange}
+                  placeholder="Nama Komoditas"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500"
+                />
+              )}
             </div>
 
             {/* Varietas */}
             <div>
-              <label className="block font-semibold text-gray-700 mb-1">Varietas</label>
-              <input
-                type="text"
-                name="varietas"
-                value={formData.varietas || ''}
-                onChange={handleChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500"
-              />
+              <label className="block font-semibold text-gray-700 mb-1">Varietas *</label>
+              {varieties.length > 0 ? (
+                <select
+                  name="varietyId"
+                  value={formData.varietyId || ''}
+                  onChange={handleVarietyChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 bg-white"
+                >
+                  <option value="">-- Pilih Varietas --</option>
+                  {varieties.map((v) => (
+                    <option key={v.id} value={v.id}>
+                      {v.namaVarietas}
+                    </option>
+                  ))}
+                </select>
+              ) : (
+                <input
+                  type="text"
+                  name="varietas"
+                  value={formData.varietas || ''}
+                  onChange={handleChange}
+                  placeholder="Nama Varietas"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500"
+                />
+              )}
             </div>
 
             {/* Target Produksi */}
@@ -155,25 +303,25 @@ export default function ModalEditRencana({ isOpen, onClose, onSuccess, item }: M
                 type="number"
                 name="targetProduksi"
                 required
-                value={formData.targetProduksi || 0}
+                value={formData.targetProduksi ?? 0}
                 onChange={handleChange}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500"
               />
             </div>
 
-            {/* Aktual Produksi (Core Requirement) */}
+            {/* Aktual Produksi */}
             <div>
-              <label className="block font-semibold text-gray-700 mb-1">Aktual Produksi / Terpenuhi (kg) *</label>
+              <label className="block font-semibold text-gray-700 mb-1">Aktual Produksi / Terpenuhi (kg)</label>
               <div className="flex gap-2 items-center">
                 <input
                   type="number"
                   name="aktualProduksi"
-                  value={formData.aktualProduksi || 0}
+                  value={formData.aktualProduksi ?? 0}
                   onChange={handleChange}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500"
                 />
-                <span className="shrink-0 px-2 py-1.5 bg-emerald-50 border border-emerald-200 rounded-md text-emerald-700 font-bold text-[11px]">
-                  {formData.produksiTerpenuhi || 0}%
+                <span className="shrink-0 px-2.5 py-1.5 bg-emerald-50 border border-emerald-200 rounded-md text-emerald-700 font-bold text-[11px]">
+                  {formData.produksiTerpenuhi ?? 0}%
                 </span>
               </div>
             </div>
@@ -185,7 +333,7 @@ export default function ModalEditRencana({ isOpen, onClose, onSuccess, item }: M
                 type="number"
                 step="0.1"
                 name="targetLuasLahan"
-                value={formData.targetLuasLahan || 0}
+                value={formData.targetLuasLahan ?? 0}
                 onChange={handleChange}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500"
               />
@@ -197,7 +345,7 @@ export default function ModalEditRencana({ isOpen, onClose, onSuccess, item }: M
               <input
                 type="number"
                 name="kebutuhanBenih"
-                value={formData.kebutuhanBenih || 0}
+                value={formData.kebutuhanBenih ?? 0}
                 onChange={handleChange}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500"
               />
@@ -211,6 +359,7 @@ export default function ModalEditRencana({ isOpen, onClose, onSuccess, item }: M
                 name="periode"
                 value={formData.periode || ''}
                 onChange={handleChange}
+                placeholder="cth: 01/09/2026 - 17/01/2027"
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500"
               />
             </div>
@@ -229,16 +378,33 @@ export default function ModalEditRencana({ isOpen, onClose, onSuccess, item }: M
               </select>
             </div>
 
-            {/* Petani Mitra */}
+            {/* Petani Mitra Penanggung Jawab */}
             <div>
               <label className="block font-semibold text-gray-700 mb-1">Petani Mitra Penanggung Jawab</label>
-              <input
-                type="text"
-                name="namaPetani"
-                value={formData.namaPetani || ''}
-                onChange={handleChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500"
-              />
+              {partners.length > 0 ? (
+                <select
+                  name="partnerId"
+                  value={formData.partnerId || ''}
+                  onChange={handlePartnerChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 bg-white"
+                >
+                  <option value="">-- Pilih Petani Mitra --</option>
+                  {filteredPartners.map((p) => (
+                    <option key={p.id} value={p.id}>
+                      {p.namaPetani} {p.komoditasUtama ? `(${p.komoditasUtama})` : ''}
+                    </option>
+                  ))}
+                </select>
+              ) : (
+                <input
+                  type="text"
+                  name="namaPetani"
+                  value={formData.namaPetani || ''}
+                  onChange={handleChange}
+                  placeholder="Nama Petani Mitra"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500"
+                />
+              )}
             </div>
 
             {/* Status */}
@@ -302,3 +468,4 @@ export default function ModalEditRencana({ isOpen, onClose, onSuccess, item }: M
     </div>
   );
 }
+

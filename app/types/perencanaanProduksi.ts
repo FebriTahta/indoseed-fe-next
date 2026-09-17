@@ -28,6 +28,27 @@ export interface PerencanaanProduksi {
   diubahOleh?: string | null;
   createdAt?: string;
   updatedAt?: string;
+  petaniDistribusi?: PerencanaanProduksiPetani[];
+  commodity?: any;
+  variety?: any;
+  partner?: any;
+  greenhouse?: any;
+}
+
+export interface PerencanaanProduksiPetani {
+  id?: string;
+  perencanaanProduksiId?: string;
+  partnerId?: string | null;
+  namaPetani: string;
+  greenhouseId?: string | null;
+  namaLahan?: string | null;
+  luasLahan: number; // ha
+  targetProduksi: number; // kg
+  tanggalTanam?: string | null;
+  tanggalPanen?: string | null;
+  keterangan?: string | null;
+  partner?: any;
+  greenhouse?: any;
 }
 
 export interface PerencanaanStats {

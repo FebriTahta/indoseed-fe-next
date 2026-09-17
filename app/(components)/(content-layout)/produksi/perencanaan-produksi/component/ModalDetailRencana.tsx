@@ -33,7 +33,7 @@ export default function ModalDetailRencana({
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h3 className="text-base font-bold text-gray-800">{item.produk}</h3>
+                <h3 className="text-base font-bold text-gray-800">{item.komoditas} - {item.varietas}</h3>
                 <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-100 text-emerald-800">
                   {item.status}
                 </span>

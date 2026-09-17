@@ -47,20 +47,6 @@ export default function FilterCard({
     'Feb 2027 - Mei 2027'
   ];
 
-  const produkOptions = [
-    'Kangkung',
-    'Bayam',
-    'Tomat',
-    'Cabe',
-    'Brokoli',
-    'Padi',
-    'Terong',
-    'Buncis',
-    'Wortel',
-    'Jagung',
-    'Kedelai'
-  ];
-
   const statusOptions = ['Disetujui', 'Draft', 'Proses', 'Selesai'];
 
   const varietasOptions = [

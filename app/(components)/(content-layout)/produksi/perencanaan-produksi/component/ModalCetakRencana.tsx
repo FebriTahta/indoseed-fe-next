@@ -74,12 +74,8 @@ export default function ModalCetakRencana({ isOpen, onClose, item }: ModalCetakR
           <table className="w-full text-xs border border-gray-300 mb-6">
             <tbody>
               <tr className="border-b border-gray-200">
-                <td className="w-1/3 p-2.5 bg-gray-50 font-semibold text-gray-700">Nama Produk Benih</td>
-                <td className="p-2.5 font-bold text-gray-900">{item.produk}</td>
-              </tr>
-              <tr className="border-b border-gray-200">
-                <td className="p-2.5 bg-gray-50 font-semibold text-gray-700">Komoditas & Varietas</td>
-                <td className="p-2.5 text-gray-800">{item.komoditas} - {item.varietas}</td>
+                <td className="w-1/3 p-2.5 bg-gray-50 font-semibold text-gray-700">Komoditas & Varietas</td>
+                <td className="p-2.5 text-gray-800 font-bold">{item.komoditas} - {item.varietas}</td>
               </tr>
               <tr className="border-b border-gray-200">
                 <td className="p-2.5 bg-gray-50 font-semibold text-gray-700">Target Produksi</td>

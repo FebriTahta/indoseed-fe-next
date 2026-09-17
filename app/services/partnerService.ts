@@ -9,6 +9,8 @@ export const partnerService = {
     search?: string;
     kelompokTani?: string;
     status?: string;
+    commodityId?: string;
+    komoditasUtama?: string;
   }) => {
     const response = await api.get<ApiResponse<Partner[]>>('/master/partner', { params });
     return response.data;

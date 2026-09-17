@@ -34,7 +34,6 @@ export function usePerencanaanProduksi() {
   // Filters
   const [search, setSearch] = useState<string>('');
   const [periode, setPeriode] = useState<string>('');
-  const [produk, setProduk] = useState<string>('');
   const [status, setStatus] = useState<string>('');
   const [komoditas, setKomoditas] = useState<string>('');
   const [varietas, setVarietas] = useState<string>('');
@@ -87,14 +86,14 @@ export function usePerencanaanProduksi() {
         setTotalRecords(res.meta.total);
         setTotalPages(res.meta.totalPages);
 
-        // Auto select first item if none selected or if selected item not in current list
+        // Keep selected item synced if already selected
         if (res.data.length > 0) {
           setSelectedItem((prev) => {
             if (prev) {
               const matched = res.data.find((x) => x.id === prev.id);
               if (matched) return matched;
             }
-            return res.data[0];
+            return null;
           });
         }
       } else {
@@ -106,7 +105,7 @@ export function usePerencanaanProduksi() {
     } finally {
       setLoading(false);
     }
-  }, [search, periode, produk, status, komoditas, varietas, namaPetani, currentPage, pageSize]);
+  }, [search, periode, status, komoditas, varietas, namaPetani, currentPage, pageSize]);
 
   useEffect(() => {
     const options = commodities.map((item) => ({
@@ -158,7 +157,6 @@ export function usePerencanaanProduksi() {
   const handleResetFilters = () => {
     setSearch('');
     setPeriode('');
-    setProduk('');
     setStatus('');
     setKomoditas('');
     setVarietas('');
@@ -194,6 +192,7 @@ export function usePerencanaanProduksi() {
             timer: 1500,
             showConfirmButton: false
           });
+          setSelectedItem(null);
           fetchData();
           fetchStats();
         }
