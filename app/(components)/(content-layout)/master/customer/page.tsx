@@ -8,7 +8,7 @@ import StatsWidgets from '../../shared/StatsWidgets';
 import FilterRow, { FilterSelectConfig } from '../../shared/FilterRow';
 import DataTable from '../../shared/DataTable';
 
-import {CustData} from '@/app/types/customer';
+import { CustData } from '@/app/types/customer';
 import { TableEditBtn, TableRemoveBtn } from '../../shared/ActionButtons';
 import DetailPanel, { DetailAction, TabConfig } from '../../shared/DetailPanel';
 import DetailInfo, { DetailItem } from '../../shared/DetailInfo';
@@ -16,76 +16,76 @@ import SpkButton from '@/shared/@spk-reusable-components/uielements/spk-button';
 import CrudModal from '../../shared/CrudModal';
 
 
-  
+
 export default function MasterCustomer() {
   const {
-      customers,
-      loading,
-      error,
-      search,
-      setSearch,
-      filterKategori,
-      setFilterKategori,
-      filterStatus,
-      setFilterStatus,
-      filterWilayah,
-      setFilterWilayah,
-      viewed,
-      setViewed,
-      isDetailLoading,
-      setIsDetailLoading,
-      activeDetailTab,
-      setActiveDetailTab,
-      currentPage,
-      setCurrentPage,
-      pageSize,
-      setPageSize,
-      totalRecords,
-      setTotalRecords,
-      totalPages,
-      setTotalPages,
-      kategoriOptions,
-      statusOptions,
-      wilayahOptions,
-      isTableLoading,
-      isModalOpen,
-      setIsModalOpen,
-      isSubmitLoading,
-      setIsSubmitLoading,
-      handleResetFilters,
-      handleOpenAddModal,
-      handleExportData,
-      handleAdd,
-      handleEdit,
-      handleDelete,
-      handleOpenEditModal,
-      handleSaveModal,
-      handleToggleStatus,
-      modalMode,
-      setModalMode,
-      formValues,
-      setFormValues,
-      statItems
+    customers,
+    loading,
+    error,
+    search,
+    setSearch,
+    filterKategori,
+    setFilterKategori,
+    filterStatus,
+    setFilterStatus,
+    filterWilayah,
+    setFilterWilayah,
+    viewed,
+    setViewed,
+    isDetailLoading,
+    setIsDetailLoading,
+    activeDetailTab,
+    setActiveDetailTab,
+    currentPage,
+    setCurrentPage,
+    pageSize,
+    setPageSize,
+    totalRecords,
+    setTotalRecords,
+    totalPages,
+    setTotalPages,
+    kategoriOptions,
+    statusOptions,
+    wilayahOptions,
+    isTableLoading,
+    isModalOpen,
+    setIsModalOpen,
+    isSubmitLoading,
+    setIsSubmitLoading,
+    handleResetFilters,
+    handleOpenAddModal,
+    handleExportData,
+    handleAdd,
+    handleEdit,
+    handleDelete,
+    handleOpenEditModal,
+    handleSaveModal,
+    handleToggleStatus,
+    modalMode,
+    setModalMode,
+    formValues,
+    setFormValues,
+    statItems
   } = useCustomer();
 
-  
-const CATEGORY_COLORS: Record<string, string> = {
-  'toko_pertanian': 'success',
-  'koperasi': 'primary',
-  'distributor': 'secondary',
-  'perusahaan': 'warning',
-  'kelompok_tani': 'info'
 
-};
+  const CATEGORY_COLORS: Record<string, string> = {
+    'toko_pertanian': 'success',
+    'koperasi': 'primary',
+    'distributor': 'secondary',
+    'perusahaan': 'warning',
+    'kelompok_tani': 'info'
 
-const CATEGORY_LABEL: Record<string, string> = {
-  'toko_pertanian': 'Toko Pertanian',
-  'koperasi': 'Koperasi',
-  'distributor': 'Distributor',
-  'perusahaan': 'Perusahaan',
-  'kelompok_tani': 'Kelompok Tani'
+  };
 
-};
+  const CATEGORY_LABEL: Record<string, string> = {
+    'toko_pertanian': 'Toko Pertanian',
+    'koperasi': 'Koperasi',
+    'distributor': 'Distributor',
+    'perusahaan': 'Perusahaan',
+    'kelompok_tani': 'Kelompok Tani'
+
+  };
 
   // Shared Filters Configuration
   const filterConfig: FilterSelectConfig[] = [
@@ -118,27 +118,27 @@ const CATEGORY_LABEL: Record<string, string> = {
     const isSelected = viewed && viewed.kodeCust === item.kodeCust;
     return (
       <tr className="border-b border-defaultborder" key={item.id}>
-          <td>{index + 1}</td>
-          <td>{item.kodeCust}</td>
-          <td>{item.namaCust}</td>
-          <td>
-            <span className={`badge bg-${CATEGORY_COLORS[item.kategori] || 'default'}/10 text-${CATEGORY_COLORS[item.kategori] || 'default'}`}>
-                {CATEGORY_LABEL[item.kategori] || item.kategori}
-            </span>
-            
-          </td>
-          <td>{item.pic}</td>
-          <td>{item.noTelepon}</td>
-          <td>{item.kota}</td>
-          <td>
-              <span className={`badge ${item.status === 'Aktif' ? 'bg-success/10 text-success' : 'bg-danger/10 text-danger'}`}>
-                  {item.status === 'Aktif' ? 'Active' : 'Non active'}
-              </span>
-          </td>
-          <td>
-              <TableEditBtn id={item.kodeCust} onClick={handleEdit} />
-              <TableRemoveBtn id={item.kodeCust} onClick={handleDelete} />
-          </td>
+        <td>{index + 1}</td>
+        <td>{item.kodeCust}</td>
+        <td>{item.namaCust}</td>
+        <td>
+          <span className={`badge bg-${CATEGORY_COLORS[item.kategori] || 'default'}/10 text-${CATEGORY_COLORS[item.kategori] || 'default'}`}>
+            {CATEGORY_LABEL[item.kategori] || item.kategori}
+          </span>
+
+        </td>
+        <td>{item.pic}</td>
+        <td>{item.noTelepon}</td>
+        <td>{item.kota}</td>
+        <td>
+          <span className={`badge ${item.status === 'Aktif' ? 'bg-success/10 text-success' : 'bg-danger/10 text-danger'}`}>
+            {item.status === 'Aktif' ? 'Active' : 'Non active'}
+          </span>
+        </td>
+        <td>
+          <TableEditBtn id={item.kodeCust} onClick={handleEdit} />
+          <TableRemoveBtn id={item.kodeCust} onClick={handleDelete} />
+        </td>
       </tr>
     );
   };
@@ -188,7 +188,8 @@ const CATEGORY_LABEL: Record<string, string> = {
           { label: 'Limit Credit', value: viewed.limitKredit?.toLocaleString('id-ID', { style: 'currency', currency: 'IDR' }) },
           { label: 'Sisa Credit', value: viewed.remainKredit?.toLocaleString('id-ID', { style: 'currency', currency: 'IDR' }) },
           { label: 'Tanggal Bergabung', value: viewed.createdAt ? new Date(viewed.createdAt).toLocaleDateString('id-ID') : '-' },
-          { label: 'Status', value: (
+          {
+            label: 'Status', value: (
               <span className={`badge rounded font-bold px-1.5 py-0.5 text-[10px] ${viewed.status === 'Aktif'
                 ? 'bg-success/10 text-success'
                 : viewed.status === 'Maintenance'
@@ -276,279 +277,280 @@ const CATEGORY_LABEL: Record<string, string> = {
     }
   };
 
-  
+
 
   if (error) {
-      return <div className="p-4 text-center text-danger">{error}</div>;
+    return <div className="p-4 text-center text-danger">{error}</div>;
   }
 
   return (
     <Fragment>
-        <Pageheader title="Master Data" 
-          currentpage="Master Customer" 
-          activepage="Customers" 
-          mainpage="Customer" 
-          description="Kelola Data Customer" 
-        />
-        
-        {/* Summary Cards */}
-        <StatsWidgets items={statItems} />
+      <Pageheader title="Master Data"
+        currentpage="Master Customer"
+        activepage="Customers"
+        mainpage="Customer"
+        description="Kelola Data Customer"
+      />
 
-        <div className="grid grid-cols-12 gap-x-6">
-          {/* Left Side (Table & Filters) */}
-          <div className={viewed ? 'xl:col-span-8 col-span-12' : 'xl:col-span-12 col-span-12'}>
-            {/* Filters Bar */}
-            <FilterRow
-              search={search}
-              onSearchChange={(val) => { setSearch(val); }}
-              searchPlaceholder="Cari customer..."
-              selectFilters={filterConfig}
-              onReset={handleResetFilters}
-              onExport={handleExportData}
-              onAdd={handleOpenAddModal}
-              addLabel="Tambah Customer"
-            />
-  
-            {/* Table list with pagination */}
-            <DataTable
-              headers={tableHeaders}
-              items={customers}
-              renderRow={renderTableRow}
-              currentPage={currentPage}
-              pageSize={pageSize}
-              totalPages={totalPages}
-              totalRecords={totalRecords}
-              onPageChange={setCurrentPage}
-              onPageSizeChange={(size) => { setPageSize(size); setCurrentPage(1); }}
-              emptyMessage="Tidak ada data customer yang cocok dengan filter pencarian."
-              isLoading={loading}
-            />
-          </div>
-  
-          {/* Right Side (Detail Panel) */}
-          {viewed && (
-            <div className="xl:col-span-4 col-span-12">
-              <DetailPanel
-                title="Detail Lahan"
-                onClose={() => setViewed(null)}
-                statusLabel={viewed.status}
-                statusBgClass={
-                  viewed.status === 'Aktif'
-                    ? 'bg-success'
-                    : viewed.status === 'Maintenance'
-                      ? 'bg-danger'
-                      : 'bg-gray-500'
-                }
-                primaryTitle={viewed.namaCust}
-                secondaryTitle={viewed.kodeCust}
-                tabs={detailTabs}
-                activeTab={activeDetailTab}
-                onTabChange={setActiveDetailTab}
-                renderTabContent={renderDetailTabContent}
-                actions={detailActions}
-                isLoading={isDetailLoading}
-              />
-            </div>
-          )}
+      {/* Summary Cards */}
+      <StatsWidgets items={statItems} />
+
+      <div className="grid grid-cols-12 gap-x-6">
+        {/* Left Side (Table & Filters) */}
+        <div className={viewed ? 'xl:col-span-8 col-span-12' : 'xl:col-span-12 col-span-12'}>
+          {/* Filters Bar */}
+          <FilterRow
+            search={search}
+            onSearchChange={(val) => { setSearch(val); }}
+            searchPlaceholder="Cari customer..."
+            selectFilters={filterConfig}
+            onReset={handleResetFilters}
+            onExport={handleExportData}
+            onAdd={handleOpenAddModal}
+            addLabel="Tambah Customer"
+          />
+
+          {/* Table list with pagination */}
+          <DataTable
+            headers={tableHeaders}
+            items={customers}
+            renderRow={renderTableRow}
+            currentPage={currentPage}
+            pageSize={pageSize}
+            totalPages={totalPages}
+            totalRecords={totalRecords}
+            onPageChange={setCurrentPage}
+            onPageSizeChange={(size) => { setPageSize(size); setCurrentPage(1); }}
+            emptyMessage="Tidak ada data customer yang cocok dengan filter pencarian."
+            isLoading={loading}
+          />
         </div>
 
-        {/* Create / Edit Modal Dialog */}
-        <CrudModal
-          isOpen={isModalOpen}
-          onClose={() => setIsModalOpen(false)}
-          title={modalMode === 'add' ? 'Tambah Customer' : 'Ubah Data Customer'}
-          onSubmit={handleSaveModal}
-          submitText="Simpan Data"
-          cancelText="Batal"
-          isLoading={isSubmitLoading}
-        >
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-xs font-bold text-gray-700 mb-1.5">Kode Customer</label>
-              <input
-                type="text"
-                value={formValues.id}
-                onChange={(e) => setFormValues(prev => ({ ...prev, id: e.target.value }))}
-                className="form-control w-full border border-defaultborder p-2 rounded text-sm bg-gray-50 font-mono"
-                placeholder="CUS-XXX"
-                required
-                disabled={isSubmitLoading}
-              />
-            </div>
-  
-            <div>
-              <label className="block text-xs font-bold text-gray-700 mb-1.5">Nama Customer</label>
-              <input
-                type="text"
-                value={formValues.namaCust}
-                onChange={(e) => setFormValues(prev => ({ ...prev, namaCust: e.target.value }))}
-                className="form-control w-full border border-defaultborder p-2 rounded text-sm focus:border-emerald-500"
-                placeholder="Contoh: John Doe"
-                required
-                disabled={isSubmitLoading}
-              />
-            </div>
+        {/* Right Side (Detail Panel) */}
+        {viewed && (
+          <div className="xl:col-span-4 col-span-12">
+            <DetailPanel
+              title="Detail Lahan"
+              onClose={() => setViewed(null)}
+              statusLabel={viewed.status}
+              statusBgClass={
+                viewed.status === 'Aktif'
+                  ? 'bg-success'
+                  : viewed.status === 'Maintenance'
+                    ? 'bg-danger'
+                    : 'bg-gray-500'
+              }
+              primaryTitle={viewed.namaCust}
+              secondaryTitle={viewed.kodeCust}
+              tabs={detailTabs}
+              activeTab={activeDetailTab}
+              onTabChange={setActiveDetailTab}
+              renderTabContent={renderDetailTabContent}
+              actions={detailActions}
+              isLoading={isDetailLoading}
+            />
           </div>
-  
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-xs font-bold text-gray-700 mb-1.5">Kategori</label>
-              <select
-                value={formValues.kategori}
-                onChange={(e) => {
-                  const val = e.target.value as CustData['kategori'];
-                  setFormValues(prev => ({
-                    ...prev,
-                    kategori: val
-                  }));
-                }}
-                className="form-select w-full border border-defaultborder p-2 rounded text-sm bg-white cursor-pointer"
-                disabled={isSubmitLoading}
-              >
-                {Object.entries(CATEGORY_LABEL).map(([key, label]) => (
-                  <option key={key} value={key}>
-                    {label}
-                  </option>
-                ))}
-                
-              </select>
-            </div>
+        )}
+      </div>
 
-            <div>
-              <label className="block text-xs font-bold text-gray-700 mb-1.5">Kontak Person</label>
-              <input
-                type="text"
-                value={formValues.pic}
-                onChange={(e) => setFormValues(prev => ({ ...prev, pic: e.target.value }))}
-                className="form-control w-full border border-defaultborder p-2 rounded text-sm focus:border-emerald-500"
-                placeholder="Contoh: John Doe"
-                disabled={isSubmitLoading}
-              />
-            </div>
+      {/* Create / Edit Modal Dialog */}
+      <CrudModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        title={modalMode === 'add' ? 'Tambah Customer' : 'Ubah Data Customer'}
+        onSubmit={handleSaveModal}
+        submitText="Simpan Data"
+        cancelText="Batal"
+        isLoading={isSubmitLoading}
+        maxWidthClass="max-w-2xl"
+      >
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className="block text-xs font-bold text-gray-700 mb-1.5">Kode Customer</label>
+            <input
+              type="text"
+              value={formValues.id}
+              onChange={(e) => setFormValues(prev => ({ ...prev, id: e.target.value }))}
+              className="form-control w-full border border-defaultborder p-2 rounded text-sm bg-gray-50 font-mono"
+              placeholder="CUS-XXX"
+              required
+              disabled={isSubmitLoading}
+            />
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-xs font-bold text-gray-700 mb-1.5">Email</label>
-              <input
-                type="text"
-                value={formValues.email}
-                onChange={(e) => setFormValues(prev => ({ ...prev, email: e.target.value }))}
-                className="form-control w-full border border-defaultborder p-2 rounded text-sm focus:border-emerald-500"
-                placeholder="Contoh: johndoe@gmail.com"
-                disabled={isSubmitLoading}
-              />
-            </div>
+          <div>
+            <label className="block text-xs font-bold text-gray-700 mb-1.5">Nama Customer</label>
+            <input
+              type="text"
+              value={formValues.namaCust}
+              onChange={(e) => setFormValues(prev => ({ ...prev, namaCust: e.target.value }))}
+              className="form-control w-full border border-defaultborder p-2 rounded text-sm focus:border-emerald-500"
+              placeholder="Contoh: John Doe"
+              required
+              disabled={isSubmitLoading}
+            />
+          </div>
+        </div>
 
-            <div>
-              <label className="block text-xs font-bold text-gray-700 mb-1.5">No. Telepon</label>
-              <input
-                type="text"
-                value={formValues.noTelepon}
-                onChange={(e) => setFormValues(prev => ({ ...prev, noTelepon: e.target.value }))}
-                className="form-control w-full border border-defaultborder p-2 rounded text-sm focus:border-emerald-500"
-                placeholder="Contoh: 08123456789"
-                disabled={isSubmitLoading}
-              />
-            </div>
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className="block text-xs font-bold text-gray-700 mb-1.5">Kategori</label>
+            <select
+              value={formValues.kategori}
+              onChange={(e) => {
+                const val = e.target.value as CustData['kategori'];
+                setFormValues(prev => ({
+                  ...prev,
+                  kategori: val
+                }));
+              }}
+              className="form-select w-full border border-defaultborder p-2 rounded text-sm bg-white cursor-pointer"
+              disabled={isSubmitLoading}
+            >
+              {Object.entries(CATEGORY_LABEL).map(([key, label]) => (
+                <option key={key} value={key}>
+                  {label}
+                </option>
+              ))}
+
+            </select>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-xs font-bold text-gray-700 mb-1.5">Kota</label>
-              <input
-                type="text"
-                value={formValues.kota}
-                onChange={(e) => setFormValues(prev => ({ ...prev, kota: e.target.value }))}
-                className="form-control w-full border border-defaultborder p-2 rounded text-sm focus:border-emerald-500"
-                placeholder="Contoh: Surabaya"
-                disabled={isSubmitLoading}
-              />
-            </div>
+          <div>
+            <label className="block text-xs font-bold text-gray-700 mb-1.5">Kontak Person</label>
+            <input
+              type="text"
+              value={formValues.pic}
+              onChange={(e) => setFormValues(prev => ({ ...prev, pic: e.target.value }))}
+              className="form-control w-full border border-defaultborder p-2 rounded text-sm focus:border-emerald-500"
+              placeholder="Contoh: John Doe"
+              disabled={isSubmitLoading}
+            />
+          </div>
+        </div>
 
-            <div>
-              <label className="block text-xs font-bold text-gray-700 mb-1.5">Kode Pos</label>
-              <input
-                type="text"
-                value={formValues.kodePos}
-                onChange={(e) => setFormValues(prev => ({ ...prev, kodePos: e.target.value }))}
-                className="form-control w-full border border-defaultborder p-2 rounded text-sm focus:border-emerald-500"
-                placeholder="Contoh: 60000"
-                disabled={isSubmitLoading}
-              />
-            </div>
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className="block text-xs font-bold text-gray-700 mb-1.5">Email</label>
+            <input
+              type="text"
+              value={formValues.email}
+              onChange={(e) => setFormValues(prev => ({ ...prev, email: e.target.value }))}
+              className="form-control w-full border border-defaultborder p-2 rounded text-sm focus:border-emerald-500"
+              placeholder="Contoh: johndoe@gmail.com"
+              disabled={isSubmitLoading}
+            />
           </div>
 
-          <div className="grid grid-cols-1 gap-4">
-            <div>
-              <label className="block text-xs font-bold text-gray-700 mb-1.5">Alamat</label>
-              <textarea 
-                className="form-control -full border border-defaultborder p-2 rounded text-sm focus:border-emerald-500" 
-                value={formValues.alamat}
-                onChange={(e) => setFormValues(prev => ({ ...prev, alamat: e.target.value }))} 
-                id="text-area" 
-                rows={3} 
-                placeholder="Contoh: Jl. Raya Surabaya No. 123"
-                disabled={isSubmitLoading}
-                />
-            </div>
+          <div>
+            <label className="block text-xs font-bold text-gray-700 mb-1.5">No. Telepon</label>
+            <input
+              type="text"
+              value={formValues.noTelepon}
+              onChange={(e) => setFormValues(prev => ({ ...prev, noTelepon: e.target.value }))}
+              className="form-control w-full border border-defaultborder p-2 rounded text-sm focus:border-emerald-500"
+              placeholder="Contoh: 08123456789"
+              disabled={isSubmitLoading}
+            />
+          </div>
+        </div>
 
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className="block text-xs font-bold text-gray-700 mb-1.5">Kota</label>
+            <input
+              type="text"
+              value={formValues.kota}
+              onChange={(e) => setFormValues(prev => ({ ...prev, kota: e.target.value }))}
+              className="form-control w-full border border-defaultborder p-2 rounded text-sm focus:border-emerald-500"
+              placeholder="Contoh: Surabaya"
+              disabled={isSubmitLoading}
+            />
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-xs font-bold text-gray-700 mb-1.5">NPWP</label>
-              <input
-                type="text"
-                value={formValues.NPWP}
-                onChange={(e) => setFormValues(prev => ({ ...prev, NPWP: e.target.value }))}
-                className="form-control w-full border border-defaultborder p-2 rounded text-sm focus:border-emerald-500"
-                placeholder="Contoh: 1234567890123456"
-                disabled={isSubmitLoading}
-              />
-            </div>
+          <div>
+            <label className="block text-xs font-bold text-gray-700 mb-1.5">Kode Pos</label>
+            <input
+              type="text"
+              value={formValues.kodePos}
+              onChange={(e) => setFormValues(prev => ({ ...prev, kodePos: e.target.value }))}
+              className="form-control w-full border border-defaultborder p-2 rounded text-sm focus:border-emerald-500"
+              placeholder="Contoh: 60000"
+              disabled={isSubmitLoading}
+            />
+          </div>
+        </div>
 
-            <div>
-              <label className="block text-xs font-bold text-gray-700 mb-1.5">Top Customer</label>
-              <input 
-                className="form-check-input ms-2 focus:border-emerald-500"
-                type="checkbox" 
-                checked={formValues.isTop}
-                onChange={(e) => setFormValues(prev => ({ ...prev, isTop: e.target.checked }))}
-                disabled={isSubmitLoading}
-              />
-            </div>
+        <div className="grid grid-cols-1 gap-4">
+          <div>
+            <label className="block text-xs font-bold text-gray-700 mb-1.5">Alamat</label>
+            <textarea
+              className="form-control -full border border-defaultborder p-2 rounded text-sm focus:border-emerald-500"
+              value={formValues.alamat}
+              onChange={(e) => setFormValues(prev => ({ ...prev, alamat: e.target.value }))}
+              id="text-area"
+              rows={3}
+              placeholder="Contoh: Jl. Raya Surabaya No. 123"
+              disabled={isSubmitLoading}
+            />
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-xs font-bold text-gray-700 mb-1.5">Limit Kredit</label>
-              <input
-                type="text"
-                value={formValues.limitKredit}
-                onChange={(e) => setFormValues(prev => ({ ...prev, limitKredit: Number(e.target.value) }))}
-                className="form-control w-full border border-defaultborder p-2 rounded text-sm focus:border-emerald-500"
-                placeholder="Contoh: 000000000000000"
-                disabled={isSubmitLoading}
-              />
-            </div>
+        </div>
 
-            <div>
-              <label className="block text-xs font-bold text-gray-700 mb-1.5">Sisa Kredit</label>
-              <input
-                type="text"
-                value={formValues.remainKredit}
-                onChange={(e) => setFormValues(prev => ({ ...prev, remainKredit: Number(e.target.value) }))}
-                className="form-control w-full border border-defaultborder p-2 rounded text-sm focus:border-emerald-500"
-                placeholder="Contoh: 000000000000000"
-                disabled={isSubmitLoading}
-              />
-            </div>
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className="block text-xs font-bold text-gray-700 mb-1.5">NPWP</label>
+            <input
+              type="text"
+              value={formValues.NPWP}
+              onChange={(e) => setFormValues(prev => ({ ...prev, NPWP: e.target.value }))}
+              className="form-control w-full border border-defaultborder p-2 rounded text-sm focus:border-emerald-500"
+              placeholder="Contoh: 1234567890123456"
+              disabled={isSubmitLoading}
+            />
           </div>
 
+          <div>
+            <label className="block text-xs font-bold text-gray-700 mb-1.5">Top Customer</label>
+            <input
+              className="form-check-input ms-2 focus:border-emerald-500"
+              type="checkbox"
+              checked={formValues.isTop}
+              onChange={(e) => setFormValues(prev => ({ ...prev, isTop: e.target.checked }))}
+              disabled={isSubmitLoading}
+            />
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className="block text-xs font-bold text-gray-700 mb-1.5">Limit Kredit</label>
+            <input
+              type="text"
+              value={formValues.limitKredit}
+              onChange={(e) => setFormValues(prev => ({ ...prev, limitKredit: Number(e.target.value) }))}
+              className="form-control w-full border border-defaultborder p-2 rounded text-sm focus:border-emerald-500"
+              placeholder="Contoh: 000000000000000"
+              disabled={isSubmitLoading}
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-bold text-gray-700 mb-1.5">Sisa Kredit</label>
+            <input
+              type="text"
+              value={formValues.remainKredit}
+              onChange={(e) => setFormValues(prev => ({ ...prev, remainKredit: Number(e.target.value) }))}
+              className="form-control w-full border border-defaultborder p-2 rounded text-sm focus:border-emerald-500"
+              placeholder="Contoh: 000000000000000"
+              disabled={isSubmitLoading}
+            />
+          </div>
+        </div>
 
 
-        </CrudModal>
+
+      </CrudModal>
     </Fragment>
   );
 }

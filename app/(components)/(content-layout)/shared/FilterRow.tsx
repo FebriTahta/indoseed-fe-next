@@ -16,7 +16,7 @@ interface FilterRowProps {
   searchPlaceholder?: string;
   selectFilters: FilterSelectConfig[];
   onReset: () => void;
-  onExport: () => void;
+  onExport?: () => void;
   onAdd?: () => void;
   addLabel?: string;
 }
@@ -106,16 +106,18 @@ export default function FilterRow({
 
         {/* Add & Export Actions */}
         <div className="flex items-center justify-between sm:justify-end gap-3 w-full md:w-auto border-t border-gray-200 md:border-t-0 pt-4 md:pt-0">
-          <SpkButton
-            {...({
-              onclickfunc: onExport,
-              style: { backgroundColor: '#1B4E3B', color: 'white' },
-              className: "hover:bg-[#1B4E3B]/80 shadow-sm hover:shadow text-xs font-semibold py-2 px-4 border-0 rounded-md flex items-center gap-1.5 transition-all duration-300",
-              customClass: "ti-btn"
-            } as any)}
-          >
-            <i className="ri-file-excel-2-line text-sm"></i> Export Data
-          </SpkButton>
+          {onExport && (
+            <SpkButton
+              {...({
+                onclickfunc: onExport,
+                style: { backgroundColor: '#1B4E3B', color: 'white' },
+                className: "hover:bg-[#1B4E3B]/80 shadow-sm hover:shadow text-xs font-semibold py-2 px-4 border-0 rounded-md flex items-center gap-1.5 transition-all duration-300",
+                customClass: "ti-btn"
+              } as any)}
+            >
+              <i className="ri-file-excel-2-line text-sm"></i> Export Data
+            </SpkButton>
+          )}
 
           {onAdd && (
             <SpkButton

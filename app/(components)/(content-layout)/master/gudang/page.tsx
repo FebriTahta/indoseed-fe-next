@@ -9,7 +9,7 @@ import StatsWidgets from '../../shared/StatsWidgets';
 import FilterRow, { FilterSelectConfig } from '../../shared/FilterRow';
 import DataTable from '../../shared/DataTable';
 
-import {GudData} from '@/app/types/gudang';
+import { GudData } from '@/app/types/gudang';
 import { TableEditBtn, TableRemoveBtn } from '../../shared/ActionButtons';
 import DetailPanel, { DetailAction, TabConfig } from '../../shared/DetailPanel';
 import DetailInfo, { DetailItem } from '../../shared/DetailInfo';
@@ -17,73 +17,73 @@ import SpkButton from '@/shared/@spk-reusable-components/uielements/spk-button';
 import CrudModal from '../../shared/CrudModal';
 
 
-  
+
 export default function MasterGudang() {
   const {
-      gudangs,
-      loading,
-      error,
-      search,
-      setSearch,
-      filterKategori,
-      setFilterKategori,
-      filterStatus,
-      setFilterStatus,
-      filterWilayah,
-      setFilterWilayah,
-      viewed,
-      setViewed,
-      isDetailLoading,
-      setIsDetailLoading,
-      activeDetailTab,
-      setActiveDetailTab,
-      currentPage,
-      setCurrentPage,
-      pageSize,
-      setPageSize,
-      totalRecords,
-      setTotalRecords,
-      totalPages,
-      setTotalPages,
-      kategoriOptions,
-      statusOptions,
-      isTableLoading,
-      isModalOpen,
-      setIsModalOpen,
-      isSubmitLoading,
-      setIsSubmitLoading,
-      handleResetFilters,
-      handleOpenAddModal,
-      handleExportData,
-      handleAdd,
-      handleEdit,
-      handleDelete,
-      handleOpenEditModal,
-      handleSaveModal,
-      handleToggleStatus,
-      modalMode,
-      setModalMode,
-      formValues,
-      setFormValues,
-      statItems
+    gudangs,
+    loading,
+    error,
+    search,
+    setSearch,
+    filterKategori,
+    setFilterKategori,
+    filterStatus,
+    setFilterStatus,
+    filterWilayah,
+    setFilterWilayah,
+    viewed,
+    setViewed,
+    isDetailLoading,
+    setIsDetailLoading,
+    activeDetailTab,
+    setActiveDetailTab,
+    currentPage,
+    setCurrentPage,
+    pageSize,
+    setPageSize,
+    totalRecords,
+    setTotalRecords,
+    totalPages,
+    setTotalPages,
+    kategoriOptions,
+    statusOptions,
+    isTableLoading,
+    isModalOpen,
+    setIsModalOpen,
+    isSubmitLoading,
+    setIsSubmitLoading,
+    handleResetFilters,
+    handleOpenAddModal,
+    handleExportData,
+    handleAdd,
+    handleEdit,
+    handleDelete,
+    handleOpenEditModal,
+    handleSaveModal,
+    handleToggleStatus,
+    modalMode,
+    setModalMode,
+    formValues,
+    setFormValues,
+    statItems
   } = useGudang();
 
-  
-const CATEGORY_COLORS: Record<string, string> = {
-  'benih': 'success',
-  'packing': 'primary',
-  'treatment': 'secondary',
-  'umum': 'info',
 
-};
+  const CATEGORY_COLORS: Record<string, string> = {
+    'benih': 'success',
+    'packing': 'primary',
+    'treatment': 'secondary',
+    'umum': 'info',
 
-const CATEGORY_LABEL: Record<string, string> = {
-  'benih': 'Gudang Benih',
-  'packing': 'Gudang Packing',
-  'treatment': 'Gudang Bahan Treatment',
-  'umum': 'Gudang Umum',
+  };
 
-};
+  const CATEGORY_LABEL: Record<string, string> = {
+    'benih': 'Gudang Benih',
+    'packing': 'Gudang Packing',
+    'treatment': 'Gudang Bahan Treatment',
+    'umum': 'Gudang Umum',
+
+  };
 
   // Shared Filters Configuration
   const filterConfig: FilterSelectConfig[] = [
@@ -109,24 +109,24 @@ const CATEGORY_LABEL: Record<string, string> = {
     const isSelected = viewed && viewed.kodeGudang === item.kodeGudang;
     return (
       <tr className="border-b border-defaultborder" key={item.id}>
-          <td>{index + 1}</td>
-          <td>{item.kodeGudang}</td>
-          <td>{item.namaGudang}</td>
-          <td>
-            <span className={`badge bg-${CATEGORY_COLORS[item.kategori] || 'default'}/10 text-${CATEGORY_COLORS[item.kategori] || 'default'}`}>
-                {CATEGORY_LABEL[item.kategori] || item.kategori}
-            </span>
-            
-          </td>
-          <td>
-              <span className={`badge ${item.status === 'Aktif' ? 'bg-success/10 text-success' : 'bg-danger/10 text-danger'}`}>
-                  {item.status === 'Aktif' ? 'Active' : 'Non active'}
-              </span>
-          </td>
-          <td>
-              <TableEditBtn id={item.kodeGudang} onClick={handleEdit} />
-              <TableRemoveBtn id={item.kodeGudang} onClick={handleDelete} />
-          </td>
+        <td>{index + 1}</td>
+        <td>{item.kodeGudang}</td>
+        <td>{item.namaGudang}</td>
+        <td>
+          <span className={`badge bg-${CATEGORY_COLORS[item.kategori] || 'default'}/10 text-${CATEGORY_COLORS[item.kategori] || 'default'}`}>
+            {CATEGORY_LABEL[item.kategori] || item.kategori}
+          </span>
+
+        </td>
+        <td>
+          <span className={`badge ${item.status === 'Aktif' ? 'bg-success/10 text-success' : 'bg-danger/10 text-danger'}`}>
+            {item.status === 'Aktif' ? 'Active' : 'Non active'}
+          </span>
+        </td>
+        <td>
+          <TableEditBtn id={item.kodeGudang} onClick={handleEdit} />
+          <TableRemoveBtn id={item.kodeGudang} onClick={handleDelete} />
+        </td>
       </tr>
     );
   };
@@ -167,7 +167,8 @@ const CATEGORY_LABEL: Record<string, string> = {
           { label: 'Nama Gudang', value: viewed.namaGudang },
           { label: 'Kategori', value: viewed.kategori },
           { label: 'Tanggal Bergabung', value: viewed.createdAt ? new Date(viewed.createdAt).toLocaleDateString('id-ID') : '-' },
-          { label: 'Status', value: (
+          {
+            label: 'Status', value: (
               <span className={`badge rounded font-bold px-1.5 py-0.5 text-[10px] ${viewed.status === 'Aktif'
                 ? 'bg-success/10 text-success'
                 : viewed.status === 'Maintenance'
@@ -255,164 +256,165 @@ const CATEGORY_LABEL: Record<string, string> = {
     }
   };
 
-  
+
 
   if (error) {
-      return <div className="p-4 text-center text-danger">{error}</div>;
+    return <div className="p-4 text-center text-danger">{error}</div>;
   }
 
   return (
     <Fragment>
-        <Pageheader title="Master Data" 
-          currentpage="Master Gudang" 
-          activepage="Gudang" 
-          mainpage="Gudang" 
-          description="Kelola Data Gudang" 
-        />
-        
-        {/* Summary Cards */}
-        <StatsWidgets items={statItems} />
+      <Pageheader title="Master Data"
+        currentpage="Master Gudang"
+        activepage="Gudang"
+        mainpage="Gudang"
+        description="Kelola Data Gudang"
+      />
 
-        <div className="grid grid-cols-12 gap-x-6">
-          {/* Left Side (Table & Filters) */}
-          <div className={viewed ? 'xl:col-span-8 col-span-12' : 'xl:col-span-12 col-span-12'}>
-            {/* Filters Bar */}
-            <FilterRow
-              search={search}
-              onSearchChange={(val) => { setSearch(val); }}
-              searchPlaceholder="Cari gudang..."
-              selectFilters={filterConfig}
-              onReset={handleResetFilters}
-              onExport={handleExportData}
-              onAdd={handleOpenAddModal}
-              addLabel="Tambah Gudang"
-            />
-  
-            {/* Table list with pagination */}
-            <DataTable
-              headers={tableHeaders}
-              items={gudangs}
-              renderRow={renderTableRow}
-              currentPage={currentPage}
-              pageSize={pageSize}
-              totalPages={totalPages}
-              totalRecords={totalRecords}
-              onPageChange={setCurrentPage}
-              onPageSizeChange={(size) => { setPageSize(size); setCurrentPage(1); }}
-              emptyMessage="Tidak ada data customer yang cocok dengan filter pencarian."
-              isLoading={loading}
-            />
-          </div>
-  
-          {/* Right Side (Detail Panel) */}
-          {viewed && (
-            <div className="xl:col-span-4 col-span-12">
-              <DetailPanel
-                title="Detail Gudang"
-                onClose={() => setViewed(null)}
-                statusLabel={viewed.status}
-                statusBgClass={
-                  viewed.status === 'Aktif'
-                    ? 'bg-success'
-                    : viewed.status === 'Maintenance'
-                      ? 'bg-danger'
-                      : 'bg-gray-500'
-                }
-                primaryTitle={viewed.namaGudang}
-                secondaryTitle={viewed.kodeGudang}
-                tabs={detailTabs}
-                activeTab={activeDetailTab}
-                onTabChange={setActiveDetailTab}
-                renderTabContent={renderDetailTabContent}
-                actions={detailActions}
-                isLoading={isDetailLoading}
-              />
-            </div>
-          )}
+      {/* Summary Cards */}
+      <StatsWidgets items={statItems} />
+
+      <div className="grid grid-cols-12 gap-x-6">
+        {/* Left Side (Table & Filters) */}
+        <div className={viewed ? 'xl:col-span-8 col-span-12' : 'xl:col-span-12 col-span-12'}>
+          {/* Filters Bar */}
+          <FilterRow
+            search={search}
+            onSearchChange={(val) => { setSearch(val); }}
+            searchPlaceholder="Cari gudang..."
+            selectFilters={filterConfig}
+            onReset={handleResetFilters}
+            onExport={handleExportData}
+            onAdd={handleOpenAddModal}
+            addLabel="Tambah Gudang"
+          />
+
+          {/* Table list with pagination */}
+          <DataTable
+            headers={tableHeaders}
+            items={gudangs}
+            renderRow={renderTableRow}
+            currentPage={currentPage}
+            pageSize={pageSize}
+            totalPages={totalPages}
+            totalRecords={totalRecords}
+            onPageChange={setCurrentPage}
+            onPageSizeChange={(size) => { setPageSize(size); setCurrentPage(1); }}
+            emptyMessage="Tidak ada data customer yang cocok dengan filter pencarian."
+            isLoading={loading}
+          />
         </div>
 
-        {/* Create / Edit Modal Dialog */}
-        <CrudModal
-          isOpen={isModalOpen}
-          onClose={() => setIsModalOpen(false)}
-          title={modalMode === 'add' ? 'Tambah Gudang' : 'Ubah Data Gudang'}
-          onSubmit={handleSaveModal}
-          submitText="Simpan Data"
-          cancelText="Batal"
-          isLoading={isSubmitLoading}
-        >
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-xs font-bold text-gray-700 mb-1.5">Kode Gudang</label>
-              <input
-                type="text"
-                value={formValues.id}
-                onChange={(e) => setFormValues(prev => ({ ...prev, id: e.target.value }))}
-                className="form-control w-full border border-defaultborder p-2 rounded text-sm bg-gray-50 font-mono"
-                placeholder="GDN-XXX"
-                required
-                disabled={isSubmitLoading}
-              />
-            </div>
-  
-            <div>
-              <label className="block text-xs font-bold text-gray-700 mb-1.5">Nama Gudang</label>
-              <input
-                type="text"
-                value={formValues.namaGudang}
-                onChange={(e) => setFormValues(prev => ({ ...prev, namaGudang: e.target.value }))}
-                className="form-control w-full border border-defaultborder p-2 rounded text-sm focus:border-emerald-500"
-                placeholder="Contoh: John Doe"
-                required
-                disabled={isSubmitLoading}
-              />
-            </div>
+        {/* Right Side (Detail Panel) */}
+        {viewed && (
+          <div className="xl:col-span-4 col-span-12">
+            <DetailPanel
+              title="Detail Gudang"
+              onClose={() => setViewed(null)}
+              statusLabel={viewed.status}
+              statusBgClass={
+                viewed.status === 'Aktif'
+                  ? 'bg-success'
+                  : viewed.status === 'Maintenance'
+                    ? 'bg-danger'
+                    : 'bg-gray-500'
+              }
+              primaryTitle={viewed.namaGudang}
+              secondaryTitle={viewed.kodeGudang}
+              tabs={detailTabs}
+              activeTab={activeDetailTab}
+              onTabChange={setActiveDetailTab}
+              renderTabContent={renderDetailTabContent}
+              actions={detailActions}
+              isLoading={isDetailLoading}
+            />
           </div>
-  
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-xs font-bold text-gray-700 mb-1.5">Kategori</label>
-              <select
-                value={formValues.kategori}
-                onChange={(e) => {
-                  const val = e.target.value as GudData['kategori'];
-                  setFormValues(prev => ({
-                    ...prev,
-                    kategori: val
-                  }));
-                }}
-                className="form-select w-full border border-defaultborder p-2 rounded text-sm bg-white cursor-pointer"
-                disabled={isSubmitLoading}
-              >
-                {Object.entries(CATEGORY_LABEL).map(([key, label]) => (
-                  <option key={key} value={key}>
-                    {label}
-                  </option>
-                ))}
-                
-              </select>
-            </div>
+        )}
+      </div>
 
-          </div>
-          
-          <div className="grid grid-cols-1 gap-4">
-            <div>
-              <label className="block text-xs font-bold text-gray-700 mb-1.5">Alamat</label>
-              <textarea 
-                className="form-control -full border border-defaultborder p-2 rounded text-sm focus:border-emerald-500" 
-                value={formValues.alamat}
-                onChange={(e) => setFormValues(prev => ({ ...prev, alamat: e.target.value }))} 
-                id="text-area" 
-                rows={3} 
-                placeholder="Contoh: Jl. Raya Surabaya No. 123"
-                disabled={isSubmitLoading}
-                />
-            </div>
-
+      {/* Create / Edit Modal Dialog */}
+      <CrudModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        title={modalMode === 'add' ? 'Tambah Gudang' : 'Ubah Data Gudang'}
+        onSubmit={handleSaveModal}
+        submitText="Simpan Data"
+        cancelText="Batal"
+        isLoading={isSubmitLoading}
+        maxWidthClass="max-w-2xl"
+      >
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className="block text-xs font-bold text-gray-700 mb-1.5">Kode Gudang</label>
+            <input
+              type="text"
+              value={formValues.id}
+              onChange={(e) => setFormValues(prev => ({ ...prev, id: e.target.value }))}
+              className="form-control w-full border border-defaultborder p-2 rounded text-sm bg-gray-50 font-mono"
+              placeholder="GDN-XXX"
+              required
+              disabled={isSubmitLoading}
+            />
           </div>
 
+          <div>
+            <label className="block text-xs font-bold text-gray-700 mb-1.5">Nama Gudang</label>
+            <input
+              type="text"
+              value={formValues.namaGudang}
+              onChange={(e) => setFormValues(prev => ({ ...prev, namaGudang: e.target.value }))}
+              className="form-control w-full border border-defaultborder p-2 rounded text-sm focus:border-emerald-500"
+              placeholder="Contoh: John Doe"
+              required
+              disabled={isSubmitLoading}
+            />
+          </div>
+        </div>
 
-        </CrudModal>
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className="block text-xs font-bold text-gray-700 mb-1.5">Kategori</label>
+            <select
+              value={formValues.kategori}
+              onChange={(e) => {
+                const val = e.target.value as GudData['kategori'];
+                setFormValues(prev => ({
+                  ...prev,
+                  kategori: val
+                }));
+              }}
+              className="form-select w-full border border-defaultborder p-2 rounded text-sm bg-white cursor-pointer"
+              disabled={isSubmitLoading}
+            >
+              {Object.entries(CATEGORY_LABEL).map(([key, label]) => (
+                <option key={key} value={key}>
+                  {label}
+                </option>
+              ))}
+
+            </select>
+          </div>
+
+        </div>
+
+        <div className="grid grid-cols-1 gap-4">
+          <div>
+            <label className="block text-xs font-bold text-gray-700 mb-1.5">Alamat</label>
+            <textarea
+              className="form-control -full border border-defaultborder p-2 rounded text-sm focus:border-emerald-500"
+              value={formValues.alamat}
+              onChange={(e) => setFormValues(prev => ({ ...prev, alamat: e.target.value }))}
+              id="text-area"
+              rows={3}
+              placeholder="Contoh: Jl. Raya Surabaya No. 123"
+              disabled={isSubmitLoading}
+            />
+          </div>
+
+        </div>
+
+
+      </CrudModal>
     </Fragment>
   );
 }
