@@ -38,6 +38,7 @@ export default function PemeriksaanLahanPage() {
     handleCloseAddModal,
     eligibleJadwals,
     loadingEligible,
+    refreshData,
   } = usePemeriksaanLahan();
 
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
@@ -372,12 +373,13 @@ export default function PemeriksaanLahanPage() {
         )}
       </div>
 
-      {/* Modal Tambah Pemeriksaan (Placeholder as requested) */}
+      {/* Modal Tambah Pemeriksaan (5-Step Wizard) */}
       <ModalTambahPemeriksaan
         isOpen={isAddModalOpen}
         onClose={handleCloseAddModal}
         eligibleJadwals={eligibleJadwals}
         loadingEligible={loadingEligible}
+        onSuccess={refreshData}
       />
       </div>
     </Fragment>

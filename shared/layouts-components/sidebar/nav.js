@@ -59,8 +59,8 @@ export const MENUITEMS = [
       { path: "/produksi/jadwaltanam", type: "link", active: false, selected: false, title: "Jadwal Tanam" },
       { path: "/produksi/persetujuan-produksi", type: "link", active: false, selected: false, title: "Persetujuan Produksi" },
       { path: "/produksi/pemeriksaan-lahan", type: "link", active: false, selected: false, title: "Pemeriksaan Lahan" },
-      { path: "/produksi/monitoringgreenhouse", type: "link", active: false, selected: false, title: "Monitoring Pertumbuhan" },
       { path: "/produksi/panen", type: "link", active: false, selected: false, title: "Panen" },
+      { path: "/produksi/monitoringgreenhouse", type: "link", active: false, selected: false, title: "Monitoring Pertumbuhan" },
       { path: "/produksi/batchproduksi", type: "link", active: false, selected: false, title: "Batch Produksi" },
       { path: "/produksi/pengeringan", type: "link", active: false, selected: false, title: "Proses Pengolahan" },
     ]
