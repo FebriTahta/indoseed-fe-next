@@ -27,10 +27,14 @@ module.exports = {
     },
     borderRadius: {
       none: "0",
+      xs: "0.125rem",
       sm: "0.25rem",
+      DEFAULT: "0.25rem",
       md: "0.5rem",
       lg: "0.75rem",
       xl: "1rem",
+      "2xl": "1.25rem",
+      "3xl": "1.5rem",
       full: "9999px",
     },
     fontFamily: {
@@ -157,6 +161,12 @@ module.exports = {
       },
       boxShadow: {
          defaultshadow:"0px 6px 16px 2px rgba(0, 0, 0, 0.05)",
+         '2xs': '0 1px 2px 0 rgba(0, 0, 0, 0.03)',
+         'xs': '0 1px 2px 0 rgba(0, 0, 0, 0.05)',
+      },
+      backdropBlur: {
+        '2xs': '1px',
+        'xs': '2px',
       },
       backgroundImage: {
         "instagram":"linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%)",

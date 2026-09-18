@@ -24,7 +24,7 @@ export default function RingkasanKomoditas({ jadwalTanams = [] }: RingkasanKomod
     let totalLuas = 0;
 
     jadwalTanams.forEach(item => {
-      const name = item.lahanKomoditas?.komoditas || item.lahanKomoditas?.namaKomoditas || 'Lainnya';
+      const name = item.komoditas || item.lahanKomoditas?.komoditas || (item.lahanKomoditas as any)?.namaKomoditas || 'Lainnya';
       const luas = Number(item.lahanKomoditas?.luasTanam || 0);
       grouped[name] = (grouped[name] || 0) + luas;
       totalLuas += luas;

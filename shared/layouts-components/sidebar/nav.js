@@ -55,8 +55,10 @@ export const MENUITEMS = [
     active: false,
     children: [
       { path: "/produksi/perencanaan-produksi", type: "link", active: false, selected: false, title: "Perencanaan Produksi" },
+      { path: "/produksi/kontrak-panen", type: "link", active: false, selected: false, title: "Kontrak Panen" },
       { path: "/produksi/jadwaltanam", type: "link", active: false, selected: false, title: "Jadwal Tanam" },
-      { path: "/produksi/monitoringlahan", type: "link", active: false, selected: false, title: "Realisasi Tanam" },
+      { path: "/produksi/persetujuan-produksi", type: "link", active: false, selected: false, title: "Persetujuan Produksi" },
+      { path: "/produksi/pemeriksaan-lahan", type: "link", active: false, selected: false, title: "Pemeriksaan Lahan" },
       { path: "/produksi/monitoringgreenhouse", type: "link", active: false, selected: false, title: "Monitoring Pertumbuhan" },
       { path: "/produksi/panen", type: "link", active: false, selected: false, title: "Panen" },
       { path: "/produksi/batchproduksi", type: "link", active: false, selected: false, title: "Batch Produksi" },
