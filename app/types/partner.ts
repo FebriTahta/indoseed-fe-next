@@ -6,6 +6,8 @@ export interface Partner {
   namaPetani: string;
   kelompokTani: string;
   komoditasUtama: string;
+  commodityId?: string | null;
+  commodity?: any;
   noKtp: string | null;
   noTelepon: string | null;
   alamat: string | null;

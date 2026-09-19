@@ -1,55 +1,86 @@
 import api from '@/app/lib/axios';
+import {
+  PanenItem,
+  PanenStats,
+  RingkasanKomoditasItem,
+  ChartPanenData,
+  ReferensiJadwalTanamPanen,
+  CreatePanenPayload,
+} from '../types/panen';
 
 const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8080/api';
 
-export interface PanenItem {
-  id: string;
-  kodePanen: string;
-  jadwalTanamId?: string;
-  kesiapanPanenId?: string;
-  commodityId?: string;
-  varietyId?: string;
-  kesiapanLahanId?: string;
-  komoditas: string;
-  varietas: string;
-  lahan: string;
-  tanggalPanen: string;
-  luasHa: number;
-  produksiKg: number;
-  hasilKgHa: number;
-  status: 'Selesai' | 'Berlangsung' | 'Belum Mulai' | string;
-  penanggungJawab?: string;
-  metodePanen?: string;
-  produksiKotorKg?: number;
-  kadarAir?: number;
-  kebersihan?: number;
-  catatan?: string;
-  dokumen?: string | any[];
-  createdAt?: string;
-  updatedAt?: string;
+export type {
+  PanenItem,
+  PanenStats,
+  RingkasanKomoditasItem,
+  ChartPanenData,
+  ReferensiJadwalTanamPanen,
+  CreatePanenPayload,
+};
+
+export interface GetPanenParams {
+  page?: number;
+  limit?: number;
+  search?: string;
+  komoditas?: string;
+  varietas?: string;
+  status?: string;
+  jenisHasil?: string;
+  petani?: string;
+  startDate?: string;
+  endDate?: string;
+}
+
+export interface PanenListResponse {
+  status: string;
+  data: PanenItem[];
+  meta: {
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+  };
+  stats: PanenStats;
 }
 
 export const panenService = {
-  getPanenList: async (params?: {
-    page?: number;
-    limit?: number;
-    search?: string;
-    komoditas?: string;
-    varietas?: string;
-    status?: string;
-    startDate?: string;
-    endDate?: string;
-  }) => {
+  getPanenList: async (params?: GetPanenParams): Promise<PanenListResponse> => {
     const response = await api.get(`${baseUrl}/produksi/panen`, { params });
     return response.data;
   },
 
-  getPanenById: async (id: string) => {
+  getPanenById: async (id: string): Promise<{ status: string; data: PanenItem }> => {
     const response = await api.get(`${baseUrl}/produksi/panen/${id}`);
     return response.data;
   },
 
-  createPanen: async (data: Partial<PanenItem>) => {
+  getStats: async (): Promise<{ status: string; data: PanenStats }> => {
+    const response = await api.get(`${baseUrl}/produksi/panen/stats`);
+    return response.data;
+  },
+
+  getRingkasanKomoditas: async (): Promise<{ status: string; data: RingkasanKomoditasItem[] }> => {
+    const response = await api.get(`${baseUrl}/produksi/panen/ringkasan-komoditas`);
+    return response.data;
+  },
+
+  getChartData: async (period = '7_hari'): Promise<{ status: string; data: ChartPanenData }> => {
+    const response = await api.get(`${baseUrl}/produksi/panen/chart-data`, { params: { period } });
+    return response.data;
+  },
+
+  getReferensiJadwalTanam: async (): Promise<{ status: string; data: ReferensiJadwalTanamPanen[]; total: number }> => {
+    const response = await api.get(`${baseUrl}/produksi/panen/referensi-jadwal-tanam`);
+    return response.data;
+  },
+
+  getNextKode: async (): Promise<{ status: string; kodePanen: string }> => {
+    const response = await api.get(`${baseUrl}/produksi/panen/next-code`);
+    return response.data;
+  },
+
+  createPanen: async (data: Partial<CreatePanenPayload | PanenItem>) => {
     const response = await api.post(`${baseUrl}/produksi/panen`, data);
     return response.data;
   },
