@@ -1,7 +1,7 @@
 import React from 'react';
 
 interface DataTableProps<T> {
-  headers: string[];
+  headers: React.ReactNode[];
   items: T[];
   renderRow: (item: T, index: number) => React.ReactNode;
   currentPage: number;

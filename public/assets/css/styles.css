@@ -67,8 +67,8 @@ typography
 @import url("https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap");
 :root {
   --body-bg:	249 250 252;
-  --primary:	92 103 247;
-  --primary-rgb:	92, 103, 247;
+  --primary:	22 101 52;
+  --primary-rgb:	22, 101, 52;
   --primary-tint1-rgb:	227 84 212;
   --primary-tint2-rgb:	255 93 159;
   --primary-tint3-rgb:	255 142 111;

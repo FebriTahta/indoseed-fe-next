@@ -87,14 +87,14 @@ export const EditIconButton: React.FC<IconButtonProps> = ({ onClick, title = "Ed
   );
 };
 
-export const ExportButton: React.FC<BaseButtonProps> = ({ onClick, className = '' }) => {
+export const ExportButton: React.FC<BaseButtonProps & { label?: string }> = ({ onClick, label = "Export Laporan", className = '' }) => {
   return (
     <SpkButton
       onclickfunc={onClick}
       variant="light"
-      customClass={`flex items-center gap-2 px-4 py-2 rounded-lg shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all bg-white border border-gray-200 text-gray-700 ${className}`}
+      customClass={`flex items-center gap-2 px-4 py-2.5 rounded-lg shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all bg-white border border-gray-200 text-gray-700 ${className}`}
     >
-      <i className="ri-download-2-line text-lg"></i> <span className="font-medium">Export Laporan</span>
+      <i className="ri-download-2-line text-lg"></i> <span className="font-medium">{label}</span>
     </SpkButton>
   );
 };
@@ -165,5 +165,31 @@ export const DeleteIconButton: React.FC<IconButtonProps> = ({ onClick, title = "
     >
       <i className="ri-delete-bin-line text-lg"></i>
     </button>
+  );
+};
+
+export const SaveButton: React.FC<BaseButtonProps & { label?: string }> = ({ onClick, label = "Simpan", className = '', disabled = false }) => {
+  return (
+    <SpkButton
+      onclickfunc={onClick}
+      variant="primary"
+      disabled={disabled}
+      customClass={`flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all font-semibold bg-[#1B4E3B] text-white border-transparent ${className}`}
+    >
+      <i className="ri-save-line text-lg"></i> <span className="font-medium">{label}</span>
+    </SpkButton>
+  );
+};
+
+export const CancelButton: React.FC<BaseButtonProps & { label?: string }> = ({ onClick, label = "Batal", className = '', disabled = false }) => {
+  return (
+    <SpkButton
+      onclickfunc={onClick}
+      variant="outline-primary"
+      disabled={disabled}
+      customClass={`flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all font-semibold bg-white text-[#1B4E3B] border border-[#1B4E3B] ${className}`}
+    >
+      <i className="ri-close-line text-lg"></i> <span className="font-medium">{label}</span>
+    </SpkButton>
   );
 };

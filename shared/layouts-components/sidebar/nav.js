@@ -72,6 +72,8 @@ export const MENUITEMS = [
     type: "sub",
     active: false,
     children: [
+      { path: "/qc/permintaan-pengujian", type: "link", active: false, selected: false, title: "Permintaan Pengujian" },
+      { path: "/qc/pemeriksaan-pengujian", type: "link", active: false, selected: false, title: "Pemeriksaan / Pengujian" },
       { path: "/qc/daya-tumbuh", type: "link", active: false, selected: false, title: "Daya Tumbuh" },
       { path: "/qc/kadar-air", type: "link", active: false, selected: false, title: "Kadar Air" },
       { path: "/qc/kemurnian", type: "link", active: false, selected: false, title: "Kemurnian" },
