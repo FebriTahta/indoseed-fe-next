@@ -39,7 +39,7 @@ export function useMasterParameter() {
   }>({
     kode: '',
     nama: '',
-    namaModul: 'UMUM',
+    namaModul: 'OFF_TYPE',
     tipeNilai: 'NUMBER',
     satuan: '',
     batasLulus: '',
@@ -109,7 +109,7 @@ export function useMasterParameter() {
     setFormValues({
       kode: '',
       nama: '',
-      namaModul: 'UMUM',
+      namaModul: 'OFF_TYPE',
       tipeNilai: 'NUMBER',
       satuan: '',
       batasLulus: '',
@@ -126,7 +126,7 @@ export function useMasterParameter() {
     setFormValues({
       kode: param.kode,
       nama: param.nama,
-      namaModul: param.namaModul,
+      namaModul: param.namaModul || 'OFF_TYPE',
       tipeNilai: param.tipeNilai,
       satuan: param.satuan || '',
       batasLulus: param.batasLulus || '',

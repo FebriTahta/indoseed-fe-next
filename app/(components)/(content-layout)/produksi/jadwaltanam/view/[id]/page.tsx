@@ -252,17 +252,26 @@ export default function ViewJadwalTanamPage({ params }: ViewPageProps) {
               </button>
             </div>
 
-            <div className="text-xs text-gray-500">
-              Tanggal Dibuat:{' '}
-              <span className="font-semibold text-gray-700">
-                {formatDateDisplay(item.createdAt || new Date('2026-06-08'))} oleh {item.dibuatOleh || 'Admin'}
-              </span>
+            <div className="text-xs text-gray-500 flex flex-wrap items-center gap-2 sm:gap-3">
+              <div>
+                Penanggung Jawab:{' '}
+                <span className="font-semibold text-emerald-700">
+                  {item.penanggungJawab || item.partner?.kelompokTani || '-'}
+                </span>
+              </div>
+              <span className="hidden sm:inline text-gray-300">|</span>
+              <div>
+                Tanggal Dibuat:{' '}
+                <span className="font-semibold text-gray-700">
+                  {formatDateDisplay(item.createdAt || new Date('2026-06-08'))} oleh {item.dibuatOleh || 'Admin'}
+                </span>
+              </div>
             </div>
           </div>
 
           {/* 4 Cards Row */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            {/* Petani Mitra */}
+            {/* Petani Mitra & PJ */}
             <div className="p-3.5 rounded-xl bg-gray-50/70 border border-gray-100 flex items-start gap-3">
               <div className="w-9 h-9 rounded-lg bg-white border border-gray-200 text-emerald-700 flex items-center justify-center shrink-0 shadow-2xs">
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -272,7 +281,10 @@ export default function ViewJadwalTanamPage({ params }: ViewPageProps) {
               <div className="space-y-0.5">
                 <span className="text-[11px] font-semibold text-gray-500 block">Petani Mitra</span>
                 <div className="text-xs font-bold text-gray-900">{farmerName} ({farmerCode})</div>
-                <div className="text-[11px] text-emerald-700 font-medium">{totalLahanCount} Lahan</div>
+                <div className="text-[11px] text-gray-600 font-medium">
+                  PJ: <span className="text-emerald-700 font-semibold">{item.penanggungJawab || item.partner?.kelompokTani || '-'}</span>
+                </div>
+                <div className="text-[10px] text-gray-400">{totalLahanCount} Lahan Terdaftar</div>
               </div>
             </div>
 

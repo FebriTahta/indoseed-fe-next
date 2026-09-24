@@ -4,6 +4,7 @@ import jadwalTanamService from '@/app/services/jadwalTanamService';
 import { partnerService } from '@/app/services/partnerService';
 import { commodityService } from '@/app/services/commodityService';
 import { varietyService } from '@/app/services/varietyService';
+import { penanggungJawabService } from '@/app/services/penanggungJawabService';
 import { JadwalTanam, JadwalTanamStats } from '@/app/types/jadwalTanam';
 import { toast } from 'react-toastify';
 
@@ -34,11 +35,13 @@ export function useJadwalTanams() {
   const [search, setSearch] = useState('');
   const [filterPeriode, setFilterPeriode] = useState<string>('all');
   const [filterStatus, setFilterStatus] = useState<string>('all');
+  const [filterPenanggungJawab, setFilterPenanggungJawab] = useState<string>('all');
   const [filterPetani, setFilterPetani] = useState<string>('all');
   const [filterKomoditas, setFilterKomoditas] = useState<string>('all');
   const [filterVarietas, setFilterVarietas] = useState<string>('all');
 
   // Master Data Options
+  const [penanggungJawabList, setPenanggungJawabList] = useState<any[]>([]);
   const [partnerList, setPartnerList] = useState<any[]>([]);
   const [commodityList, setCommodityList] = useState<any[]>([]);
   const [varietyList, setVarietyList] = useState<any[]>([]);
@@ -56,11 +59,13 @@ export function useJadwalTanams() {
   useEffect(() => {
     async function loadMasters() {
       try {
-        const [partRes, commRes, varRes] = await Promise.all([
+        const [pjRes, partRes, commRes, varRes] = await Promise.all([
+          penanggungJawabService.getPenanggungJawab({ status: 'Aktif', pageSize: 100 }).catch(() => ({ data: [] })),
           partnerService.getPartners({ pageSize: 100, status: 'Aktif' }).catch(() => ({ data: [] })),
           commodityService.getCommodities({ status: 'Aktif' }).catch(() => ({ data: [] })),
           varietyService.getVarieties({ status: 'Aktif' }).catch(() => ({ data: [] })),
         ]);
+        setPenanggungJawabList(pjRes.data || []);
         setPartnerList(partRes.data || []);
         setCommodityList(commRes.data || []);
         setVarietyList(varRes.data || []);
@@ -97,6 +102,9 @@ export function useJadwalTanams() {
       if (filterStatus && filterStatus !== 'all' && filterStatus !== 'Semua Status') {
         params.statusJadwal = filterStatus;
       }
+      if (filterPenanggungJawab && filterPenanggungJawab !== 'all' && filterPenanggungJawab !== 'Semua Penanggung Jawab') {
+        params.penanggungJawab = filterPenanggungJawab;
+      }
       if (filterPetani && filterPetani !== 'all' && filterPetani !== 'Semua Petani') {
         params.partnerId = filterPetani;
       }
@@ -126,7 +134,7 @@ export function useJadwalTanams() {
     } finally {
       setLoading(false);
     }
-  }, [currentPage, pageSize, search, filterStatus, filterPetani, filterKomoditas, filterVarietas, filterPeriode]);
+  }, [currentPage, pageSize, search, filterStatus, filterPenanggungJawab, filterPetani, filterKomoditas, filterVarietas, filterPeriode]);
 
   useEffect(() => {
     fetchStats();
@@ -145,6 +153,7 @@ export function useJadwalTanams() {
     setSearch('');
     setFilterPeriode('all');
     setFilterStatus('all');
+    setFilterPenanggungJawab('all');
     setFilterPetani('all');
     setFilterKomoditas('all');
     setFilterVarietas('all');
@@ -209,12 +218,15 @@ export function useJadwalTanams() {
     setFilterPeriode,
     filterStatus,
     setFilterStatus,
+    filterPenanggungJawab,
+    setFilterPenanggungJawab,
     filterPetani,
     setFilterPetani,
     filterKomoditas,
     setFilterKomoditas,
     filterVarietas,
     setFilterVarietas,
+    penanggungJawabList,
     partnerList,
     commodityList,
     varietyList,

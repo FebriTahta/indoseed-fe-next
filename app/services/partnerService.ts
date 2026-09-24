@@ -3,7 +3,7 @@ import { ApiResponse } from '@/app/types/api';
 import { Partner } from '@/app/types/partner';
 
 export const partnerService = {
-  getPartners: async (params: {
+  getPartners: async (params?: {
     page?: number;
     pageSize?: number;
     search?: string;

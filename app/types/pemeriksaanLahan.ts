@@ -3,6 +3,7 @@ export interface TemuanOffTypeItem {
   jenisKarakter: string;
   jumlah: number;
   keterangan: string;
+  foto?: string;
 }
 
 export interface RoguingInfo {
@@ -76,6 +77,9 @@ export interface ReferensiJadwalTanamItem {
   tanggalTanam?: string;
   perkiraanPanen?: string;
   statusJadwal: string;
+  lahan?: string;
+  luasLahan?: number | string;
+  varietyId?: string | null;
   detailLahan?: any[];
   partner?: any;
   commodity?: any;

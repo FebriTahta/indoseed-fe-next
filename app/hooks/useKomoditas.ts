@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'react-toastify';
 import commodityService from '@/app/services/commodityService';
+import { varietyService } from '@/app/services/varietyService';
 import { Commodity } from '@/app/types/commodity';
 
 export function useKomoditas() {
@@ -17,6 +18,7 @@ export function useKomoditas() {
 
   // Total stats calculations
   const [allCommoditiesForStats, setAllCommoditiesForStats] = useState<Commodity[]>([]);
+  const [totalVarietiesCount, setTotalVarietiesCount] = useState(0);
 
   // Filters State
   const [search, setSearch] = useState('');
@@ -29,7 +31,7 @@ export function useKomoditas() {
     const handler = setTimeout(() => {
       setDebouncedSearch(search);
       setCurrentPage(1);
-    }, 500);
+    }, 400);
     return () => clearTimeout(handler);
   }, [search]);
 
@@ -39,12 +41,11 @@ export function useKomoditas() {
   const [totalRecords, setTotalRecords] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
 
-  // Viewed Detail State
+  // Viewed Detail State (Right Toggle Panel)
   const [viewedCommodity, setViewedCommodity] = useState<Commodity | null>(null);
   const [isDetailLoading, setIsDetailLoading] = useState(false);
-  const [activeDetailTab, setActiveDetailTab] = useState<'info' | 'riwayat'>('info');
 
-  // Modal States
+  // Modal States (Tambah & Ubah)
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isSubmitLoading, setIsSubmitLoading] = useState(false);
   const [modalMode, setModalMode] = useState<'add' | 'edit'>('add');
@@ -52,28 +53,35 @@ export function useKomoditas() {
     id: '',
     kodeKomoditas: '',
     namaKomoditas: '',
-    kategori: 'Serealia',
+    kategori: 'Buah',
+    satuanHasil: 'Kg',
     deskripsi: '',
-    status: 'Aktif' as Commodity['status'],
-    image: ''
+    status: 'Aktif' as 'Aktif' | 'Nonaktif' | 'Tidak Aktif',
   });
 
-  // Image Upload States
-  const [imageFile, setImageFile] = useState<File | null>(null);
-  const [previewUrl, setPreviewUrl] = useState<string>('');
-
   // Options
-  const kategoriOptions = [
-    { value: 'Serealia', label: 'Serealia' },
-    { value: 'Legum', label: 'Legum' },
-    { value: 'Umbi', label: 'Umbi' },
-    { value: 'Hortikultura', label: 'Hortikultura' }
-  ];
+  const kelompokTanamanOptions = useMemo(() => [
+    { value: 'Buah', label: 'Buah' },
+    { value: 'Sayuran', label: 'Sayuran' },
+    { value: 'Palawija', label: 'Palawija' },
+    { value: 'Perkebunan', label: 'Perkebunan' },
+    { value: 'Tanaman Pangan', label: 'Tanaman Pangan' },
+    { value: 'Tanaman Hias', label: 'Tanaman Hias' },
+    { value: 'Hortikultura', label: 'Hortikultura' },
+  ], []);
 
-  const statusOptions = [
+  const satuanHasilOptions = useMemo(() => [
+    { value: 'Kg', label: 'Kg' },
+    { value: 'Ton', label: 'Ton' },
+    { value: 'Gram', label: 'Gram' },
+    { value: 'Kuintal', label: 'Kuintal' },
+    { value: 'Ikat', label: 'Ikat' },
+  ], []);
+
+  const statusOptions = useMemo(() => [
     { value: 'Aktif', label: 'Aktif' },
-    { value: 'Tidak Aktif', label: 'Non Aktif' }
-  ];
+    { value: 'Nonaktif', label: 'Nonaktif' },
+  ], []);
 
   // API Call: Fetch list of commodities
   const fetchCommoditiesList = useCallback(async (pageToFetch = currentPage) => {
@@ -117,6 +125,18 @@ export function useKomoditas() {
     }
   }, []);
 
+  // API Call: Fetch total varieties count
+  const fetchTotalVarieties = useCallback(async () => {
+    try {
+      const res = await varietyService.getVarieties({ pageSize: 1 });
+      if (res.status === 'success' && res.pagination) {
+        setTotalVarietiesCount(res.pagination.totalItems);
+      }
+    } catch (err) {
+      console.error('Error fetching total varieties:', err);
+    }
+  }, []);
+
   // Auth Guard & Setup on Load
   useEffect(() => {
     const checkAuthAndInit = async () => {
@@ -144,8 +164,11 @@ export function useKomoditas() {
           return;
         }
 
-        await fetchAllCommoditiesForStats();
-        await fetchCommoditiesList(1);
+        await Promise.all([
+          fetchAllCommoditiesForStats(),
+          fetchTotalVarieties(),
+          fetchCommoditiesList(1),
+        ]);
         setLoading(false);
       } catch (err: any) {
         console.error(err);
@@ -154,7 +177,7 @@ export function useKomoditas() {
       }
     };
     checkAuthAndInit();
-  }, [router, fetchAllCommoditiesForStats, fetchCommoditiesList]);
+  }, [router, fetchAllCommoditiesForStats, fetchTotalVarieties, fetchCommoditiesList]);
 
   // Reactive updates on filters change
   useEffect(() => {
@@ -169,50 +192,68 @@ export function useKomoditas() {
     const total = allCommoditiesForStats.length;
     const active = allCommoditiesForStats.filter(c => c.status === 'Aktif').length;
     const inactive = allCommoditiesForStats.filter(c => c.status !== 'Aktif').length;
-    const uniqueCategories = new Set(allCommoditiesForStats.map(c => c.kategori)).size;
+
+    // sum of varieties from commodities as fallback or use totalVarietiesCount
+    const sumVarieties = allCommoditiesForStats.reduce((acc, curr) => acc + (curr._count?.varieties || curr.varieties?.length || 0), 0);
+    const totalVarieties = Math.max(totalVarietiesCount, sumVarieties);
 
     return {
       total,
       active,
       inactive,
-      categories: uniqueCategories
+      totalVarieties,
     };
-  }, [allCommoditiesForStats]);
+  }, [allCommoditiesForStats, totalVarietiesCount]);
 
   const statItems = useMemo(() => [
     {
       title: 'Total Komoditas',
       value: stats.total,
-      subtitle: 'Semua komoditas',
-      icon: 'ri-seedling-line',
+      subtitle: 'Komoditas',
+      icon: 'ri-plant-line',
       bgColor: 'bg-emerald-50',
-      textColor: 'text-emerald-600'
+      textColor: 'text-emerald-600',
     },
     {
       title: 'Aktif',
       value: stats.active,
-      subtitle: 'Komoditas aktif',
+      subtitle: 'Komoditas',
       icon: 'ri-checkbox-circle-line',
-      bgColor: 'bg-green-50',
-      textColor: 'text-green-600'
+      bgColor: 'bg-emerald-50',
+      textColor: 'text-emerald-600',
     },
     {
-      title: 'Non Aktif',
+      title: 'Nonaktif',
       value: stats.inactive,
-      subtitle: 'Komoditas non aktif',
+      subtitle: 'Komoditas',
       icon: 'ri-close-circle-line',
-      bgColor: 'bg-red-50',
-      textColor: 'text-red-600'
+      bgColor: 'bg-rose-50',
+      textColor: 'text-rose-600',
     },
     {
-      title: 'Kategori',
-      value: stats.categories,
-      subtitle: 'Kategori komoditas',
-      icon: 'ri-grid-line',
+      title: 'Total Varietas',
+      value: stats.totalVarieties,
+      subtitle: 'Varietas Terdaftar',
+      icon: 'ri-seedling-line',
       bgColor: 'bg-blue-50',
-      textColor: 'text-blue-600'
-    }
+      textColor: 'text-blue-600',
+    },
   ], [stats]);
+
+  // Generate Next Auto Commodity Code (e.g. KMD-011)
+  const generateNextKodeKomoditas = useCallback(() => {
+    let maxNum = 0;
+    allCommoditiesForStats.forEach(c => {
+      const match = c.kodeKomoditas?.match(/(?:KMD|KOM)-?(\d+)/i);
+      if (match) {
+        const num = parseInt(match[1], 10);
+        if (!isNaN(num) && num > maxNum) {
+          maxNum = num;
+        }
+      }
+    });
+    return `KMD-${String(maxNum + 1).padStart(3, '0')}`;
+  }, [allCommoditiesForStats]);
 
   // Reset Filters
   const handleResetFilters = () => {
@@ -224,19 +265,18 @@ export function useKomoditas() {
     toast.info('Filter berhasil direset');
   };
 
-  // Open Add Modal
+  // Open Add Modal (Refer to Image 2)
   const handleOpenAddModal = () => {
     setModalMode('add');
-    setImageFile(null);
-    setPreviewUrl('');
+    const nextCode = generateNextKodeKomoditas();
     setFormValues({
       id: '',
-      kodeKomoditas: `KOM-${String(allCommoditiesForStats.length + 1).padStart(3, '0')}`,
+      kodeKomoditas: nextCode,
       namaKomoditas: '',
-      kategori: 'Serealia',
+      kategori: 'Buah',
+      satuanHasil: 'Kg',
       deskripsi: '',
       status: 'Aktif',
-      image: ''
     });
     setIsModalOpen(true);
   };
@@ -244,18 +284,22 @@ export function useKomoditas() {
   // Open Edit Modal
   const handleOpenEditModal = (commodity: Commodity) => {
     setModalMode('edit');
-    setImageFile(null);
-    setPreviewUrl(commodity.image || '');
     setFormValues({
       id: commodity.id,
       kodeKomoditas: commodity.kodeKomoditas,
       namaKomoditas: commodity.namaKomoditas,
-      kategori: commodity.kategori,
+      kategori: commodity.kategori || 'Buah',
+      satuanHasil: commodity.satuanHasil || 'Kg',
       deskripsi: commodity.deskripsi || '',
-      status: commodity.status,
-      image: commodity.image || ''
+      status: (commodity.status === 'Aktif' ? 'Aktif' : 'Nonaktif') as any,
     });
     setIsModalOpen(true);
+  };
+
+  // Regenerate Auto Code
+  const handleRegenerateCode = () => {
+    const nextCode = generateNextKodeKomoditas();
+    setFormValues(prev => ({ ...prev, kodeKomoditas: nextCode }));
   };
 
   // Save Modal Data (Create & Update)
@@ -272,22 +316,20 @@ export function useKomoditas() {
 
     setIsSubmitLoading(true);
     try {
-      const formData = new FormData();
-      formData.append('kodeKomoditas', formValues.kodeKomoditas);
-      formData.append('namaKomoditas', formValues.namaKomoditas);
-      formData.append('kategori', formValues.kategori);
-      formData.append('deskripsi', formValues.deskripsi || '');
-      formData.append('status', formValues.status);
-
-      if (imageFile) {
-        formData.append('image', imageFile);
-      }
+      const payload = {
+        kodeKomoditas: formValues.kodeKomoditas,
+        namaKomoditas: formValues.namaKomoditas,
+        kategori: formValues.kategori,
+        satuanHasil: formValues.satuanHasil,
+        deskripsi: formValues.deskripsi || '',
+        status: formValues.status,
+      };
 
       let result;
       if (modalMode === 'add') {
-        result = await commodityService.createCommodity(formData);
+        result = await commodityService.createCommodity(payload);
       } else {
-        result = await commodityService.updateCommodity(formValues.id, formData);
+        result = await commodityService.updateCommodity(formValues.id, payload);
       }
 
       if (result.status === 'error') {
@@ -338,15 +380,12 @@ export function useKomoditas() {
 
   // Toggle Commodity Status
   const handleToggleStatus = async (commodity: Commodity) => {
-    const newStatus: Commodity['status'] = commodity.status === 'Aktif' ? 'Tidak Aktif' : 'Aktif';
+    const newStatus: Commodity['status'] = commodity.status === 'Aktif' ? 'Nonaktif' : 'Aktif';
     setIsDetailLoading(true);
     try {
-      const formData = new FormData();
-      formData.append('status', newStatus);
-
-      const result = await commodityService.updateCommodity(commodity.id, formData);
+      const result = await commodityService.updateCommodity(commodity.id, { status: newStatus });
       if (result.status === 'error') {
-        throw new Error(result.message || 'Gagal merubah status');
+        throw new Error(result.message || 'Gagal mengubah status');
       }
 
       setViewedCommodity(result.data);
@@ -361,14 +400,13 @@ export function useKomoditas() {
     }
   };
 
-  const handleExportData = () => {
-    toast.success('Mengekspor data... File Anda akan segera diunduh.');
-  };
-
-  // Viewed Detail loading handler
-  const handleViewDetail = async (commodity: Commodity) => {
+  // Toggle View Detail panel on right
+  const handleToggleViewDetail = async (commodity: Commodity) => {
+    if (viewedCommodity && viewedCommodity.id === commodity.id) {
+      setViewedCommodity(null);
+      return;
+    }
     setViewedCommodity(commodity);
-    setActiveDetailTab('info');
     setIsDetailLoading(true);
     try {
       const result = await commodityService.getCommodityDetail(commodity.id);
@@ -382,34 +420,6 @@ export function useKomoditas() {
     }
   };
 
-  // File Upload handler
-  const handleFileChange = (file: File | null) => {
-    if (!file) {
-      setImageFile(null);
-      setPreviewUrl('');
-      return;
-    }
-
-    const maxSize = 5 * 1024 * 1024;
-    if (file.size > maxSize) {
-      toast.error('Ukuran gambar melebihi batas 5MB!');
-      return;
-    }
-
-    setImageFile(file);
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      setPreviewUrl(reader.result as string);
-    };
-    reader.readAsDataURL(file);
-  };
-
-  const handleClearImage = () => {
-    setImageFile(null);
-    setPreviewUrl('');
-    setFormValues(prev => ({ ...prev, image: '' }));
-  };
-
   return {
     loading,
     error,
@@ -417,7 +427,8 @@ export function useKomoditas() {
     isTableLoading,
     stats,
     statItems,
-    kategoriOptions,
+    kelompokTanamanOptions,
+    satuanHasilOptions,
     statusOptions,
     search,
     setSearch,
@@ -434,25 +445,20 @@ export function useKomoditas() {
     viewedCommodity,
     setViewedCommodity,
     isDetailLoading,
-    activeDetailTab,
-    setActiveDetailTab,
     isModalOpen,
     setIsModalOpen,
     isSubmitLoading,
     modalMode,
     formValues,
     setFormValues,
-    previewUrl,
     handleResetFilters,
     handleOpenAddModal,
     handleOpenEditModal,
+    handleRegenerateCode,
     handleSaveModal,
     handleDeleteCommodity,
     handleToggleStatus,
-    handleExportData,
-    handleViewDetail,
-    handleFileChange,
-    handleClearImage,
+    handleToggleViewDetail,
   };
 }
 export default useKomoditas;
