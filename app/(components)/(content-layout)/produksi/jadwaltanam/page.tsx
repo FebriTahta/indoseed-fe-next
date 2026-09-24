@@ -22,10 +22,13 @@ export default function JadwalTanamPage() {
     setFilterPeriode,
     filterStatus,
     setFilterStatus,
+    filterPenanggungJawab,
+    setFilterPenanggungJawab,
     filterPetani,
     setFilterPetani,
     filterKomoditas,
     setFilterKomoditas,
+    penanggungJawabList,
     partnerList,
     commodityList,
     currentPage,
@@ -299,7 +302,7 @@ export default function JadwalTanamPage() {
               </span>
               <input
                 type="text"
-                placeholder="Cari nomor jadwal, petani, atau komoditas..."
+                placeholder="Cari nomor jadwal, PJ, petani, atau komoditas..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 className="w-full pl-9 pr-3 py-2 text-xs rounded-lg border border-gray-200 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 text-gray-800 placeholder-gray-400 bg-white"
@@ -350,6 +353,25 @@ export default function JadwalTanamPage() {
               </select>
             </div>
 
+            {/* Penanggung Jawab Dropdown */}
+            <div className="w-full sm:w-44">
+              <select
+                value={filterPenanggungJawab}
+                onChange={(e) => {
+                  setFilterPenanggungJawab(e.target.value);
+                  setFilterPetani('all');
+                }}
+                className="w-full px-3 py-2 text-xs rounded-lg border border-gray-200 bg-white text-gray-700 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 cursor-pointer"
+              >
+                <option value="all">Semua PJ</option>
+                {penanggungJawabList.map((pj) => (
+                  <option key={pj.id} value={pj.nama}>
+                    {pj.nama}
+                  </option>
+                ))}
+              </select>
+            </div>
+
             {/* Petani Mitra Dropdown */}
             <div className="w-full sm:w-44">
               <select
@@ -358,7 +380,14 @@ export default function JadwalTanamPage() {
                 className="w-full px-3 py-2 text-xs rounded-lg border border-gray-200 bg-white text-gray-700 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 cursor-pointer"
               >
                 <option value="all">Semua Petani</option>
-                {partnerList.map((p) => (
+                {(filterPenanggungJawab && filterPenanggungJawab !== 'all'
+                  ? partnerList.filter(
+                      (p) =>
+                        (p.kelompokTani || '').trim().toLowerCase() ===
+                        filterPenanggungJawab.trim().toLowerCase()
+                    )
+                  : partnerList
+                ).map((p) => (
                   <option key={p.id} value={p.id}>
                     {p.namaPetani}
                   </option>
@@ -412,6 +441,7 @@ export default function JadwalTanamPage() {
                     />
                   </th>
                   <th className="p-3 font-semibold">No. Jadwal</th>
+                  <th className="p-3 font-semibold">Penanggung Jawab</th>
                   <th className="p-3 font-semibold">Petani Mitra</th>
                   <th className="p-3 font-semibold">Lahan</th>
                   <th className="p-3 font-semibold">Komoditas / Varietas</th>
@@ -425,7 +455,7 @@ export default function JadwalTanamPage() {
               <tbody className="divide-y divide-gray-100 text-gray-700">
                 {loading ? (
                   <tr>
-                    <td colSpan={10} className="p-8 text-center text-gray-500">
+                    <td colSpan={11} className="p-8 text-center text-gray-500">
                       <div className="flex flex-col items-center justify-center gap-2">
                         <div className="w-7 h-7 border-2 border-emerald-600 border-t-transparent rounded-full animate-spin"></div>
                         <span className="text-xs text-gray-500">Memuat data jadwal tanam...</span>
@@ -434,13 +464,13 @@ export default function JadwalTanamPage() {
                   </tr>
                 ) : error ? (
                   <tr>
-                    <td colSpan={10} className="p-8 text-center text-rose-600">
+                    <td colSpan={11} className="p-8 text-center text-rose-600">
                       {error}
                     </td>
                   </tr>
                 ) : items.length === 0 ? (
                   <tr>
-                    <td colSpan={10} className="p-8 text-center text-gray-500">
+                    <td colSpan={11} className="p-8 text-center text-gray-500">
                       Tidak ada data jadwal tanam yang cocok dengan filter.
                     </td>
                   </tr>
@@ -479,6 +509,13 @@ export default function JadwalTanamPage() {
                           >
                             {item.kodeJadwalTanam}
                           </button>
+                        </td>
+
+                        {/* Penanggung Jawab */}
+                        <td className="p-3">
+                          <div className="font-semibold text-gray-900">
+                            {item.penanggungJawab || item.partner?.kelompokTani || '-'}
+                          </div>
                         </td>
 
                         {/* Petani Mitra */}

@@ -12,6 +12,7 @@ import { commodityService } from '@/app/services/commodityService';
 import { varietyService } from '@/app/services/varietyService';
 import { greenhouseService } from '@/app/services/greenhouseService';
 import { perencanaanProduksiService } from '@/app/services/perencanaanProduksiService';
+import { penanggungJawabService } from '@/app/services/penanggungJawabService';
 import { jadwalTanamService } from '@/app/services/jadwalTanamService';
 import { JadwalTanamDetail } from '@/app/types/jadwalTanam';
 
@@ -30,6 +31,7 @@ export default function EditJadwalTanamPage({ params }: EditPageProps) {
   const [varieties, setVarieties] = useState<any[]>([]);
   const [greenhouses, setGreenhouses] = useState<any[]>([]);
   const [perencanaanList, setPerencanaanList] = useState<any[]>([]);
+  const [penanggungJawabList, setPenanggungJawabList] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [originalItem, setOriginalItem] = useState<any | null>(null);
@@ -40,6 +42,9 @@ export default function EditJadwalTanamPage({ params }: EditPageProps) {
   const [selectedPlan, setSelectedPlan] = useState<any | null>(null);
 
   // Form State - Section 2: Data Petani & Lahan
+  const [penanggungJawab, setPenanggungJawab] = useState('');
+  const [selectedPenanggungJawab, setSelectedPenanggungJawab] = useState<any | null>(null);
+
   const [partnerId, setPartnerId] = useState('');
   const [namaPetani, setNamaPetani] = useState('');
   const [kodePetani, setKodePetani] = useState('');
@@ -73,13 +78,14 @@ export default function EditJadwalTanamPage({ params }: EditPageProps) {
     async function loadData() {
       setIsLoading(true);
       try {
-        const [itemRes, partRes, commRes, varRes, ghRes, planRes] = await Promise.all([
+        const [itemRes, partRes, commRes, varRes, ghRes, planRes, pjRes] = await Promise.all([
           jadwalTanamService.getJadwalTanamById(id),
           partnerService.getPartners({ pageSize: 100, status: 'Aktif' }).catch(() => ({ data: [] })),
           commodityService.getCommodities({ status: 'Aktif' }).catch(() => ({ data: [] })),
           varietyService.getVarieties({ status: 'Aktif' }).catch(() => ({ data: [] })),
           greenhouseService.getLands({ pageSize: 100, status: 'Aktif' }).catch(() => ({ data: [] })),
           perencanaanProduksiService.getList({ limit: 100 }).catch(() => ({ data: [] })),
+          penanggungJawabService.getPenanggungJawab({ pageSize: 100, status: 'Aktif' }).catch(() => ({ data: [] })),
         ]);
 
         const partnerData = partRes?.data || [];
@@ -87,12 +93,14 @@ export default function EditJadwalTanamPage({ params }: EditPageProps) {
         const varData = varRes?.data || [];
         const ghData = ghRes?.data || [];
         const planData = planRes?.data || [];
+        const pjData = pjRes?.data || [];
 
         setPartners(partnerData);
         setCommodities(commData);
         setVarieties(varData);
         setGreenhouses(ghData);
         setPerencanaanList(planData);
+        setPenanggungJawabList(pjData);
 
         const item = itemRes.data;
         if (item) {
@@ -101,6 +109,14 @@ export default function EditJadwalTanamPage({ params }: EditPageProps) {
           setSelectedPerencanaanId(item.perencanaanProduksiId || (item.perencanaanProduksi ? item.perencanaanProduksi.id : ''));
           setStatusJadwal(item.statusJadwal || 'Dalam Proses');
           setKeterangan(item.keterangan || '');
+
+          // Penanggung Jawab
+          const loadedPj = item.penanggungJawab || item.partner?.kelompokTani || '';
+          setPenanggungJawab(loadedPj);
+          if (loadedPj) {
+            const matchedPj = pjData.find((p: any) => p.nama === loadedPj || p.id === loadedPj);
+            if (matchedPj) setSelectedPenanggungJawab(matchedPj);
+          }
 
           // Partner
           setPartnerId(item.partnerId || (item.partner ? item.partner.id : ''));
@@ -237,8 +253,8 @@ export default function EditJadwalTanamPage({ params }: EditPageProps) {
     return d.toISOString().split('T')[0];
   };
 
-  // Filtered partners based on selected Perencanaan Produksi
-  const availablePartners = useMemo(() => {
+  // Base partners pool from selected Perencanaan Produksi or all active partners
+  const basePartners = useMemo(() => {
     // If no perencanaan is selected or standalone is chosen, allow choosing any active partner
     if (!selectedPerencanaanId || selectedPerencanaanId === 'standalone' || !selectedPlan) {
       return partners;
@@ -264,6 +280,7 @@ export default function EditJadwalTanamPage({ params }: EditPageProps) {
                 id: pId,
                 namaPetani: dist.namaPetani,
                 kodePetani: dist.kodePetani || '',
+                kelompokTani: dist.kelompokTani || '',
                 alamat: dist.alamat || '-',
                 noTelepon: dist.noTelepon || dist.telepon || '-',
               });
@@ -280,6 +297,7 @@ export default function EditJadwalTanamPage({ params }: EditPageProps) {
               id: `dist-${dist.namaPetani}`,
               namaPetani: dist.namaPetani,
               kodePetani: '',
+              kelompokTani: '',
               alamat: '-',
               noTelepon: '-',
             });
@@ -303,6 +321,7 @@ export default function EditJadwalTanamPage({ params }: EditPageProps) {
             id: pId,
             namaPetani: selectedPlan.namaPetani,
             kodePetani: selectedPlan.kodePetani || '',
+            kelompokTani: selectedPlan.kelompokTani || '',
             alamat: '-',
             noTelepon: '-',
           });
@@ -318,6 +337,100 @@ export default function EditJadwalTanamPage({ params }: EditPageProps) {
 
     return registered;
   }, [selectedPerencanaanId, selectedPlan, partners]);
+
+  // Filtered partners based on selected Penanggung Jawab
+  const availablePartners = useMemo(() => {
+    if (!penanggungJawab) {
+      return [];
+    }
+    const pjName = penanggungJawab.trim().toLowerCase();
+    const pjId = selectedPenanggungJawab?.id?.toLowerCase();
+
+    return basePartners.filter((p) => {
+      const pKelompok = (p.kelompokTani || '').trim().toLowerCase();
+      return pKelompok === pjName || (pjId && pKelompok === pjId);
+    });
+  }, [basePartners, penanggungJawab, selectedPenanggungJawab]);
+
+  // Filtered lands (greenhouse/lahan) based on selected Petani Mitra
+  const availableLands = useMemo(() => {
+    if (!partnerId && !namaPetani) {
+      return [];
+    }
+
+    // 1. Filter from master greenhouses
+    const fromMaster = greenhouses.filter((g) => {
+      const matchId = partnerId && g.partnerId && g.partnerId === partnerId;
+      const matchName =
+        namaPetani && g.petaniMitra && g.petaniMitra.trim().toLowerCase() === namaPetani.trim().toLowerCase();
+      return matchId || matchName;
+    });
+
+    // 2. Also check if selectedPlan has distribution land for this farmer
+    const planDistLands: any[] = [];
+    if (selectedPlan?.petaniDistribusi && Array.isArray(selectedPlan.petaniDistribusi)) {
+      const dist = selectedPlan.petaniDistribusi.find(
+        (d: any) =>
+          d.partnerId === partnerId || (namaPetani && d.namaPetani?.toLowerCase() === namaPetani.toLowerCase())
+      );
+      if (
+        dist &&
+        dist.namaLahan &&
+        !fromMaster.some((m) => m.namaLahan?.toLowerCase() === dist.namaLahan?.toLowerCase())
+      ) {
+        planDistLands.push({
+          id: dist.greenhouseId || `dist-land-${dist.namaLahan}`,
+          namaLahan: dist.namaLahan,
+          kodeLahan: 'LHN-DIST',
+          luas: (Number(dist.luasLahan) || 1) * 10000,
+          partnerId: partnerId,
+          petaniMitra: namaPetani,
+        });
+      }
+    }
+
+    return [...fromMaster, ...planDistLands];
+  }, [greenhouses, partnerId, namaPetani, selectedPlan]);
+
+  // Handle Penanggung Jawab selection
+  const handlePenanggungJawabChange = (val: string) => {
+    setPenanggungJawab(val);
+    const found = penanggungJawabList.find((p) => p.nama === val || p.id === val);
+    setSelectedPenanggungJawab(found || null);
+
+    // If changing or clearing PJ, check if current partner is still valid
+    if (val) {
+      const target = val.trim().toLowerCase();
+      const targetId = found?.id?.toLowerCase();
+      const matchingPartners = basePartners.filter((p) => {
+        const pk = (p.kelompokTani || '').trim().toLowerCase();
+        return pk === target || (targetId && pk === targetId);
+      });
+
+      if (!matchingPartners.some((p) => p.id === partnerId)) {
+        setPartnerId('');
+        setNamaPetani('');
+        setKodePetani('');
+        setSelectedPartner(null);
+        setGreenhouseId('');
+        setNamaLahan('');
+        setSelectedLand(null);
+
+        // Auto-select if exactly 1 partner belongs to this PJ
+        if (matchingPartners.length === 1) {
+          handlePartnerChange(matchingPartners[0].id, matchingPartners);
+        }
+      }
+    } else {
+      setPartnerId('');
+      setNamaPetani('');
+      setKodePetani('');
+      setSelectedPartner(null);
+      setGreenhouseId('');
+      setNamaLahan('');
+      setSelectedLand(null);
+    }
+  };
 
   // Handle Perencanaan Produksi selection
   const handlePerencanaanChange = (planId: string) => {
@@ -387,6 +500,7 @@ export default function EditJadwalTanamPage({ params }: EditPageProps) {
               id: pId,
               namaPetani: dist.namaPetani,
               kodePetani: dist.kodePetani || '',
+              kelompokTani: dist.kelompokTani || '',
               alamat: dist.alamat || '-',
               noTelepon: dist.noTelepon || '-',
             });
@@ -400,6 +514,7 @@ export default function EditJadwalTanamPage({ params }: EditPageProps) {
               id: `dist-${dist.namaPetani}`,
               namaPetani: dist.namaPetani,
               kodePetani: '',
+              kelompokTani: '',
               alamat: '-',
               noTelepon: '-',
             });
@@ -417,6 +532,7 @@ export default function EditJadwalTanamPage({ params }: EditPageProps) {
           id: plan.partnerId,
           namaPetani: plan.namaPetani,
           kodePetani: plan.kodePetani || '',
+          kelompokTani: plan.kelompokTani || '',
           alamat: '-',
           noTelepon: '-',
         });
@@ -425,21 +541,34 @@ export default function EditJadwalTanamPage({ params }: EditPageProps) {
 
     if (registered.length === 1) {
       const single = registered[0];
+
+      // Auto-set penanggung jawab if single farmer has kelompokTani matching a PJ
+      if (single.kelompokTani) {
+        const matchPj = penanggungJawabList.find(
+          (pj) => pj.nama.trim().toLowerCase() === single.kelompokTani.trim().toLowerCase()
+        );
+        if (matchPj) {
+          setPenanggungJawab(matchPj.nama);
+          setSelectedPenanggungJawab(matchPj);
+        }
+      }
+
       setPartnerId(single.id);
       setNamaPetani(single.namaPetani);
       setKodePetani(single.kodePetani || '');
       setSelectedPartner(single);
 
       // Check if dist has dedicated land & area
-      const dist = plan.petaniDistribusi?.find(
-        (d: any) => d.partnerId === single.id || d.namaPetani?.toLowerCase() === single.namaPetani.toLowerCase()
-      ) || plan.petaniDistribusi?.[0];
+      const dist =
+        plan.petaniDistribusi?.find(
+          (d: any) => d.partnerId === single.id || d.namaPetani?.toLowerCase() === single.namaPetani.toLowerCase()
+        ) || plan.petaniDistribusi?.[0];
 
       if (dist) {
         if (dist.luasLahan) setLuasTanam(dist.luasLahan);
         if (dist.targetProduksi) setTargetProduksi(dist.targetProduksi);
         if (dist.greenhouseId || dist.namaLahan) {
-          const matchLand = greenhouses.find(g => g.id === dist.greenhouseId || g.namaLahan === dist.namaLahan);
+          const matchLand = greenhouses.find((g) => g.id === dist.greenhouseId || g.namaLahan === dist.namaLahan);
           if (matchLand) {
             setGreenhouseId(matchLand.id);
             setNamaLahan(matchLand.namaLahan);
@@ -469,8 +598,11 @@ export default function EditJadwalTanamPage({ params }: EditPageProps) {
         setNamaPetani('');
         setKodePetani('');
         setSelectedPartner(null);
+        setGreenhouseId('');
+        setNamaLahan('');
+        setSelectedLand(null);
         toast.info(
-          `Perencanaan ${plan.noPerencanaan} memiliki ${registered.length} petani terdaftar. Silakan pilih salah satu petani.`
+          `Perencanaan ${plan.noPerencanaan} memiliki ${registered.length} petani terdaftar. Silakan pilih penanggung jawab & petani.`
         );
       }
     } else {
@@ -478,18 +610,54 @@ export default function EditJadwalTanamPage({ params }: EditPageProps) {
       setNamaPetani('');
       setKodePetani('');
       setSelectedPartner(null);
+      setGreenhouseId('');
+      setNamaLahan('');
+      setSelectedLand(null);
       toast.warning(`Perencanaan ${plan.noPerencanaan} belum memiliki petani mitra terdaftar.`);
     }
   };
 
   // Handle Partner Change
-  const handlePartnerChange = (pId: string) => {
+  const handlePartnerChange = (pId: string, customPartnerList?: any[]) => {
     setPartnerId(pId);
-    const found = availablePartners.find((p) => p.id === pId) || partners.find((p) => p.id === pId);
+    const listToSearch = customPartnerList || (availablePartners.length > 0 ? availablePartners : basePartners);
+    const found = listToSearch.find((p: any) => p.id === pId) || partners.find((p) => p.id === pId);
+
+    // Reset land selection whenever partner changes
+    setGreenhouseId('');
+    setNamaLahan('');
+    setSelectedLand(null);
+
     if (found) {
       setSelectedPartner(found);
       setNamaPetani(found.namaPetani);
       setKodePetani(found.kodePetani || '');
+
+      // Also ensure penanggungJawab is synced if empty
+      if (!penanggungJawab && found.kelompokTani) {
+        const matchPj = penanggungJawabList.find(
+          (pj) => pj.nama.trim().toLowerCase() === found.kelompokTani.trim().toLowerCase()
+        );
+        if (matchPj) {
+          setPenanggungJawab(matchPj.nama);
+          setSelectedPenanggungJawab(matchPj);
+        }
+      }
+
+      // Check lands for this partner from master
+      const landsForFarmer = greenhouses.filter(
+        (g) =>
+          g.partnerId === found.id ||
+          (g.petaniMitra && g.petaniMitra.trim().toLowerCase() === found.namaPetani.trim().toLowerCase())
+      );
+
+      // Auto-select if exactly 1 land exists
+      if (landsForFarmer.length === 1) {
+        const firstLand = landsForFarmer[0];
+        setGreenhouseId(firstLand.id);
+        setNamaLahan(firstLand.namaLahan);
+        setSelectedLand(firstLand);
+      }
 
       // Check if selectedPlan has a distribution record specifically for this farmer!
       if (selectedPlan && selectedPlan.petaniDistribusi) {
@@ -545,7 +713,7 @@ export default function EditJadwalTanamPage({ params }: EditPageProps) {
   // Handle Land Change
   const handleLandChange = (gId: string) => {
     setGreenhouseId(gId);
-    const found = greenhouses.find((g) => g.id === gId);
+    const found = availableLands.find((g) => g.id === gId) || greenhouses.find((g) => g.id === gId);
     if (found) {
       setSelectedLand(found);
       setNamaLahan(found.namaLahan);
@@ -655,6 +823,10 @@ export default function EditJadwalTanamPage({ params }: EditPageProps) {
       toast.error('No. Jadwal Tanam wajib diisi');
       return;
     }
+    if (!penanggungJawab.trim()) {
+      toast.error('Penanggung Jawab wajib dipilih');
+      return;
+    }
     if (!namaPetani.trim()) {
       toast.error('Petani Mitra wajib dipilih');
       return;
@@ -717,7 +889,7 @@ export default function EditJadwalTanamPage({ params }: EditPageProps) {
         targetProduksi: computedTarget,
         statusJadwal: statusJadwal || 'Dalam Proses',
         keterangan: keterangan || '-',
-        penanggungJawab: 'Admin',
+        penanggungJawab: penanggungJawab.trim(),
         detailLahan: detailLahanPayload,
       };
 
@@ -902,22 +1074,96 @@ export default function EditJadwalTanamPage({ params }: EditPageProps) {
                   <span className="w-6 h-6 rounded-full bg-emerald-800 text-white text-xs font-bold flex items-center justify-center">
                     2
                   </span>
-                  <h2 className="font-bold text-gray-900 text-sm">Data Petani & Lahan</h2>
+                  <div>
+                    <h2 className="font-bold text-gray-900 text-sm">Data Petani & Lahan</h2>
+                    <p className="text-[11px] text-gray-500">Pilih penanggung jawab untuk memfilter petani mitra, kemudian pilih lahan yang dikelola.</p>
+                  </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                  {/* Left: Petani Mitra */}
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+                  {/* Column 1: Penanggung Jawab */}
+                  <div>
+                    <div className="flex items-center justify-between mb-1.5">
+                      <label className="block text-xs font-semibold text-gray-700">
+                        Penanggung Jawab <span className="text-red-500">*</span>
+                      </label>
+                      <span className="text-[10px] font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full">
+                        Master PJ
+                      </span>
+                    </div>
+                    <div className="relative">
+                      <select
+                        value={penanggungJawab}
+                        onChange={(e) => handlePenanggungJawabChange(e.target.value)}
+                        required
+                        className="w-full pl-8 pr-7 py-2 text-xs text-gray-800 bg-white border border-gray-300 rounded-lg focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 outline-none appearance-none cursor-pointer"
+                      >
+                        <option value="">-- Pilih Penanggung Jawab --</option>
+                        {penanggungJawabList.map((pj: any) => (
+                          <option key={pj.id || pj.nama} value={pj.nama}>
+                            {pj.nama} ({pj.status || 'Aktif'})
+                          </option>
+                        ))}
+                      </select>
+                      <svg
+                        className="w-3.5 h-3.5 text-gray-400 absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth="2"
+                          d="M5.121 17.804A13.937 13.937 0 0112 16c2.5 0 4.847.655 6.879 1.804M15 10a3 3 0 11-6 0 3 3 0 016 0zm6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                        />
+                      </svg>
+                      <svg
+                        className="w-3.5 h-3.5 text-gray-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+                      </svg>
+                    </div>
+
+                    {/* Preview Box Informasi Penanggung Jawab */}
+                    <div className="mt-2.5 bg-gray-50/70 border border-gray-100 rounded-lg p-3 text-xs space-y-1.5 min-h-[92px]">
+                      <div className="font-semibold text-gray-900 truncate">
+                        {selectedPenanggungJawab ? selectedPenanggungJawab.nama : penanggungJawab || 'Informasi Penanggung Jawab'}
+                      </div>
+                      <div className="grid grid-cols-12 gap-1 text-gray-600">
+                        <span className="col-span-5 text-gray-500">Status</span>
+                        <span className="col-span-7 font-medium text-gray-900">
+                          : {selectedPenanggungJawab?.status ? (
+                            <span className="inline-flex items-center px-1.5 py-0.2 rounded text-[10px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                              {selectedPenanggungJawab.status}
+                            </span>
+                          ) : '-'}
+                        </span>
+                      </div>
+                      <div className="grid grid-cols-12 gap-1 text-gray-600">
+                        <span className="col-span-5 text-gray-500">Petani Binaan</span>
+                        <span className="col-span-7 font-medium text-gray-900">
+                          : {penanggungJawab ? `${availablePartners.length} Petani Terdaftar` : '-'}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Column 2: Petani Mitra (Filtered by Penanggung Jawab) */}
                   <div>
                     <div className="flex items-center justify-between mb-1.5">
                       <label className="block text-xs font-semibold text-gray-700">
                         Petani Mitra <span className="text-red-500">*</span>
                       </label>
-                      {selectedPlan && (
+                      {penanggungJawab && (
                         <span className="text-[10px] font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full flex items-center gap-1">
                           <svg className="w-3 h-3 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
                           </svg>
-                          <span>{availablePartners.length} Terdaftar di {selectedPlan.noPerencanaan}</span>
+                          <span>{availablePartners.length} Petani</span>
                         </span>
                       )}
                     </div>
@@ -925,15 +1171,16 @@ export default function EditJadwalTanamPage({ params }: EditPageProps) {
                       <select
                         value={partnerId}
                         onChange={(e) => handlePartnerChange(e.target.value)}
+                        disabled={!penanggungJawab}
                         required
-                        className="w-full pl-8 pr-4 py-2 text-xs text-gray-800 bg-white border border-gray-300 rounded-lg focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 outline-none appearance-none"
+                        className="w-full pl-8 pr-7 py-2 text-xs text-gray-800 bg-white border border-gray-300 rounded-lg focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 outline-none appearance-none disabled:bg-gray-100 disabled:text-gray-400 cursor-pointer disabled:cursor-not-allowed"
                       >
                         <option value="">
-                          {selectedPlan
-                            ? availablePartners.length > 0
-                              ? `-- Pilih Petani Terdaftar (${availablePartners.length}) --`
-                              : '-- Tidak Ada Petani Terdaftar --'
-                            : 'Pilih Petani'}
+                          {!penanggungJawab
+                            ? '-- Pilih Penanggung Jawab Terlebih Dahulu --'
+                            : availablePartners.length > 0
+                            ? `-- Pilih Petani Mitra (${availablePartners.length}) --`
+                            : '-- Tidak Ada Petani Mitra --'}
                         </option>
                         {availablePartners.map((p) => (
                           <option key={p.id} value={p.id}>
@@ -964,9 +1211,18 @@ export default function EditJadwalTanamPage({ params }: EditPageProps) {
                       </svg>
                     </div>
 
+                    {penanggungJawab && availablePartners.length === 0 && (
+                      <div className="mt-2 text-[11px] text-amber-700 bg-amber-50 border border-amber-200 rounded-lg p-2 flex items-start gap-1.5">
+                        <svg className="w-3.5 h-3.5 text-amber-600 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                        </svg>
+                        <span>Belum ada petani mitra terhubung dengan penanggung jawab {penanggungJawab}.</span>
+                      </div>
+                    )}
+
                     {/* Preview Box Informasi Petani */}
-                    <div className="mt-2.5 bg-gray-50/70 border border-gray-100 rounded-lg p-3 text-xs space-y-1.5">
-                      <div className="font-semibold text-gray-900">
+                    <div className="mt-2.5 bg-gray-50/70 border border-gray-100 rounded-lg p-3 text-xs space-y-1.5 min-h-[92px]">
+                      <div className="font-semibold text-gray-900 truncate">
                         {selectedPartner ? selectedPartner.namaPetani : namaPetani || 'Informasi Petani'}
                       </div>
                       <div className="grid grid-cols-12 gap-1 text-gray-600">
@@ -984,20 +1240,37 @@ export default function EditJadwalTanamPage({ params }: EditPageProps) {
                     </div>
                   </div>
 
-                  {/* Right: Lahan */}
+                  {/* Column 3: Lahan (Filtered by Petani Mitra) */}
                   <div>
-                    <label className="block text-xs font-semibold text-gray-700 mb-1.5">
-                      Lahan <span className="text-red-500">*</span>
-                    </label>
+                    <div className="flex items-center justify-between mb-1.5">
+                      <label className="block text-xs font-semibold text-gray-700">
+                        Lahan <span className="text-red-500">*</span>
+                      </label>
+                      {partnerId && (
+                        <span className="text-[10px] font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full flex items-center gap-1">
+                          <svg className="w-3 h-3 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                          </svg>
+                          <span>{availableLands.length} Lahan</span>
+                        </span>
+                      )}
+                    </div>
                     <div className="relative">
                       <select
                         value={greenhouseId}
                         onChange={(e) => handleLandChange(e.target.value)}
+                        disabled={!partnerId && !namaPetani}
                         required
-                        className="w-full pl-8 pr-4 py-2 text-xs text-gray-800 bg-white border border-gray-300 rounded-lg focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 outline-none appearance-none"
+                        className="w-full pl-8 pr-7 py-2 text-xs text-gray-800 bg-white border border-gray-300 rounded-lg focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 outline-none appearance-none disabled:bg-gray-100 disabled:text-gray-400 cursor-pointer disabled:cursor-not-allowed"
                       >
-                        <option value="">Pilih Lahan</option>
-                        {greenhouses.map((g) => (
+                        <option value="">
+                          {!partnerId && !namaPetani
+                            ? '-- Pilih Petani Mitra Terlebih Dahulu --'
+                            : availableLands.length > 0
+                            ? `-- Pilih Lahan (${availableLands.length}) --`
+                            : '-- Tidak Ada Lahan Terdaftar --'}
+                        </option>
+                        {availableLands.map((g) => (
                           <option key={g.id} value={g.id}>
                             {g.namaLahan} {g.kodeLahan ? `(${g.kodeLahan})` : ''} - {g.luas ? `${g.luas} m²` : ''}
                           </option>
@@ -1032,14 +1305,23 @@ export default function EditJadwalTanamPage({ params }: EditPageProps) {
                       </svg>
                     </div>
 
+                    {partnerId && availableLands.length === 0 && (
+                      <div className="mt-2 text-[11px] text-amber-700 bg-amber-50 border border-amber-200 rounded-lg p-2 flex items-start gap-1.5">
+                        <svg className="w-3.5 h-3.5 text-amber-600 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                        </svg>
+                        <span>Petani mitra ini belum memiliki data lahan di master greenhouse.</span>
+                      </div>
+                    )}
+
                     {/* Preview Box Informasi Lahan */}
-                    <div className="mt-2.5 bg-gray-50/70 border border-gray-100 rounded-lg p-3 text-xs space-y-1.5">
-                      <div className="font-semibold text-gray-900">
+                    <div className="mt-2.5 bg-gray-50/70 border border-gray-100 rounded-lg p-3 text-xs space-y-1.5 min-h-[92px]">
+                      <div className="font-semibold text-gray-900 truncate">
                         {selectedLand ? selectedLand.namaLahan : namaLahan || 'Informasi Lahan'}
                       </div>
                       <div className="grid grid-cols-12 gap-1 text-gray-600">
                         <span className="col-span-4 text-gray-500">Luas Total</span>
-                        <span className="col-span-8 font-medium text-gray-900">
+                        <span className="col-span-8 font-medium text-gray-900 truncate">
                           : {selectedLand?.luas ? `${(Number(selectedLand.luas) / 10000).toFixed(2)} Ha (${Number(selectedLand.luas).toLocaleString('id-ID')} m²)` : '-'}
                         </span>
                       </div>

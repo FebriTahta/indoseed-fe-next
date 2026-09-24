@@ -10,7 +10,7 @@ import FilterRow, { FilterSelectConfig } from '../../shared/FilterRow';
 import DataTable from '../../shared/DataTable';
 import CrudModal from '../../shared/CrudModal';
 import { TableEditBtn, TableRemoveBtn } from '../../shared/ActionButtons';
-import { MasterParameter, MasterParameterOption } from '@/app/types/parameter';
+import { MasterParameter, MasterParameterOption, PARAMETER_MODUL_OPTIONS } from '@/app/types/parameter';
 import { useMasterParameter } from '@/app/hooks/useMasterParameter';
 
 const TIPE_COLORS: Record<string, string> = {
@@ -53,9 +53,17 @@ export default function MasterParameterPage() {
   } = useMasterParameter();
 
   // Filters Configuration
+  const defaultModulList = PARAMETER_MODUL_OPTIONS.map((opt) => opt.value as string);
+  const activeModuls = Array.from(new Set([...defaultModulList, ...modulList]));
+
+  const getModulLabel = (modul: string) => {
+    const found = PARAMETER_MODUL_OPTIONS.find((opt) => opt.value === modul);
+    return found ? found.label : modul;
+  };
+
   const modulOptions = [
     { value: 'ALL', label: 'Semua Modul' },
-    ...modulList.map((m) => ({ value: m, label: m })),
+    ...activeModuls.map((m) => ({ value: m, label: getModulLabel(m) })),
   ];
 
   const statusOptions = [
@@ -203,7 +211,7 @@ export default function MasterParameterPage() {
         </td>
         <td className="p-4">
           <span className="badge px-2.5 py-1 rounded text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
-            {item.namaModul}
+            {getModulLabel(item.namaModul)}
           </span>
         </td>
         <td className="p-4">
@@ -333,16 +341,24 @@ export default function MasterParameterPage() {
             <label className="form-label text-sm font-semibold text-gray-700">
               Nama Modul <span className="text-red-500">*</span>
             </label>
-            <input
-              type="text"
-              className="form-control w-full h-[40px] p-2 text-sm rounded-lg uppercase"
-              placeholder="Contoh: QC, PERTANIAN, MONITORING"
+            <select
+              className="form-select w-full h-[40px] p-2 text-sm rounded-lg"
               value={formValues.namaModul}
               onChange={(e) => setFormValues({ ...formValues, namaModul: e.target.value })}
               required
-            />
+            >
+              {PARAMETER_MODUL_OPTIONS.map((opt) => (
+                <option key={opt.value} value={opt.value}>
+                  {opt.label}
+                </option>
+              ))}
+              {formValues.namaModul &&
+                !PARAMETER_MODUL_OPTIONS.some((opt) => opt.value === formValues.namaModul) && (
+                  <option value={formValues.namaModul}>{formValues.namaModul}</option>
+                )}
+            </select>
             <p className="text-xs text-gray-400 mt-1">
-              Pengelompokkan modul (QC, PERTANIAN, PANEN, MONITORING).
+              Pilihan modul: Off_Type, QC, VARIETAS, MONITORING_LAHAN.
             </p>
           </div>
 

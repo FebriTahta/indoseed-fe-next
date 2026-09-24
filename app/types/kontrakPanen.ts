@@ -8,6 +8,7 @@ export interface KontrakPanen {
   harvestTypeId?: string | null;
   tipePanenan: string; // 'Glondong / Fresh' | 'OC / Benih'
   nilaiKontrak: number;
+  feeKelompok?: number | null;
   satuan: string;
   umurPanen: number; // HST
   periodeMulai?: string | null;
@@ -59,6 +60,7 @@ export interface KontrakPanenFormData {
   harvestTypeId?: string;
   tipePanenan: string;
   nilaiKontrak: number | string;
+  feeKelompok?: number | string;
   satuan: string;
   umurPanen: number | string;
   periodeMulai: string;

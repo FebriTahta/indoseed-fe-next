@@ -10,12 +10,18 @@ export interface Partner {
   commodity?: any;
   noKtp: string | null;
   noTelepon: string | null;
+  email?: string | null;
   alamat: string | null;
   luasLahan: number;
   pengalaman: number;
   tglBergabung: string;
   status: 'Aktif' | 'Non Aktif' | 'Tidak Aktif';
   image: string | null;
+  namaBank?: string | null;
+  noRekening?: string | null;
+  atasNama?: string | null;
+  catatan?: string | null;
+  dokumen?: string | null;
   tglDibuat: string;
   dibuatOleh: string;
   tglDiubah: string;

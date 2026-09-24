@@ -173,6 +173,7 @@ export interface JadwalTanam {
     kodePetani: string;
     namaPetani: string;
     noTelepon?: string;
+    kelompokTani?: string;
   } | null;
   greenhouse?: {
     id: string;

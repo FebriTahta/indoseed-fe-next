@@ -330,6 +330,7 @@ export default function KontrakPanenPage() {
                   <th className="py-3 px-3">Varietas</th>
                   <th className="py-3 px-3">Tipe Panenan</th>
                   <th className="py-3 px-3 text-right">Nilai Kontrak</th>
+                  <th className="py-3 px-3 text-right">Fee Kelompok</th>
                   <th className="py-3 px-3 text-center">Satuan</th>
                   <th className="py-3 px-3 text-center">Umur Panen</th>
                   <th className="py-3 px-3">Periode Berlaku</th>
@@ -340,7 +341,7 @@ export default function KontrakPanenPage() {
               <tbody className="divide-y divide-gray-100">
                 {loading ? (
                   <tr>
-                    <td colSpan={11} className="py-12 text-center text-gray-400">
+                    <td colSpan={12} className="py-12 text-center text-gray-400">
                       <div className="flex items-center justify-center gap-2">
                         <svg className="animate-spin w-5 h-5 text-emerald-600" fill="none" viewBox="0 0 24 24">
                           <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
@@ -352,13 +353,13 @@ export default function KontrakPanenPage() {
                   </tr>
                 ) : error ? (
                   <tr>
-                    <td colSpan={11} className="py-12 text-center text-red-500">
+                    <td colSpan={12} className="py-12 text-center text-red-500">
                       {error}
                     </td>
                   </tr>
                 ) : items.length === 0 ? (
                   <tr>
-                    <td colSpan={11} className="py-12 text-center text-gray-400">
+                    <td colSpan={12} className="py-12 text-center text-gray-400">
                       Tidak ada data kontrak panen yang sesuai kriteria.
                     </td>
                   </tr>
@@ -399,6 +400,13 @@ export default function KontrakPanenPage() {
                         {/* Nilai Kontrak */}
                         <td className="py-3 px-3 text-right font-bold text-gray-900">
                           Rp {row.nilaiKontrak.toLocaleString('id-ID')}
+                        </td>
+
+                        {/* Fee Kelompok */}
+                        <td className="py-3 px-3 text-right font-semibold text-gray-800">
+                          {row.feeKelompok !== null && row.feeKelompok !== undefined
+                            ? `Rp ${Number(row.feeKelompok).toLocaleString('id-ID')}`
+                            : '-'}
                         </td>
 
                         {/* Satuan */}

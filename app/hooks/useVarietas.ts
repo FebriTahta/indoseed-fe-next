@@ -27,6 +27,7 @@ export function useVarietas() {
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [filterCommodity, setFilterCommodity] = useState<any>(null);
   const [filterStatus, setFilterStatus] = useState<any>(null);
+  const [filterKelompok, setFilterKelompok] = useState<string>('');
 
   // Debounce search input
   useEffect(() => {
@@ -197,12 +198,30 @@ export function useVarietas() {
     const active = allVarietiesForStats.filter(v => v.status === 'Aktif').length;
     const inactive = allVarietiesForStats.filter(v => v.status !== 'Aktif').length;
     const uniqueCommodities = new Set(allVarietiesForStats.map(v => v.commodityId)).size;
+    
+    // Calculate total brands (each variety has at least 1 brand, or count from JSON metadata)
+    let brandsCount = 0;
+    allVarietiesForStats.forEach(v => {
+      if (v.deskripsi && v.deskripsi.trim().startsWith('{')) {
+        try {
+          const parsed = JSON.parse(v.deskripsi);
+          if (parsed.brands && Array.isArray(parsed.brands)) {
+            brandsCount += parsed.brands.length;
+            return;
+          }
+        } catch (e) {
+          // ignore
+        }
+      }
+      brandsCount += 1;
+    });
 
     return {
       total,
       active,
       inactive,
-      commodities: uniqueCommodities
+      commodities: uniqueCommodities,
+      totalBrands: brandsCount || total,
     };
   }, [allVarietiesForStats]);
 
@@ -247,6 +266,7 @@ export function useVarietas() {
     setDebouncedSearch('');
     setFilterCommodity(null);
     setFilterStatus(null);
+    setFilterKelompok('');
     setCurrentPage(1);
     toast.info('Filter berhasil direset');
   };
@@ -482,6 +502,8 @@ export function useVarietas() {
     setFilterCommodity,
     filterStatus,
     setFilterStatus,
+    filterKelompok,
+    setFilterKelompok,
     currentPage,
     setCurrentPage,
     pageSize,

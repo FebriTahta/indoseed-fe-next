@@ -1,5 +1,6 @@
 "use client"
 import React, { useMemo, Fragment } from 'react';
+import { useRouter } from 'next/navigation';
 import Pageheader from '@/shared/layouts-components/page-header/pageheader';
 import Seo from '@/shared/layouts-components/seo/seo';
 import SpkButton from '@/shared/@spk-reusable-components/uielements/spk-button';
@@ -10,15 +11,16 @@ import 'react-toastify/dist/ReactToastify.css';
 import StatsWidgets, { StatItem } from '../../shared/StatsWidgets';
 import FilterRow, { FilterSelectConfig } from '../../shared/FilterRow';
 import DataTable from '../../shared/DataTable';
-import DetailPanel, { TabConfig, DetailAction } from '../../shared/DetailPanel';
 import CrudModal from '../../shared/CrudModal';
 import ImageUpload from '../../shared/ImageUpload';
 import { TableViewBtn, TableEditBtn, TableRemoveBtn } from '../../shared/ActionButtons';
 
+import ModalDetailPetani from './component/ModalDetailPetani';
 import { Partner } from '@/app/types/partner';
 import { usePetaniMitra } from '@/app/hooks/usePetaniMitra';
 
 export default function PetaniMitraPage() {
+  const router = useRouter();
   const {
     loading,
     error,
@@ -151,242 +153,7 @@ export default function PetaniMitraPage() {
     );
   };
 
-  // Detail Panel Tabs Config
-  const detailTabs: TabConfig[] = [
-    { id: 'info', label: 'Informasi' },
-    { id: 'lahan', label: 'Lahan' },
-    { id: 'produksi', label: 'Riwayat Produksi' },
-    { id: 'catatan', label: 'Catatan' }
-  ];
 
-  const detailActions: DetailAction[] = viewedPartner ? [
-    {
-      label: 'Edit Data',
-      onClick: () => handleOpenEditModal(viewedPartner),
-      icon: 'ri-edit-line',
-      className: 'bg-emerald-600 text-white hover:bg-emerald-700 font-semibold px-4 py-2 rounded flex items-center justify-center gap-2'
-    },
-    {
-      label: viewedPartner.status === 'Aktif' ? 'Non Aktifkan' : 'Aktifkan',
-      onClick: () => handleToggleStatus(viewedPartner),
-      icon: 'ri-shut-down-line',
-      className: viewedPartner.status === 'Aktif'
-        ? 'border border-red-500 text-red-500 hover:bg-red-50 font-semibold px-4 py-2 rounded flex items-center justify-center gap-2'
-        : 'border border-success text-success hover:bg-emerald-50 font-semibold px-4 py-2 rounded flex items-center justify-center gap-2'
-    }
-  ] : [];
-
-  // Local helper to filter greenhouses managed by this partner
-  const managedLahan = useMemo(() => {
-    if (!viewedPartner) return [];
-    return greenhouses.filter(g => g.partnerId === viewedPartner.id || g.petaniMitra === viewedPartner.namaPetani);
-  }, [viewedPartner, greenhouses]);
-
-  const renderDetailTabContent = (tabId: string) => {
-    if (!viewedPartner) return null;
-
-    switch (tabId) {
-      case 'info':
-        return (
-          <div className="grid grid-cols-12 gap-y-3.5 text-xs mt-3 text-gray-700 divide-y divide-gray-100">
-            <div className="col-span-4 font-semibold text-textmuted py-1 flex items-center">Nama Lengkap</div>
-            <div className="col-span-8 py-1 font-bold text-gray-800 flex items-center">
-              <span className="mr-3 text-gray-400">:</span>{viewedPartner.namaPetani}
-            </div>
-
-            <div className="col-span-4 font-semibold text-textmuted py-1.5 flex items-center">Kelompok Tani</div>
-            <div className="col-span-8 py-1.5 font-bold text-emerald-600 flex items-center">
-              <span className="mr-3 text-gray-400">:</span>
-              <span className="badge rounded font-bold px-2 py-0.5 text-xs bg-emerald-50 text-emerald-700">
-                {viewedPartner.kelompokTani}
-              </span>
-            </div>
-
-            <div className="col-span-4 font-semibold text-textmuted py-1 flex items-center">Komoditas Utama</div>
-            <div className="col-span-8 py-1 font-bold text-gray-800 flex items-center">
-              <span className="mr-3 text-gray-400">:</span>{viewedPartner.komoditasUtama}
-            </div>
-
-            <div className="col-span-4 font-semibold text-textmuted py-1 flex items-center">No. KTP</div>
-            <div className="col-span-8 py-1 font-semibold text-gray-800 flex items-center font-mono">
-              <span className="mr-3 text-gray-400">:</span>{viewedPartner.noKtp || '-'}
-            </div>
-
-            <div className="col-span-4 font-semibold text-textmuted py-1 flex items-center">No. Telepon</div>
-            <div className="col-span-8 py-1 font-semibold text-gray-800 flex items-center font-mono">
-              <span className="mr-3 text-gray-400">:</span>{viewedPartner.noTelepon || '-'}
-            </div>
-
-            <div className="col-span-4 font-semibold text-textmuted py-2 flex items-start">Alamat</div>
-            <div className="col-span-8 py-2 text-gray-600 flex items-start leading-relaxed">
-              <span className="mr-3 text-gray-400">:</span>
-              <span className="flex-1">{viewedPartner.alamat || '-'}</span>
-            </div>
-
-            <div className="col-span-4 font-semibold text-textmuted py-1 flex items-center">Luas Lahan Total</div>
-            <div className="col-span-8 py-1 font-semibold text-gray-800 flex items-center">
-              <span className="mr-3 text-gray-400">:</span>
-              {(() => {
-                const partnerGreenhouses = viewedPartner.greenhouses || greenhouses.filter(g => g.partnerId === viewedPartner.id || g.petaniMitra === viewedPartner.namaPetani);
-                const totalLuas = partnerGreenhouses.reduce((sum, g) => sum + Number(g.luas || 0), 0);
-                return totalLuas.toLocaleString('id-ID', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-              })()} Ha
-            </div>
-
-            <div className="col-span-4 font-semibold text-textmuted py-1 flex items-center">Pengalaman Bertani</div>
-            <div className="col-span-8 py-1 text-gray-700 flex items-center">
-              <span className="mr-3 text-gray-400">:</span>{viewedPartner.pengalaman} tahun
-            </div>
-
-            <div className="col-span-4 font-semibold text-textmuted py-1 flex items-center">Tanggal Bergabung</div>
-            <div className="col-span-8 py-1 text-gray-700 flex items-center">
-              <span className="mr-3 text-gray-400">:</span>{viewedPartner.tglBergabung ? new Date(viewedPartner.tglBergabung).toLocaleDateString('id-ID', { day: '2-digit', month: '2-digit', year: 'numeric' }) : '-'}
-            </div>
-
-            <div className="col-span-4 font-semibold text-textmuted py-1 flex items-center">Status</div>
-            <div className="col-span-8 py-1 flex items-center">
-              <span className="mr-3 text-gray-400">:</span>
-              <span className={`badge rounded font-bold px-2 py-0.5 text-xs ${viewedPartner.status === 'Aktif'
-                ? 'bg-success/10 text-success'
-                : 'bg-danger/10 text-danger'
-                }`}>
-                {viewedPartner.status === 'Aktif' ? 'Aktif' : 'Non Aktif'}
-              </span>
-            </div>
-
-            <div className="col-span-12 py-2">
-              <p className="font-semibold text-textmuted mb-2">Foto Profil</p>
-              <div className="w-24 h-24 rounded border bg-gray-50 flex items-center justify-center overflow-hidden">
-                {viewedPartner.image ? (
-                  <img src={viewedPartner.image} alt={viewedPartner.namaPetani} className="w-full h-full object-cover" />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center bg-emerald-50 text-emerald-600">
-                    <i className="ri-user-line text-2xl"></i>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-        );
-      case 'lahan':
-        return (
-          <div className="space-y-4 text-xs py-1">
-            <p className="font-semibold text-gray-700 mb-1.5 flex items-center gap-1.5">
-              <i className="ri-community-line text-emerald-600 text-sm"></i>
-              Daftar Greenhouse/Lahan yang Dikelola ({managedLahan.length}):
-            </p>
-            {managedLahan.length > 0 ? (
-              <div className="space-y-3 max-h-[420px] overflow-y-auto pr-1 custom-scrollbar">
-                {managedLahan.map((lahan) => (
-                  <div key={lahan.id} className="p-3.5 bg-white border border-defaultborder hover:border-emerald-500/50 rounded-lg shadow-sm hover:shadow transition-all duration-200">
-                    {/* Header */}
-                    <div className="flex justify-between items-start gap-2 border-b border-gray-100 pb-2 mb-2.5">
-                      <div>
-                        <h4 className="font-bold text-gray-800 text-[13px]">{lahan.namaLahan}</h4>
-                        <span className="text-[10px] text-textmuted font-mono bg-gray-50 px-1.5 py-0.5 rounded border border-gray-200/50 mt-0.5 inline-block">{lahan.kodeLahan}</span>
-                      </div>
-                      <span className={`badge rounded px-1.5 py-0.5 text-[10px] font-semibold ${lahan.status === 'Aktif'
-                          ? 'bg-success/10 text-success'
-                          : lahan.status === 'Maintenance'
-                            ? 'bg-danger/10 text-danger'
-                            : 'bg-gray-100 text-gray-500'
-                        }`}>
-                        {lahan.status}
-                      </span>
-                    </div>
-
-                    {/* Grid Details */}
-                    <div className="grid grid-cols-2 gap-x-3 gap-y-2 text-[11px] text-gray-600">
-                      <div>
-                        <span className="text-textmuted block text-[10px] font-semibold">Jenis Lahan</span>
-                        <span className="font-semibold text-gray-800">{lahan.jenisLahan}</span>
-                      </div>
-                      <div>
-                        <span className="text-textmuted block text-[10px] font-semibold">Luas Lahan</span>
-                        <span className="font-semibold text-emerald-600">{Number(lahan.luas).toFixed(2)} Ha</span>
-                      </div>
-                      <div className="col-span-2">
-                        <span className="text-textmuted block text-[10px] font-semibold">Komoditas Utama</span>
-                        <span className="font-semibold text-gray-800 flex items-center gap-1">
-                          <i className="ri-leaf-line text-emerald-500"></i>
-                          {lahan.commodity?.namaKomoditas || lahan.komoditasUtama || '-'}
-                        </span>
-                      </div>
-                      <div className="col-span-2">
-                        <span className="text-textmuted block text-[10px] font-semibold">Lokasi</span>
-                        <span className="font-medium text-gray-700 leading-relaxed block text-wrap">
-                          <strong>{lahan.lokasi}</strong>{lahan.detailLokasi ? ` - ${lahan.detailLokasi}` : ''}
-                        </span>
-                      </div>
-                      {lahan.koordinat && (
-                        <div className="col-span-2">
-                          <span className="text-textmuted block text-[10px] font-semibold">Koordinat</span>
-                          <span className="font-mono text-gray-600 flex items-center gap-1">
-                            <i className="ri-map-pin-2-line text-red-500"></i>
-                            {lahan.koordinat}
-                          </span>
-                        </div>
-                      )}
-                      {lahan.keterangan && (
-                        <div className="col-span-2 border-t border-gray-100 pt-2 mt-1">
-                          <span className="text-textmuted block text-[10px] font-semibold">Keterangan</span>
-                          <p className="text-gray-500 italic mt-0.5 leading-relaxed">{lahan.keterangan}</p>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="p-8 text-center text-gray-400 border border-dashed border-gray-200 rounded-lg bg-gray-50/30">
-                <i className="ri-treasure-map-line text-3xl mb-1.5 block text-gray-300"></i>
-                Belum ada Greenhouse/Lahan yang dihubungkan ke mitra ini.
-              </div>
-            )}
-          </div>
-        );
-      case 'produksi':
-        return (
-          <div className="space-y-3 text-xs py-1">
-            <p className="font-semibold text-gray-700 mb-2">Riwayat Panen & Produksi (2 Musim Terakhir):</p>
-            <div className="border border-defaultborder rounded divide-y divide-defaultborder">
-              <div className="p-3 flex justify-between items-center bg-gray-50/50">
-                <div>
-                  <p className="font-bold text-gray-800">Panen Padi Unggul Inpari 32 - MT I 2025</p>
-                  <span className="text-[10px] text-textmuted">Diserahkan ke Gudang Pusat Lamongan &bull; 10 Mei 2025</span>
-                </div>
-                <span className="font-bold text-emerald-600">8.40 Ton</span>
-              </div>
-              <div className="p-3 flex justify-between items-center bg-gray-50/50">
-                <div>
-                  <p className="font-bold text-gray-800">Panen Jagung Hibrida P-21 - MT II 2024</p>
-                  <span className="text-[10px] text-textmuted">Diserahkan ke Gudang Pusat Jember &bull; 12 Nov 2024</span>
-                </div>
-                <span className="font-bold text-emerald-600">7.20 Ton</span>
-              </div>
-            </div>
-          </div>
-        );
-      case 'catatan':
-        return (
-          <div className="space-y-3 text-xs py-1">
-            <p className="font-semibold text-gray-700 mb-2">Catatan Kinerja & Riwayat Evaluasi:</p>
-            <div className="border border-defaultborder rounded p-3 bg-gray-50/50 text-gray-600 leading-relaxed">
-              <p className="mb-2"><strong>Evaluasi Musim Tanam I 2025:</strong></p>
-              <p className="text-[11px] mb-3">
-                Kinerja petani sangat baik. Pemeliharaan lahan di Greenhouse dilakukan secara disiplin. Hasil produktivitas padi melampaui target awal sebesar 12%. Komunikasi dengan tim lapangan sangat kooperatif.
-              </p>
-              <div className="border-t border-gray-200 pt-2.5 flex justify-between text-[10px] text-textmuted">
-                <span>Diperbarui oleh: Supervisor Lapangan</span>
-                <span>Tgl: 18/05/2025</span>
-              </div>
-            </div>
-          </div>
-        );
-      default:
-        return null;
-    }
-  };
 
   // Auth loading / error states
   if (error) {
@@ -419,59 +186,45 @@ export default function PetaniMitraPage() {
       {/* Summary Cards */}
       <StatsWidgets items={statItems} />
 
-      <div className="grid grid-cols-12 gap-x-6">
-        {/* Left Side (Table & Filters) */}
-        <div className={viewedPartner ? 'xl:col-span-8 col-span-12' : 'xl:col-span-12 col-span-12'}>
-          {/* Filters Bar */}
-          <FilterRow
-            search={search}
-            onSearchChange={(val) => { setSearch(val); }}
-            searchPlaceholder="Cari petani mitra..."
-            selectFilters={filterConfig}
-            onReset={handleResetFilters}
-            onExport={handleExportData}
-            onAdd={handleOpenAddModal}
-            addLabel="Tambah Petani Mitra"
-          />
+      <div className="w-full">
+        {/* Filters Bar */}
+        <FilterRow
+          search={search}
+          onSearchChange={(val) => { setSearch(val); }}
+          searchPlaceholder="Cari petani mitra..."
+          selectFilters={filterConfig}
+          onReset={handleResetFilters}
+          onExport={handleExportData}
+          onAdd={() => router.push('/master/petani-mitra/tambah')}
+          addLabel="Tambah Petani Mitra"
+        />
 
-          {/* Table list with pagination */}
-          <DataTable
-            headers={tableHeaders}
-            items={partners}
-            renderRow={renderTableRow}
-            currentPage={currentPage}
-            pageSize={pageSize}
-            totalPages={totalPages}
-            totalRecords={totalRecords}
-            onPageChange={setCurrentPage}
-            onPageSizeChange={(size) => { setPageSize(size); setCurrentPage(1); }}
-            emptyMessage="Tidak ada data petani mitra yang cocok dengan filter pencarian."
-            isLoading={isTableLoading}
-          />
-        </div>
-
-        {/* Right Side (Detail Panel Drawer) */}
-        {viewedPartner && (
-          <div className="xl:col-span-4 col-span-12 animate-fade-in-right">
-            <DetailPanel
-              title="Detail Petani Mitra"
-              onClose={() => setViewedPartner(null)}
-              imageUrl={viewedPartner.image}
-              imageAlt={viewedPartner.namaPetani}
-              statusLabel={viewedPartner.status === 'Aktif' ? 'Aktif' : 'Non Aktif'}
-              statusBgClass={viewedPartner.status === 'Aktif' ? 'bg-success' : 'bg-danger'}
-              primaryTitle={viewedPartner.namaPetani}
-              secondaryTitle={`Kode Petani: ${viewedPartner.kodePetani}`}
-              tabs={detailTabs}
-              activeTab={activeDetailTab}
-              onTabChange={setActiveDetailTab}
-              renderTabContent={renderDetailTabContent}
-              actions={detailActions}
-              isLoading={isDetailLoading}
-            />
-          </div>
-        )}
+        {/* Table list with pagination */}
+        <DataTable
+          headers={tableHeaders}
+          items={partners}
+          renderRow={renderTableRow}
+          currentPage={currentPage}
+          pageSize={pageSize}
+          totalPages={totalPages}
+          totalRecords={totalRecords}
+          onPageChange={setCurrentPage}
+          onPageSizeChange={(size) => { setPageSize(size); setCurrentPage(1); }}
+          emptyMessage="Tidak ada data petani mitra yang cocok dengan filter pencarian."
+          isLoading={isTableLoading}
+        />
       </div>
+
+      {/* Info Pop Up Modal with Land List */}
+      <ModalDetailPetani
+        isOpen={!!viewedPartner}
+        partner={viewedPartner}
+        allGreenhouses={greenhouses}
+        onClose={() => setViewedPartner(null)}
+        onEdit={(p) => handleOpenEditModal(p)}
+        onToggleStatus={(p) => handleToggleStatus(p)}
+        isLoading={isDetailLoading}
+      />
 
       {/* Create / Edit Modal Dialog */}
       <CrudModal
