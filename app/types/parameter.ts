@@ -1,3 +1,12 @@
+export const PARAMETER_MODUL_OPTIONS = [
+  { value: 'OFF_TYPE', label: 'Off_Type' },
+  { value: 'QC', label: 'QC' },
+  { value: 'VARIETAS', label: 'VARIETAS' },
+  { value: 'MONITORING_LAHAN', label: 'MONITORING_LAHAN' },
+] as const;
+
+export type ParameterModul = typeof PARAMETER_MODUL_OPTIONS[number]['value'];
+
 export interface MasterParameterOption {
   id?: string;
   parameterId?: string;

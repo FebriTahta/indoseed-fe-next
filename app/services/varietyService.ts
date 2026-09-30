@@ -3,7 +3,7 @@ import { ApiResponse } from '@/app/types/api';
 import { Variety } from '@/app/types/variety';
 
 export const varietyService = {
-  getVarieties: async (params: {
+  getVarieties: async (params?: {
     page?: number;
     pageSize?: number;
     search?: string;

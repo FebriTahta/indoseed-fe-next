@@ -132,8 +132,8 @@ export default function ModalDetailKontrak({
               </div>
             </div>
 
-            {/* Grid 2: Komoditas & Tipe Panenan & Nilai Kontrak */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 pb-4 border-b border-gray-100">
+            {/* Grid 2: Komoditas & Tipe Panenan & Nilai Kontrak & Fee Kelompok */}
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-4 pb-4 border-b border-gray-100">
               {/* Komoditas */}
               <div>
                 <span className="text-[11px] font-medium text-gray-400 block mb-1">Komoditas</span>
@@ -168,6 +168,16 @@ export default function ModalDetailKontrak({
                 <div className="text-xs font-extrabold text-emerald-700">
                   Rp {item.nilaiKontrak.toLocaleString('id-ID')}
                   <span className="text-[10px] font-normal text-gray-500"> / {item.satuan}</span>
+                </div>
+              </div>
+
+              {/* Fee Kelompok */}
+              <div>
+                <span className="text-[11px] font-medium text-gray-400 block mb-1">Fee Kelompok</span>
+                <div className="text-xs font-bold text-gray-800">
+                  {item.feeKelompok !== null && item.feeKelompok !== undefined
+                    ? `Rp ${Number(item.feeKelompok).toLocaleString('id-ID')}`
+                    : '-'}
                 </div>
               </div>
             </div>
