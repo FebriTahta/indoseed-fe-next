@@ -146,6 +146,11 @@ export default function SignIn() {
                                             required
                                             value={username}
                                             onChange={changeHandler}
+                                            onKeyDown={(e) => {
+                                                if (e.key === 'Enter') {
+                                                    handleLogin(e);
+                                                }
+                                            }}
                                             className="block w-full pl-9 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-emerald-500 focus:border-emerald-500 text-sm transition-colors"
                                             placeholder="Masukkan email / username"
                                         />
@@ -167,6 +172,11 @@ export default function SignIn() {
                                             required
                                             value={password}
                                             onChange={changeHandler}
+                                            onKeyDown={(e) => {
+                                                if (e.key === 'Enter') {
+                                                    handleLogin(e);
+                                                }
+                                            }}
                                             className="block w-full pl-9 pr-9 py-2 border border-gray-300 rounded-lg focus:ring-emerald-500 focus:border-emerald-500 text-sm transition-colors"
                                             placeholder="••••••••"
                                         />
