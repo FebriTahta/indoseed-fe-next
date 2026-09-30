@@ -84,7 +84,6 @@ const PermintaanList = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   const headers = [
-    <input type="checkbox" className="form-checkbox h-4 w-4 text-primary border-gray-300 rounded" />,
     "No.",
     "No. Permintaan",
     "Tanggal Permintaan",
@@ -127,7 +126,7 @@ const PermintaanList = () => {
 
   const renderRow = (item: any, index: number) => (
     <tr key={item.id} className="hover:bg-gray-50 border-b border-defaultborder transition-colors">
-      <td className="p-4"><input type="checkbox" className="form-checkbox h-4 w-4 text-primary border-gray-300 rounded" /></td>
+
       <td className="p-4 text-center">{(index + 1).toString()}</td>
       <td className="p-4"><span className="text-primary font-medium">{item.noPermintaan}</span></td>
       <td className="p-4">{item.tanggalPermintaan}</td>
@@ -143,9 +142,6 @@ const PermintaanList = () => {
         <div className="flex gap-2 justify-center">
           <ViewIconButton title="Lihat" />
           <EditIconButton onClick={() => router.push(`/qc/permintaan-pengujian/edit/${item.id}`)} />
-          <button className="w-8 h-8 flex items-center justify-center rounded-md bg-gray-50 text-gray-600 hover:bg-gray-100 hover:text-gray-700 transition-all shadow-sm border border-gray-100">
-            <i className="ri-more-2-fill text-lg"></i>
-          </button>
         </div>
       </td>
     </tr>
@@ -282,6 +278,8 @@ const PermintaanList = () => {
           totalRecords={mockData.length}
           onPageChange={setCurrentPage}
           onPageSizeChange={setPageSize}
+          headerTextSize="12px"
+          bodyTextSize="10px"
         />
       </div>
 

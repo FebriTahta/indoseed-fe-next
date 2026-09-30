@@ -28,9 +28,9 @@ export const AddButton: React.FC<ActionButtonProps> = ({ onClick, label, classNa
     <SpkButton
       onclickfunc={onClick}
       variant="primary"
-      customClass={`flex items-center gap-2 px-4 py-2.5 rounded-lg shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all font-semibold bg-[#1B4E3B] ${className}`}
+      customClass={`flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all font-semibold bg-[#1B4E3B] text-white border-transparent ${className}`}
     >
-      <i className="ri-add-circle-line text-lg"></i> <span className="font-medium">{label}</span>
+      <i className="ri-add-line text-lg"></i> <span className="font-medium">{label}</span>
     </SpkButton>
   );
 };
@@ -67,10 +67,10 @@ export const ViewIconButton: React.FC<IconButtonProps> = ({ onClick, title = "Li
   return (
     <button
       onClick={onClick}
-      className={`w-8 h-8 flex items-center justify-center rounded-md bg-emerald-50 text-emerald-600 hover:bg-emerald-100 hover:text-emerald-700 hover:scale-110 transition-all duration-200 shadow-sm border border-emerald-100 ${className}`}
+      className={`w-6 h-6 flex items-center justify-center rounded-md bg-emerald-50 text-emerald-600 hover:bg-emerald-100 hover:text-emerald-700 hover:scale-110 transition-all duration-200 shadow-sm border border-emerald-100 ${className}`}
       title={title}
     >
-      <i className="ri-eye-line text-lg"></i>
+      <i className="ri-eye-line text-sm"></i>
     </button>
   );
 };
@@ -79,10 +79,10 @@ export const EditIconButton: React.FC<IconButtonProps> = ({ onClick, title = "Ed
   return (
     <button
       onClick={onClick}
-      className={`w-8 h-8 flex items-center justify-center rounded-md bg-blue-50 text-blue-600 hover:bg-blue-100 hover:text-blue-700 hover:scale-110 transition-all duration-200 shadow-sm border border-blue-100 ${className}`}
+      className={`w-6 h-6 flex items-center justify-center rounded-md bg-blue-50 text-blue-600 hover:bg-blue-100 hover:text-blue-700 hover:scale-110 transition-all duration-200 shadow-sm border border-blue-100 ${className}`}
       title={title}
     >
-      <i className="ri-edit-line text-lg"></i>
+      <i className="ri-edit-line text-sm"></i>
     </button>
   );
 };
@@ -160,10 +160,10 @@ export const DeleteIconButton: React.FC<IconButtonProps> = ({ onClick, title = "
   return (
     <button
       onClick={onClick}
-      className={`w-8 h-8 flex items-center justify-center rounded-md bg-rose-50 text-rose-600 hover:bg-rose-100 hover:text-rose-700 hover:scale-110 transition-all duration-200 shadow-sm border border-rose-100 ${className}`}
+      className={`w-6 h-6 flex items-center justify-center rounded-md bg-rose-50 text-rose-600 hover:bg-rose-100 hover:text-rose-700 hover:scale-110 transition-all duration-200 shadow-sm border border-rose-100 ${className}`}
       title={title}
     >
-      <i className="ri-delete-bin-line text-lg"></i>
+      <i className="ri-delete-bin-line text-sm"></i>
     </button>
   );
 };

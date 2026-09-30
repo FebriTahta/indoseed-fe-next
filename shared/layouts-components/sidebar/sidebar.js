@@ -786,57 +786,12 @@ const Sidebar = () => {
 					<Link href="/dashboard/sales" className="header-logo flex items-center justify-center">
 						{settings?.logoWebsite || settings?.logoKotak ? (
 							<>
-								<div className="relative flex desktop-logo w-48 h-14 items-center justify-center">
-									<img src={logoUrl} alt="logo" className="!w-full !h-full object-contain opacity-0" />
-									<div className="absolute inset-0" style={{ WebkitMaskImage: `url(${logoUrl})`, maskImage: `url(${logoUrl})`, WebkitMaskSize: 'contain', maskSize: 'contain', WebkitMaskRepeat: 'no-repeat', maskRepeat: 'no-repeat', WebkitMaskPosition: 'center', maskPosition: 'center', backgroundColor: settings.logoColor || '#11b238' }}></div>
-								</div>
-								<div className="relative flex toggle-dark w-28 h-14 items-center justify-center -mt-4">
-									<img src={finalLogoKotakUrl} alt="logo" className="!w-full !h-full object-contain opacity-0" />
-									<div className="absolute inset-0" style={{ WebkitMaskImage: `url(${finalLogoKotakUrl})`, maskImage: `url(${finalLogoKotakUrl})`, WebkitMaskSize: 'contain', maskSize: 'contain', WebkitMaskRepeat: 'no-repeat', maskRepeat: 'no-repeat', WebkitMaskPosition: 'center', maskPosition: 'center', backgroundColor: settings.logoColor || '#11b238' }}></div>
-								</div>
-								<div className="relative flex desktop-dark w-48 h-14 items-center justify-center">
-									<img src={logoUrl} alt="logo" className="!w-full !h-full object-contain opacity-0" />
-									<div className="absolute inset-0" style={{ WebkitMaskImage: `url(${logoUrl})`, maskImage: `url(${logoUrl})`, WebkitMaskSize: 'contain', maskSize: 'contain', WebkitMaskRepeat: 'no-repeat', maskRepeat: 'no-repeat', WebkitMaskPosition: 'center', maskPosition: 'center', backgroundColor: settings.logoColor || '#11b238' }}></div>
-								</div>
-								<div className="relative flex toggle-logo w-28 h-14 items-center justify-center -mt-4">
-									<img src={finalLogoKotakUrl} alt="logo" className="!w-full !h-full object-contain opacity-0" />
-									<div className="absolute inset-0" style={{ WebkitMaskImage: `url(${finalLogoKotakUrl})`, maskImage: `url(${finalLogoKotakUrl})`, WebkitMaskSize: 'contain', maskSize: 'contain', WebkitMaskRepeat: 'no-repeat', maskRepeat: 'no-repeat', WebkitMaskPosition: 'center', maskPosition: 'center', backgroundColor: settings.logoColor || '#11b238' }}></div>
-								</div>
-								<div className="relative flex toggle-white w-28 h-14 items-center justify-center -mt-4">
-									<img src={finalLogoKotakUrl} alt="logo" className="!w-full !h-full object-contain opacity-0" />
-									<div className="absolute inset-0" style={{ WebkitMaskImage: `url(${finalLogoKotakUrl})`, maskImage: `url(${finalLogoKotakUrl})`, WebkitMaskSize: 'contain', maskSize: 'contain', WebkitMaskRepeat: 'no-repeat', maskRepeat: 'no-repeat', WebkitMaskPosition: 'center', maskPosition: 'center', backgroundColor: settings.logoColor || '#11b238' }}></div>
-								</div>
-								<div className="relative flex desktop-white w-48 h-14 items-center justify-center">
-									<img src={logoUrl} alt="logo" className="!w-full !h-full object-contain opacity-0" />
-									<div className="absolute inset-0" style={{ WebkitMaskImage: `url(${logoUrl})`, maskImage: `url(${logoUrl})`, WebkitMaskSize: 'contain', maskSize: 'contain', WebkitMaskRepeat: 'no-repeat', maskRepeat: 'no-repeat', WebkitMaskPosition: 'center', maskPosition: 'center', backgroundColor: settings.logoColor || '#11b238' }}></div>
-								</div>
-							</>
-						) : settings?.logoColor ? (
-							<>
-								<div className="relative flex desktop-logo w-48 h-14 items-center justify-center">
-									<img src={`${process.env.NODE_ENV === 'production' ? basePath : ''}/assets/images/logo-web-green.png`} alt="logo" className="!w-full !h-full object-contain opacity-0" />
-									<div className="absolute inset-0" style={{ WebkitMaskImage: `url(${`${process.env.NODE_ENV === 'production' ? basePath : ''}/assets/images/logo-web-green.png`})`, maskImage: `url(${`${process.env.NODE_ENV === 'production' ? basePath : ''}/assets/images/logo-web-green.png`})`, WebkitMaskSize: 'contain', maskSize: 'contain', WebkitMaskRepeat: 'no-repeat', maskRepeat: 'no-repeat', WebkitMaskPosition: 'center', maskPosition: 'center', backgroundColor: settings.logoColor }}></div>
-								</div>
-								<div className="relative flex toggle-dark w-28 h-14 items-center justify-center -mt-4">
-									<img src={`${process.env.NODE_ENV === 'production' ? basePath : ''}/assets/images/logo-web-green.png`} alt="logo" className="!w-full !h-full object-contain opacity-0" />
-									<div className="absolute inset-0" style={{ WebkitMaskImage: `url(${`${process.env.NODE_ENV === 'production' ? basePath : ''}/assets/images/logo-web-green.png`})`, maskImage: `url(${`${process.env.NODE_ENV === 'production' ? basePath : ''}/assets/images/logo-web-green.png`})`, WebkitMaskSize: 'contain', maskSize: 'contain', WebkitMaskRepeat: 'no-repeat', maskRepeat: 'no-repeat', WebkitMaskPosition: 'center', maskPosition: 'center', backgroundColor: settings.logoColor }}></div>
-								</div>
-								<div className="relative flex desktop-dark w-48 h-14 items-center justify-center">
-									<img src={`${process.env.NODE_ENV === 'production' ? basePath : ''}/assets/images/logo-web-green.png`} alt="logo" className="!w-full !h-full object-contain opacity-0" />
-									<div className="absolute inset-0" style={{ WebkitMaskImage: `url(${`${process.env.NODE_ENV === 'production' ? basePath : ''}/assets/images/logo-web-green.png`})`, maskImage: `url(${`${process.env.NODE_ENV === 'production' ? basePath : ''}/assets/images/logo-web-green.png`})`, WebkitMaskSize: 'contain', maskSize: 'contain', WebkitMaskRepeat: 'no-repeat', maskRepeat: 'no-repeat', WebkitMaskPosition: 'center', maskPosition: 'center', backgroundColor: settings.logoColor }}></div>
-								</div>
-								<div className="relative flex toggle-logo w-28 h-14 items-center justify-center -mt-4">
-									<img src={`${process.env.NODE_ENV === 'production' ? basePath : ''}/assets/images/brand-logos/toggle-logo.png`} alt="logo" className="!w-full !h-full object-contain opacity-0" />
-									<div className="absolute inset-0" style={{ WebkitMaskImage: `url(${`${process.env.NODE_ENV === 'production' ? basePath : ''}/assets/images/brand-logos/toggle-logo.png`})`, maskImage: `url(${`${process.env.NODE_ENV === 'production' ? basePath : ''}/assets/images/brand-logos/toggle-logo.png`})`, WebkitMaskSize: 'contain', maskSize: 'contain', WebkitMaskRepeat: 'no-repeat', maskRepeat: 'no-repeat', WebkitMaskPosition: 'center', maskPosition: 'center', backgroundColor: settings.logoColor }}></div>
-								</div>
-								<div className="relative flex toggle-white w-28 h-14 items-center justify-center -mt-4">
-									<img src={`${process.env.NODE_ENV === 'production' ? basePath : ''}/assets/images/brand-logos/toggle-white.png`} alt="logo" className="!w-full !h-full object-contain opacity-0" />
-									<div className="absolute inset-0" style={{ WebkitMaskImage: `url(${`${process.env.NODE_ENV === 'production' ? basePath : ''}/assets/images/brand-logos/toggle-white.png`})`, maskImage: `url(${`${process.env.NODE_ENV === 'production' ? basePath : ''}/assets/images/brand-logos/toggle-white.png`})`, WebkitMaskSize: 'contain', maskSize: 'contain', WebkitMaskRepeat: 'no-repeat', maskRepeat: 'no-repeat', WebkitMaskPosition: 'center', maskPosition: 'center', backgroundColor: settings.logoColor }}></div>
-								</div>
-								<div className="relative flex desktop-white w-48 h-14 items-center justify-center">
-									<img src={`${process.env.NODE_ENV === 'production' ? basePath : ''}/assets/images/logo-web-green.png`} alt="logo" className="!w-full !h-full object-contain opacity-0" />
-									<div className="absolute inset-0" style={{ WebkitMaskImage: `url(${`${process.env.NODE_ENV === 'production' ? basePath : ''}/assets/images/logo-web-green.png`})`, maskImage: `url(${`${process.env.NODE_ENV === 'production' ? basePath : ''}/assets/images/logo-web-green.png`})`, WebkitMaskSize: 'contain', maskSize: 'contain', WebkitMaskRepeat: 'no-repeat', maskRepeat: 'no-repeat', WebkitMaskPosition: 'center', maskPosition: 'center', backgroundColor: settings.logoColor }}></div>
-								</div>
+								<img src={logoUrl} alt="logo" className="desktop-logo !w-48 !h-14 object-contain" />
+								<img src={finalLogoKotakUrl} alt="logo" className="toggle-dark !w-28 !h-14 -mt-4 object-contain" />
+								<img src={logoUrl} alt="logo" className="desktop-dark !w-48 !h-14 object-contain" />
+								<img src={finalLogoKotakUrl} alt="logo" className="toggle-logo !w-28 !h-14 -mt-4 object-contain" />
+								<img src={finalLogoKotakUrl} alt="logo" className="toggle-white !w-28 !h-14 -mt-4 object-contain" />
+								<img src={logoUrl} alt="logo" className="desktop-white !w-48 !h-14 object-contain" />
 							</>
 						) : (
 							<>

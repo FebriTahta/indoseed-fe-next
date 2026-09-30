@@ -169,3 +169,103 @@ html[data-menu-styles] .app-sidebar .slide-menu .side-menu__label {
 }
 
 
+
+/* Custom overrides for Sidebar, Header, Footer based on Reference */
+:root,
+html,
+html[data-menu-styles],
+html[data-menu-styles][data-theme-mode] {
+    --menu-bg: 2 48 32 !important;
+}
+
+html .app-sidebar#sidebar,
+html[data-menu-styles] .app-sidebar#sidebar,
+html[data-menu-styles][data-theme-mode] .app-sidebar#sidebar {
+    background-color: #023020 !important;
+    border-right: none !important;
+}
+
+html .app-sidebar#sidebar .main-sidebar-header,
+html[data-menu-styles] .app-sidebar#sidebar .main-sidebar-header,
+html[data-menu-styles][data-theme-mode] .app-sidebar#sidebar .main-sidebar-header {
+    background-color: #023020 !important;
+    border-bottom: 1px solid rgba(255,255,255,0.1) !important;
+}
+
+html .app-sidebar#sidebar .header-logo img,
+html[data-menu-styles] .app-sidebar#sidebar .header-logo img {
+    opacity: 1 !important;
+    filter: none !important;
+}
+
+html .app-sidebar#sidebar .header-logo div > div[style*="mask"],
+html[data-menu-styles] .app-sidebar#sidebar .header-logo div > div[style*="mask"] {
+    display: none !important;
+}
+
+html .app-sidebar#sidebar .side-menu__item,
+html .app-sidebar#sidebar .side-menu__item .side-menu__label,
+html[data-menu-styles] .app-sidebar#sidebar .side-menu__item,
+html[data-menu-styles] .app-sidebar#sidebar .side-menu__item .side-menu__label {
+    color: #ffffff !important;
+}
+
+html .app-sidebar#sidebar .side-menu__item .side-menu__icon,
+html[data-menu-styles] .app-sidebar#sidebar .side-menu__item .side-menu__icon {
+    color: #ffffff !important;
+    fill: #ffffff !important;
+    opacity: 1 !important;
+}
+
+html .app-sidebar#sidebar .slide__category,
+html[data-menu-styles] .app-sidebar#sidebar .slide__category {
+    color: rgba(255, 255, 255, 0.8) !important;
+}
+
+html .app-sidebar#sidebar .side-menu__item:hover,
+html[data-menu-styles] .app-sidebar#sidebar .side-menu__item:hover {
+    color: #ffffff !important;
+    background-color: rgba(255,255,255,0.1) !important;
+}
+
+html[data-menu-styles] .app-sidebar .side-menu__item.active {
+    background-color: #059669 !important;
+    color: #ffffff !important;
+    border-right: none !important;
+    border-radius: 4px;
+    margin: 0 8px;
+}
+
+html[data-menu-styles] .app-sidebar .side-menu__item.active .side-menu__icon,
+html[data-menu-styles] .app-sidebar .side-menu__item.active .side-menu__label,
+html[data-menu-styles] .app-sidebar .side-menu__item.active .side-menu__angle {
+    color: #ffffff !important;
+    fill: #ffffff !important;
+}
+
+html[data-menu-styles] .app-sidebar .slide-menu.child1,
+html[data-menu-styles] .app-sidebar .slide-menu.child2,
+html[data-menu-styles] .app-sidebar .slide-menu.child3 {
+    background-color: #012116 !important;
+}
+
+html[data-menu-styles] .app-sidebar .slide-menu .side-menu__item {
+    color: #cbd5e1 !important;
+}
+html[data-menu-styles] .app-sidebar .slide-menu .side-menu__item:hover {
+    color: #ffffff !important;
+}
+html[data-menu-styles] .app-sidebar .slide-menu .side-menu__item.active {
+    color: #34d399 !important;
+    background-color: transparent !important;
+}
+
+html .app-header {
+    background-color: #ffffff !important;
+    border-bottom: 1px solid #e2e8f0 !important;
+}
+
+html .footer {
+    background-color: #ffffff !important;
+    border-top: 1px solid #e2e8f0 !important;
+}

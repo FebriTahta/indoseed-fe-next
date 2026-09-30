@@ -15,149 +15,53 @@ const LaporanIcon = <svg xmlns="http://www.w3.org/2000/svg" className="w-6 h-6 s
 const PengaturanIcon = <svg xmlns="http://www.w3.org/2000/svg" className="w-6 h-6 side-menu__icon" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="#448d56ff"><path strokeLinecap="round" strokeLinejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>;
 
 export const MENUITEMS = [
-  {
-    title: "Dashboard",
-    icon: DashboardIcon,
-    type: "sub",
-    active: false,
-    selected: false,
-    children: [
-      { path: "/dashboard", type: "link", active: false, selected: false, title: "Dashboard Utama" },
-      { path: "/dashboard/produksi", type: "link", active: false, selected: false, title: "Dashboard Produksi" },
-      { path: "/dashboard/qc", type: "link", active: false, selected: false, title: "Dashboard QC" }
-    ]
-  },
+  { path: "/dashboard", icon: <i className="bx bx-home-circle side-menu__icon"></i>, type: "link", active: false, selected: false, title: "Dashboard" },
   { menutitle: "MASTER DATA" },
-  {
-    title: "Master",
-    icon: MasterDataIcon,
-    type: "sub",
-    active: false,
-    selected: false,
-    children: [
-      { path: "/master/parameter", type: "link", active: false, selected: false, title: "Master Parameter" },
-      { path: "/master/varietas", type: "link", active: false, selected: false, title: "Daftar Varietas" },
-      { path: "/master/komoditas", type: "link", active: false, selected: false, title: "Daftar Komoditas" },
-      { path: "/master/greenhouse", type: "link", active: false, selected: false, title: "Greenhouse" },
-      { path: "/master/tipe-panen", type: "link", active: false, selected: false, title: "Tipe Panen" },
-      { path: "/master/petani-mitra", type: "link", active: false, selected: false, title: "Petani Mitra" },
-      { path: "/master/supplier", type: "link", active: false, selected: false, title: "Daftar Supplier" },
-      { path: "/master/customer", type: "link", active: false, selected: false, title: "Daftar Pelanggan" },
-      { path: "/master/gudang", type: "link", active: false, selected: false, title: "Master Gudang" },
-      { path: "/master/laboratorium", type: "link", active: false, selected: false, title: "Laboratorium" }
-    ]
-  },
-  { menutitle: "PROSES BISNIS" },
-  {
-    title: "Produksi Benih",
-    icon: ProduksiIcon,
-    type: "sub",
-    active: false,
-    children: [
-      { path: "/produksi/jadwaltanam", type: "link", active: false, selected: false, title: "Jadwal Tanam" },
-      { path: "/produksi/monitoringlahan", type: "link", active: false, selected: false, title: "Monitoring Lahan" },
-      { path: "/produksi/monitoringgreenhouse", type: "link", active: false, selected: false, title: "Monitoring Greenhouse" },
-      { path: "/produksi/kesiapanpanen", type: "link", active: false, selected: false, title: "Kesiapan Panen" },
-      { path: "/produksi/panen", type: "link", active: false, selected: false, title: "Panen" },
-      { path: "/produksi/pengeringan", type: "link", active: false, selected: false, title: "Pengeringan" },
-      { path: "/produksi/sortasi", type: "link", active: false, selected: false, title: "Sortasi" },
-      { path: "/produksi/treatment", type: "link", active: false, selected: false, title: "Treatment" },
-      { path: "/produksi/batchproduksi", type: "link", active: false, selected: false, title: "Batch Produksi" },
-      { path: "/produksi/traceability", type: "link", active: false, selected: false, title: "Traceability" },
-    ]
-  },
-  {
-    title: "Quality Control",
-    icon: QualityControlIcon,
-    type: "sub",
-    active: false,
-    children: [
-      { path: "/qc/permintaan-pengujian", type: "link", active: false, selected: false, title: "Permintaan Pengujian" },
-      { path: "/qc/pemeriksaan-pengujian", type: "link", active: false, selected: false, title: "Pemeriksaan / Pengujian" },
-      { path: "/qc/daya-tumbuh", type: "link", active: false, selected: false, title: "Daya Tumbuh" },
-      { path: "/qc/kadar-air", type: "link", active: false, selected: false, title: "Kadar Air" },
-      { path: "/qc/kemurnian", type: "link", active: false, selected: false, title: "Kemurnian" },
-      { path: "/qc/vigor", type: "link", active: false, selected: false, title: "Vigor" },
-      { path: "/qc/sertifikat-qc", type: "link", active: false, selected: false, title: "Sertifikat QC" },
-      { path: "/qc/status-lulus-reject", type: "link", active: false, selected: false, title: "Status Lulus / Reject" },
-      { path: "/qc/audit-trail", type: "link", active: false, selected: false, title: "Audit Trail" },
-      { path: "/qc/penguji", type: "link", active: false, selected: false, title: "Penguji" },
-      { path: "/qc/standar-metode-uji", type: "link", active: false, selected: false, title: "Standar Metode Uji" }
-    ]
-  },
-  {
-    title: "Gudang & Inventori",
-    icon: WarehouseIcon,
-    type: "sub",
-    active: false,
-    children: [
-      { path: "/gudang/stok-masuk", type: "link", active: false, selected: false, title: "Stok Masuk" }
-    ]
-  },
-  {
-    title: "Penjualan & Distribusi",
-    icon: PenjualanIcon,
-    type: "sub",
-    active: false,
-    children: [
-      { path: "/penjualan/order", type: "link", active: false, selected: false, title: "Order Penjualan" }
-    ]
-  },
-  { menutitle: "MANAJEMEN" },
-  {
-    title: "Keuangan",
-    icon: KeuanganIcon,
-    type: "sub",
-    active: false,
-    children: [
-      { path: "/keuangan/kas", type: "link", active: false, selected: false, title: "Kas & Bank" }
-    ]
-  },
-  {
-    title: "SDM / HRD",
-    icon: HRDIcon,
-    type: "sub",
-    active: false,
-    children: [
-      { path: "/hrd/karyawan", type: "link", active: false, selected: false, title: "Karyawan" }
-    ]
-  },
-  {
-    title: "Aset",
-    icon: MasterDataIcon,
-    type: "sub",
-    active: false,
-    children: [
-      { path: "/aset/daftar", type: "link", active: false, selected: false, title: "Daftar Aset" }
-    ]
-  },
-  { menutitle: "SISTEM" },
-  {
-    title: "Audit ISO",
-    icon: AuditISOIcon,
-    type: "sub",
-    active: false,
-    children: [
-      { path: "/audit-iso/jadwal", type: "link", active: false, selected: false, title: "Jadwal Audit" }
-    ]
-  },
-  {
-    title: "Dokumen & Rekaman",
-    icon: DokumenISOIcon,
-    type: "sub",
-    active: false,
-    children: [
-      { path: "/dokumen-iso/daftar", type: "link", active: false, selected: false, title: "Daftar Dokumen" }
-    ]
-  },
-  {
-    title: "Pengaturan",
-    icon: PengaturanIcon,
-    type: "sub",
-    active: false,
-    children: [
-      { path: "/pengaturan/sistem", type: "link", active: false, selected: false, title: "Pengaturan Sistem" }
-    ]
-  }
+  { path: "/master/produk-benih", icon: <i className="bx bx-spa side-menu__icon"></i>, type: "link", active: false, selected: false, title: "Produk Benih" },
+  { path: "/master/komoditas", icon: <i className="bx bx-category side-menu__icon"></i>, type: "link", active: false, selected: false, title: "Komoditas" },
+  { path: "/master/varietas", icon: <i className="bx bx-layer side-menu__icon"></i>, type: "link", active: false, selected: false, title: "Varietas" },
+  { path: "/master/supplier", icon: <i className="bx bx-store side-menu__icon"></i>, type: "link", active: false, selected: false, title: "Supplier" },
+  { path: "/master/customer", icon: <i className="bx bx-user-circle side-menu__icon"></i>, type: "link", active: false, selected: false, title: "Customer" },
+  { path: "/master/petani-mitra", icon: <i className="bx bx-group side-menu__icon"></i>, type: "link", active: false, selected: false, title: "Petani Mitra" },
+  { path: "/master/greenhouse", icon: <i className="bx bx-leaf side-menu__icon"></i>, type: "link", active: false, selected: false, title: "Lahan & Greenhouse" },
+  { path: "/master/gudang", icon: <i className="bx bx-buildings side-menu__icon"></i>, type: "link", active: false, selected: false, title: "Gudang" },
+  
+  { menutitle: "PRODUKSI" },
+  { path: "/produksi/perencanaan-produksi", icon: <i className="bx bx-clipboard side-menu__icon"></i>, type: "link", active: false, selected: false, title: "Perencanaan" },
+  { path: "/produksi/jadwaltanam", icon: <i className="bx bx-calendar side-menu__icon"></i>, type: "link", active: false, selected: false, title: "Jadwal Tanam" },
+  { path: "/produksi/monitoring-jadwal", icon: <i className="bx bx-calendar-check side-menu__icon"></i>, type: "link", active: false, selected: false, title: "Monitoring Jadwal Tanam" },
+  { path: "/produksi/pemeriksaan-lahan", icon: <i className="bx bx-map-alt side-menu__icon"></i>, type: "link", active: false, selected: false, title: "Monitoring Lahan" },
+  { path: "/produksi/monitoringgreenhouse", icon: <i className="bx bx-home-smile side-menu__icon"></i>, type: "link", active: false, selected: false, title: "Monitoring Greenhouse" },
+  { path: "/produksi/panen", icon: <i className="bx bx-cut side-menu__icon"></i>, type: "link", active: false, selected: false, title: "Panen" },
+  { path: "/produksi/pengeringan", icon: <i className="bx bx-sun side-menu__icon"></i>, type: "link", active: false, selected: false, title: "Pengeringan" },
+  { path: "/produksi/sortasi", icon: <i className="bx bx-filter-alt side-menu__icon"></i>, type: "link", active: false, selected: false, title: "Sortasi" },
+  { path: "/produksi/treatment", icon: <i className="bx bx-shield-plus side-menu__icon"></i>, type: "link", active: false, selected: false, title: "Treatment" },
+  { path: "/produksi/batchproduksi", icon: <i className="bx bx-collection side-menu__icon"></i>, type: "link", active: false, selected: false, title: "Batch Produksi" },
+  
+  { menutitle: "QC & LAB" },
+  { path: "/dashboard/qc", icon: <i className="bx bx-line-chart side-menu__icon"></i>, type: "link", active: false, selected: false, title: "Dashboard QC" },
+  { path: "/qc/permintaan-pengujian", icon: <i className="bx bx-file side-menu__icon"></i>, type: "link", active: false, selected: false, title: "Permintaan Pengujian" },
+  { path: "/qc/pemeriksaan-pengujian", icon: <i className="bx bx-search-alt side-menu__icon"></i>, type: "link", active: false, selected: false, title: "Pemeriksaan / Pengujian" },
+  { path: "/qc/hasil-pengujian", icon: <i className="bx bx-check-shield side-menu__icon"></i>, type: "link", active: false, selected: false, title: "Hasil Pengujian" },
+  { path: "/qc/temuan-qc", icon: <i className="bx bx-error-circle side-menu__icon"></i>, type: "link", active: false, selected: false, title: "Temuan QC" },
+  { path: "/qc/tindakan-koreksi", icon: <i className="bx bx-wrench side-menu__icon"></i>, type: "link", active: false, selected: false, title: "Tindakan Koreksi" },
+  { path: "/qc/standar-mutu", icon: <i className="bx bx-badge-check side-menu__icon"></i>, type: "link", active: false, selected: false, title: "Standar Mutu" },
+  { path: "/qc/standar-metode-uji", icon: <i className="bx bx-list-check side-menu__icon"></i>, type: "link", active: false, selected: false, title: "Metode Uji" },
+  { path: "/master/laboratorium", icon: <i className="bx bx-cog side-menu__icon"></i>, type: "link", active: false, selected: false, title: "Peralatan Laboratorium" },
+  { path: "/qc/sampel", icon: <i className="bx bx-test-tube side-menu__icon"></i>, type: "link", active: false, selected: false, title: "Sampel" },
+  { path: "/qc/sertifikat-qc", icon: <i className="bx bx-certification side-menu__icon"></i>, type: "link", active: false, selected: false, title: "Sertifikat / COA" },
+  { path: "/qc/audit-trail", icon: <i className="bx bx-history side-menu__icon"></i>, type: "link", active: false, selected: false, title: "Riwayat QC" },
+  
+  { menutitle: "INVENTORY" },
+  { path: "/gudang/stok-benih", icon: <i className="bx bx-box side-menu__icon"></i>, type: "link", active: false, selected: false, title: "Stok Benih" },
+  { path: "/gudang/stok-packing", icon: <i className="bx bx-package side-menu__icon"></i>, type: "link", active: false, selected: false, title: "Stok Packing" },
+  { path: "/gudang/stok-bahan-treatment", icon: <i className="bx bx-water side-menu__icon"></i>, type: "link", active: false, selected: false, title: "Stok Bahan Treatment" },
+  { path: "/gudang/stok-umum", icon: <i className="bx bx-archive side-menu__icon"></i>, type: "link", active: false, selected: false, title: "Stok Umum" },
+  { path: "/gudang", icon: <i className="bx bx-building-house side-menu__icon"></i>, type: "link", active: false, selected: false, title: "Gudang" },
+  
+  { menutitle: "PENJUALAN" },
+  { path: "/penjualan/order", icon: <i className="bx bx-cart side-menu__icon"></i>, type: "link", active: false, selected: false, title: "Penjualan" },
+  { path: "/penjualan/laporan", icon: <i className="bx bx-bar-chart-alt side-menu__icon"></i>, type: "link", active: false, selected: false, title: "Laporan Penjualan" },
+  { path: "/penjualan/traceability", icon: <i className="bx bx-barcode side-menu__icon"></i>, type: "link", active: false, selected: false, title: "Traceability Lot" },
 ];
 

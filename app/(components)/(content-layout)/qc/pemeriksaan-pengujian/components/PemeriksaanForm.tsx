@@ -7,6 +7,7 @@ import HeaderInfo from "./form-sections/HeaderInfo";
 import LeftSidebar from "./form-sections/LeftSidebar";
 import ParameterTab from "./form-sections/ParameterTab";
 import RightSidebar from "./form-sections/RightSidebar";
+import DokumentasiTab from "./form-sections/DokumentasiTab";
 import { SaveButton, CancelButton, ManageButton } from "../../../shared/ActionButtons";
 
 interface PemeriksaanFormProps {
@@ -96,7 +97,15 @@ const PemeriksaanForm: React.FC<PemeriksaanFormProps> = ({ id }) => {
               </div>
             )}
 
-            {activeTab !== "Parameter Pengujian" && (
+            {activeTab === "Dokumentasi" && (
+              <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
+                <div className="md:col-span-12 space-y-4">
+                  <DokumentasiTab />
+                </div>
+              </div>
+            )}
+
+            {activeTab !== "Parameter Pengujian" && activeTab !== "Dokumentasi" && (
               <div className="bg-white p-8 rounded-xl border border-gray-100 shadow-sm text-center text-gray-500">
                 Konten untuk tab "{activeTab}" belum tersedia (Placeholder)
               </div>

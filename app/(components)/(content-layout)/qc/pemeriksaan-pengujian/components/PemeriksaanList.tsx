@@ -163,55 +163,59 @@ const PemeriksaanList = () => {
   const renderStatusBadge = (status: string) => {
     switch (status) {
       case "Menunggu Sampel":
-        return <span className="px-2 py-1 bg-gray-100 text-gray-700 rounded-full text-xs font-medium"><i className="ri-flask-line mr-1"></i>Menunggu Sampel</span>;
+        return <span className="px-2 py-1 bg-gray-100 text-gray-700 rounded-full text-[10px] font-medium"><i className="ri-flask-line mr-1"></i>Menunggu Sampel</span>;
       case "Menunggu Pengujian":
-        return <span className="px-2 py-1 bg-orange-100 text-orange-700 rounded-full text-xs font-medium"><i className="ri-time-line mr-1"></i>Menunggu Pengujian</span>;
+        return <span className="px-2 py-1 bg-orange-100 text-orange-700 rounded-full text-[10px] font-medium"><i className="ri-time-line mr-1"></i>Menunggu Pengujian</span>;
       case "Dalam Pengujian":
-        return <span className="px-2 py-1 bg-blue-100 text-blue-700 rounded-full text-xs font-medium"><i className="ri-loader-4-line mr-1 animate-spin"></i>Dalam Pengujian</span>;
+        return <span className="px-2 py-1 bg-blue-100 text-blue-700 rounded-full text-[10px] font-medium"><i className="ri-loader-4-line mr-1 animate-spin"></i>Dalam Pengujian</span>;
       case "Menunggu Review":
-        return <span className="px-2 py-1 bg-yellow-100 text-yellow-700 rounded-full text-xs font-medium"><i className="ri-search-eye-line mr-1"></i>Menunggu Review</span>;
+        return <span className="px-2 py-1 bg-yellow-100 text-yellow-700 rounded-full text-[10px] font-medium"><i className="ri-search-eye-line mr-1"></i>Menunggu Review</span>;
       case "Selesai":
-        return <span className="px-2 py-1 bg-emerald-100 text-emerald-700 rounded-full text-xs font-medium"><i className="ri-checkbox-circle-line mr-1"></i>Selesai</span>;
+        return <span className="px-2 py-1 bg-emerald-100 text-emerald-700 rounded-full text-[10px] font-medium"><i className="ri-checkbox-circle-line mr-1"></i>Selesai</span>;
       case "HOLD QC":
-        return <span className="px-2 py-1 bg-red-100 text-red-700 rounded-full text-xs font-medium"><i className="ri-error-warning-line mr-1"></i>HOLD QC</span>;
+        return <span className="px-2 py-1 bg-red-100 text-red-700 rounded-full text-[10px] font-medium"><i className="ri-error-warning-line mr-1"></i>HOLD QC</span>;
       case "Ditolak":
-        return <span className="px-2 py-1 bg-red-100 text-red-700 rounded-full text-xs font-medium"><i className="ri-close-circle-line mr-1"></i>Ditolak</span>;
+        return <span className="px-2 py-1 bg-red-100 text-red-700 rounded-full text-[10px] font-medium"><i className="ri-close-circle-line mr-1"></i>Ditolak</span>;
       default:
-        return <span className="px-2 py-1 bg-gray-100 text-gray-700 rounded-full text-xs font-medium">{status}</span>;
+        return <span className="px-2 py-1 bg-gray-100 text-gray-700 rounded-full text-[10px] font-medium">{status}</span>;
     }
   };
 
-  const renderAction = (status: string) => {
+  const renderAction = (status: string, id: string) => {
+    const handleAction = () => {
+      router.push(`/qc/pemeriksaan-pengujian/${id}`);
+    };
+
     if (status === "Menunggu Pengujian") {
       return (
-        <button className="flex items-center gap-1 px-3 py-1 bg-emerald-50 text-emerald-600 border border-emerald-200 rounded-md hover:bg-emerald-100 text-xs font-medium">
+        <button onClick={handleAction} className="flex items-center gap-1 px-2.5 py-1 bg-emerald-50 text-emerald-600 border border-emerald-200 rounded-md hover:bg-emerald-100 text-[10px] font-medium">
           <i className="ri-play-circle-line"></i> Mulai
         </button>
       );
     }
     if (status === "Dalam Pengujian") {
       return (
-        <button className="flex items-center gap-1 px-3 py-1 bg-emerald-600 text-white rounded-md hover:bg-emerald-700 text-xs font-medium">
-          <i className="ri-edit-box-line"></i> Lanjutkan
+        <button onClick={handleAction} className="flex items-center gap-1 px-2.5 py-1 bg-emerald-600 text-white rounded-md hover:bg-emerald-700 text-[10px] font-medium">
+          <i className="ri-edit-box-line"></i> Lanjut
         </button>
       );
     }
     if (status === "Menunggu Review") {
       return (
-        <button className="flex items-center gap-1 px-3 py-1 bg-blue-50 text-blue-600 border border-blue-200 rounded-md hover:bg-blue-100 text-xs font-medium">
+        <button onClick={handleAction} className="flex items-center gap-1 px-2.5 py-1 bg-blue-50 text-blue-600 border border-blue-200 rounded-md hover:bg-blue-100 text-[10px] font-medium">
           <i className="ri-search-eye-line"></i> Review
         </button>
       );
     }
     if (status === "Menunggu Sampel") {
       return (
-        <button className="flex items-center gap-1 px-3 py-1 bg-gray-50 text-gray-600 border border-gray-200 rounded-md hover:bg-gray-100 text-xs font-medium">
+        <button onClick={handleAction} className="flex items-center gap-1 px-2.5 py-1 bg-gray-50 text-gray-600 border border-gray-200 rounded-md hover:bg-gray-100 text-[10px] font-medium">
           <i className="ri-file-info-line"></i> Detail
         </button>
       );
     }
     return (
-      <button className="flex items-center gap-1 px-3 py-1 bg-white text-gray-600 border border-gray-200 rounded-md hover:bg-gray-50 text-xs font-medium">
+      <button onClick={handleAction} className="flex items-center gap-1 px-2.5 py-1 bg-white text-gray-600 border border-gray-200 rounded-md hover:bg-gray-50 text-[10px] font-medium">
         <i className="ri-eye-line"></i> Lihat
       </button>
     );
@@ -219,20 +223,20 @@ const PemeriksaanList = () => {
 
   const renderRow = (item: any, index: number) => (
     <tr key={item.id} className="hover:bg-gray-50 border-b border-defaultborder transition-colors">
-      <td className="p-4 text-center text-primary font-medium">{(index + 1).toString()}</td>
-      <td className="p-4 text-primary font-medium">{item.noPengujian}</td>
-      <td className="p-4">{item.noPermintaan}</td>
-      <td className="p-4 text-gray-700">{item.lot}</td>
-      <td className="p-4">{item.komoditas}</td>
-      <td className="p-4">{item.varietas}</td>
-      <td className="p-4">{item.petani}</td>
-      <td className="p-4">{item.tanggalSampling}</td>
-      <td className="p-4">{item.jenisPengujian}</td>
-      <td className="p-4">{renderStatusBadge(item.status)}</td>
-      <td className="p-4">{item.petugasQC}</td>
-      <td className="p-4">
+      <td className="py-1 px-2 text-center text-primary font-medium !text-[11px]">{(index + 1).toString()}</td>
+      <td className="py-1 px-2 text-primary font-medium whitespace-nowrap !text-[11px]">{item.noPengujian}</td>
+      <td className="py-1 px-2 whitespace-nowrap !text-[11px]">{item.noPermintaan}</td>
+      <td className="py-1 px-2 text-gray-700 whitespace-nowrap !text-[11px]">{item.lot}</td>
+      <td className="py-1 px-2 whitespace-nowrap !text-[11px]">{item.komoditas}</td>
+      <td className="py-1 px-2 whitespace-nowrap !text-[11px]">{item.varietas}</td>
+      <td className="py-1 px-2 whitespace-nowrap !text-[11px]">{item.petani}</td>
+      <td className="py-1 px-2 whitespace-nowrap !text-[11px]">{item.tanggalSampling}</td>
+      <td className="py-1 px-2 whitespace-nowrap !text-[11px]">{item.jenisPengujian}</td>
+      <td className="py-1 px-2 whitespace-nowrap !text-[11px]">{renderStatusBadge(item.status)}</td>
+      <td className="py-1 px-2 whitespace-nowrap !text-[11px]">{item.petugasQC}</td>
+      <td className="py-1 px-2 whitespace-nowrap !text-[11px]">
         <div className="flex gap-2 justify-center items-center">
-          {renderAction(item.status)}
+          {renderAction(item.status, item.id)}
         </div>
       </td>
     </tr>
@@ -373,6 +377,9 @@ const PemeriksaanList = () => {
           totalRecords={24}
           onPageChange={setCurrentPage}
           onPageSizeChange={setPageSize}
+          headerClassName="!text-[11px]"
+          thClassName="py-2 px-2 !text-[11px]"
+          bodyClassName="text-gray-600"
         />
       </div>
     </div>

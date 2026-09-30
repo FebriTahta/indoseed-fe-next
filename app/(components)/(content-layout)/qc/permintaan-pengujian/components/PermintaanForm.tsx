@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import Select from "react-select";
-import { SaveButton, CancelButton, ManageButton } from "@/app/(components)/(content-layout)/shared/ActionButtons";
+import { SaveButton, CancelButton, ManageButton, AddButton } from "@/app/(components)/(content-layout)/shared/ActionButtons";
 import SpkButton from "@/shared/@spk-reusable-components/uielements/spk-button";
 import Pageheader from "@/shared/layouts-components/page-header/pageheader";
 
@@ -29,45 +29,44 @@ const PermintaanForm = ({ onCancel }: PermintaanFormProps = {}) => {
   const router = useRouter();
   const [selectedBatch, setSelectedBatch] = useState<any>(null);
   const [parameters, setParameters] = useState(mockParameters);
-  const [activeTab, setActiveTab] = useState("Parameter Uji");
+  const tabs = ["Parameter Uji", "Catatan & Dokumen", "Riwayat"];
+  const [activeTab, setActiveTab] = useState<string>("Parameter Uji");
 
   const toggleParameter = (id: string) => {
     setParameters(parameters.map(p => p.id === id ? { ...p, checked: !p.checked } : p));
   };
 
-  const tabs = ["Parameter Uji", "Catatan & Dokumen", "Riwayat"];
-
   return (
-    <>
-      {/* Top Header Actions */}
-      <div className="flex items-center justify-between mb-4">
-        {!onCancel && (
+    <React.Fragment>
+      {/* Page Header */}
+      {!onCancel && (
+        <div className="mb-4">
           <Pageheader
             currentpage="Buat Baru"
             activepage="Permintaan Pengujian"
             mainpage="QC & LAB"
             mainpageurl="/qc/permintaan-pengujian"
           />
-        )}
-        <div className={`flex gap-2 ${onCancel ? 'w-full justify-end' : 'mt-4 md:mt-0'}`}>
-          <CancelButton onClick={() => onCancel ? onCancel() : router.push('/qc/permintaan-pengujian')} />
-          <ManageButton label="Simpan Draft" onClick={() => {}} className="!text-emerald-600 !border-emerald-600 hover:!bg-emerald-600 hover:!text-white" />
-          <SaveButton label="Submit Permintaan" onClick={() => onCancel ? onCancel() : router.push('/qc/permintaan-pengujian')} />
         </div>
-      </div>
+      )}
 
-      <div className="space-y-4">
-        {/* Header Info (Top Bar) */}
-        <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex flex-wrap items-center justify-between gap-6 overflow-x-auto">
-          <div className="flex gap-8 min-w-max">
+      <div className="space-y-4 p-4">
+        {/* Header Info (Top Bar) & Actions */}
+        <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex flex-wrap lg:flex-nowrap items-center justify-between gap-6 overflow-x-auto">
+
+          {/* Left: Form Fields */}
+          <div className="flex items-center gap-6 min-w-max">
             <div>
               <p className="text-xs text-gray-500 font-medium mb-1 flex items-center gap-1">
                 <i className="ri-file-list-3-line"></i> No. Permintaan
               </p>
-              <div className="font-semibold text-gray-800 flex items-center gap-2">
+              <div className="font-semibold text-gray-800 flex items-center gap-2 text-sm">
                 RQ-QC-2026-00126 <span className="text-[10px] bg-gray-100 px-2 py-0.5 rounded text-gray-500">Auto</span>
               </div>
             </div>
+
+            <div className="h-8 border-l border-gray-200"></div>
+
             <div>
               <p className="text-xs text-gray-500 font-medium mb-1 flex items-center gap-1">
                 <i className="ri-calendar-event-line text-emerald-600"></i> Tanggal Permintaan
@@ -76,16 +75,14 @@ const PermintaanForm = ({ onCancel }: PermintaanFormProps = {}) => {
                 <input type="date" defaultValue="2026-06-17" className="text-sm border-none bg-transparent p-0 focus:ring-0 cursor-pointer" />
               </div>
             </div>
-          </div>
 
-          <div className="h-10 border-l border-gray-200 hidden lg:block"></div>
+            <div className="h-8 border-l border-gray-200"></div>
 
-          <div className="flex gap-8 min-w-max">
             <div>
               <p className="text-xs text-gray-500 font-medium mb-1 flex items-center gap-1">
                 <i className="ri-user-line text-emerald-600"></i> Pemohon
               </p>
-              <div className="w-40">
+              <div className="w-32">
                 <Select
                   options={[{ value: "produksi", label: "Produksi" }, { value: "gudang", label: "Gudang" }]}
                   defaultValue={{ value: "produksi", label: "Produksi" }}
@@ -107,6 +104,9 @@ const PermintaanForm = ({ onCancel }: PermintaanFormProps = {}) => {
                 />
               </div>
             </div>
+
+            <div className="h-8 border-l border-gray-200"></div>
+
             <div>
               <p className="text-xs text-gray-500 font-medium mb-1 flex items-center gap-1">
                 <i className="ri-alert-line text-rose-500"></i> Prioritas
@@ -123,20 +123,26 @@ const PermintaanForm = ({ onCancel }: PermintaanFormProps = {}) => {
               </div>
             </div>
           </div>
+
+          {/* Right: Actions */}
+          <div className="flex items-center gap-2 min-w-max">
+            <CancelButton onClick={() => onCancel ? onCancel() : router.push('/qc/permintaan-pengujian')} />
+            <SaveButton label="Submit" onClick={() => onCancel ? onCancel() : router.push('/qc/permintaan-pengujian')} />
+          </div>
         </div>
 
         {/* Main Content Layout (12 columns) */}
         <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
-          
+
           {/* Left Column: Batch & Sample Info */}
           <div className="md:col-span-4 lg:col-span-3 space-y-4">
-            
+
             {/* Sumber Batch */}
             <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-100">
-              <h3 className="font-semibold text-gray-800 mb-4 flex items-center gap-2">
+              <h5 className="font-semibold text-gray-800 mb-4 flex items-center gap-2">
                 <i className="ri-archive-line text-emerald-600 text-lg"></i> Sumber Batch
-              </h3>
-              
+              </h5>
+
               <div className="space-y-4">
                 <div>
                   <label className="block text-xs font-medium text-gray-700 mb-1">Pilih Batch <span className="text-rose-500">*</span></label>
@@ -192,10 +198,10 @@ const PermintaanForm = ({ onCancel }: PermintaanFormProps = {}) => {
 
             {/* Informasi Sampel */}
             <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-100">
-              <h3 className="font-semibold text-gray-800 mb-4 flex items-center gap-2">
-                <i className="ri-flask-line text-emerald-600 text-lg"></i> Informasi Sampel
-              </h3>
-              
+              <h5 className="font-semibold text-gray-800 mb-4 flex items-center gap-2">
+                <i className="ri-flask-line text-emerald-600 text-md"></i> Informasi Sampel
+              </h5>
+
               <div className="space-y-4">
                 <div>
                   <label className="block text-xs font-medium text-gray-700 mb-1">Jumlah Sampel <span className="text-rose-500">*</span></label>
@@ -233,7 +239,7 @@ const PermintaanForm = ({ onCancel }: PermintaanFormProps = {}) => {
 
           {/* Right Column (Main Area) */}
           <div className="md:col-span-8 lg:col-span-9">
-            
+
             {/* Tabs */}
             <div className="border-b border-gray-200 mb-4 bg-white rounded-t-xl px-4 pt-2 shadow-sm">
               <nav className="-mb-px flex space-x-8 overflow-x-auto" aria-label="Tabs">
@@ -243,10 +249,9 @@ const PermintaanForm = ({ onCancel }: PermintaanFormProps = {}) => {
                     onClick={() => setActiveTab(tab)}
                     className={`
                       whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm transition-colors
-                      ${
-                        activeTab === tab
-                          ? "border-emerald-500 text-emerald-600"
-                          : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                      ${activeTab === tab
+                        ? "border-emerald-500 text-emerald-600"
+                        : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
                       }
                     `}
                   >
@@ -266,9 +271,7 @@ const PermintaanForm = ({ onCancel }: PermintaanFormProps = {}) => {
                     </h3>
                     <p className="text-xs text-gray-500 mt-1">Parameter default dipilih berdasarkan komoditas dan standar mutu yang berlaku.</p>
                   </div>
-                  <button className="flex items-center gap-2 px-3 py-1.5 bg-emerald-50 text-emerald-600 border border-emerald-200 rounded-lg text-sm font-medium hover:bg-emerald-100 transition-colors">
-                    <i className="ri-add-line"></i> Tambah Parameter
-                  </button>
+                  <AddButton label="Tambah Parameter" onClick={() => {}} className="!py-1.5 !px-3 !text-sm" />
                 </div>
 
                 <div className="overflow-x-auto rounded-lg border border-gray-200">
@@ -348,7 +351,7 @@ const PermintaanForm = ({ onCancel }: PermintaanFormProps = {}) => {
           </div>
         </div>
       </div>
-    </>
+    </React.Fragment>
   );
 };
 

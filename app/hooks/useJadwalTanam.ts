@@ -1,161 +1,136 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
-import useGreenhouse from './useGreenhouse';
-import useKomoditas from '@/app/hooks/useKomoditas';
-import useVarietas from './useVarietas';
 import jadwalTanamService from '@/app/services/jadwalTanamService';
-import { JadwalTanam } from '@/app/types/jadwalTanam';
+import { partnerService } from '@/app/services/partnerService';
+import { commodityService } from '@/app/services/commodityService';
+import { varietyService } from '@/app/services/varietyService';
+import { JadwalTanam, JadwalTanamStats } from '@/app/types/jadwalTanam';
 import { toast } from 'react-toastify';
-import { Commodity } from '../types/commodity';
-import { Variety } from '../types/variety';
-import { Land } from '../types/greenhouse';
-
-const mapBackendToJadwalTanam = (item: any): JadwalTanam => {
-  const formatDateStr = (dateVal: any) => {
-    if (!dateVal) return '-';
-    try {
-      const d = new Date(dateVal);
-      if (isNaN(d.getTime())) return String(dateVal);
-      const day = String(d.getDate()).padStart(2, '0');
-      const month = String(d.getMonth() + 1).padStart(2, '0');
-      const year = d.getFullYear();
-      return `${day}/${month}/${year}`;
-    } catch (e) {
-      return String(dateVal);
-    }
-  };
-
-  const formatDateIso = (dateVal: any) => {
-    if (!dateVal) return '';
-    try {
-      const d = new Date(dateVal);
-      if (isNaN(d.getTime())) return String(dateVal);
-      return d.toISOString().split('T')[0];
-    } catch (e) {
-      return String(dateVal);
-    }
-  };
-
-  const namaLahan = item.greenhouse?.namaLahan || (item.detailLahan && item.detailLahan.length > 0 ? item.detailLahan[0].namaLahan : '') || item.greenhouseId || 'Lahan 1';
-  const namaKomoditas = item.commodity?.namaKomoditas || item.commodityId || 'Padi';
-  const namaVarietas = item.variety?.namaVarietas || item.varietyId || 'Inpari 32';
-
-  return {
-    informasiUmum: {
-      kodeJadwalTanam: item.kodeJadwalTanam || '',
-      penanggungJawab: item.penanggungJawab || '-',
-      periodeTanamMulai: formatDateIso(item.periodeTanamMulai),
-      periodeTanamSelesai: formatDateIso(item.periodeTanamSelesai),
-      musimTanam: item.musimTanam || 'Musim Kemarau',
-      tujuanProduksi: item.tujuanProduksi || 'Benih Bersertifikat',
-      tipeProduksi: item.tipeProduksi || 'FS (Foundation Seed)',
-      statusJadwal: item.statusJadwal || 'Draft',
-      deskripsi: item.deskripsi || '',
-    },
-    lahanKomoditas: {
-      idLahan: item.greenhouseId || '',
-      namaLahan,
-      luasTanam: Number(item.luasTanam || 0),
-      komoditas: namaKomoditas,
-      varietas: namaVarietas,
-      idBenih: '',
-      asalBenih: item.asalBenih || 'Gudang Benih - Batch BP-2505-001',
-      jumlahBenihDiperlukan: Number(item.jumlahBenihDiperlukan || 100),
-      jarakTanam: item.jarakTanam || '25 cm x 25 cm',
-      sistemTanam: item.sistemTanam || 'Jajar Legowo 4:1',
-    },
-    rencanaTanam: {
-      tanggalPersemaian: formatDateStr(item.tanggalPersemaian),
-      tanggalTanam: formatDateStr(item.tanggalTanam),
-      perkiraanPanen: formatDateStr(item.perkiraanPanen),
-      siklusTanamHari: Number(item.siklusTanamHari || 30),
-      metodeTanam: item.metodeTanam || 'Langsung',
-      kepadatanTanam: Number(item.kepadatanTanam || 0),
-      irigasi: item.irigasi || 'Irigasi Terjadwal',
-      sumberAir: item.sumberAir || 'Sumur Bor',
-    },
-    status: item.statusJadwal || 'Draft',
-    catatan: item.catatan || '',
-    id: item.id,
-    personil: item.personil || [],
-    peralatan: item.peralatan || [],
-    dokumen: (item.dokumen && item.dokumen.length > 0) ? item.dokumen : [],
-    detailLahan: item.detailLahan || [],
-  };
-};
 
 export function useJadwalTanams() {
   const router = useRouter();
 
-  const { lands } = useGreenhouse();
-  const { commodities } = useKomoditas();
-  const { varieties } = useVarietas();
-
-  const [jadwalTanams, setJadwalTanams] = useState<JadwalTanam[]>([]);
+  const [items, setItems] = useState<JadwalTanam[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
+  // Stats
+  const [stats, setStats] = useState<JadwalTanamStats>({
+    total: 0,
+    dalamProses: 0,
+    disetujui: 0,
+    revisi: 0,
+    ditolak: 0,
+    trends: {
+      total: '+2 dari bulan lalu',
+      dalamProses: '+1 dari bulan lalu',
+      disetujui: '+2 dari bulan lalu',
+      revisi: '+1 dari bulan lalu',
+      ditolak: '-0 dari bulan lalu',
+    },
+  });
+
   // Filters State
   const [search, setSearch] = useState('');
-  const [filterPeriode, setFilterPeriode] = useState<any>(null);
-  const [filterLahan, setFilterLahan] = useState<any>(null);
-  const [filterKomoditas, setFilterKomoditas] = useState<any>(null);
-  const [filterVarietas, setFilterVarietas] = useState<any>(null);
-  const [filterStatus, setFilterStatus] = useState<any>(null);
-  const [isTableLoading, setIsTableLoading] = useState(false);
+  const [filterPeriode, setFilterPeriode] = useState<string>('all');
+  const [filterStatus, setFilterStatus] = useState<string>('all');
+  const [filterPetani, setFilterPetani] = useState<string>('all');
+  const [filterKomoditas, setFilterKomoditas] = useState<string>('all');
+  const [filterVarietas, setFilterVarietas] = useState<string>('all');
+
+  // Master Data Options
+  const [partnerList, setPartnerList] = useState<any[]>([]);
+  const [commodityList, setCommodityList] = useState<any[]>([]);
+  const [varietyList, setVarietyList] = useState<any[]>([]);
 
   // Pagination State
   const [currentPage, setCurrentPage] = useState(1);
-  const [pageSize, setPageSize] = useState(10);
+  const [pageSize, setPageSize] = useState(8);
   const [totalRecords, setTotalRecords] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
 
-  const statusOptions = [
-    { value: '', label: 'Semua Status' },
-    { value: 'Draft', label: 'Draft' },
-    { value: 'Sedang Berlangsung', label: 'Sedang Berlangsung' },
-    { value: 'Akan Tanam', label: 'Akan Tanam' },
-    { value: 'Selesai', label: 'Selesai' }
-  ];
+  // Selected checkbox rows
+  const [selectedRowIds, setSelectedRowIds] = useState<string[]>([]);
 
+  // Load master options once
+  useEffect(() => {
+    async function loadMasters() {
+      try {
+        const [partRes, commRes, varRes] = await Promise.all([
+          partnerService.getPartners({ pageSize: 100, status: 'Aktif' }).catch(() => ({ data: [] })),
+          commodityService.getCommodities({ status: 'Aktif' }).catch(() => ({ data: [] })),
+          varietyService.getVarieties({ status: 'Aktif' }).catch(() => ({ data: [] })),
+        ]);
+        setPartnerList(partRes.data || []);
+        setCommodityList(commRes.data || []);
+        setVarietyList(varRes.data || []);
+      } catch (err) {
+        console.error('Error loading filter master data:', err);
+      }
+    }
+    loadMasters();
+  }, []);
+
+  // Fetch Stats
+  const fetchStats = useCallback(async () => {
+    try {
+      const res = await jadwalTanamService.getJadwalTanamStats();
+      if (res.data) {
+        setStats(res.data);
+      }
+    } catch (err) {
+      console.error('Error loading stats:', err);
+    }
+  }, []);
+
+  // Fetch Items
   const fetchJadwalTanams = useCallback(async () => {
-    setIsTableLoading(true);
     setLoading(true);
     setError('');
     try {
-      const res = await jadwalTanamService.getJadwalTanamList({
+      const params: any = {
         page: currentPage,
         pageSize: pageSize,
-        search: search.trim() || undefined,
-        statusJadwal: filterStatus?.value || undefined,
-        commodityId: filterKomoditas?.value || undefined,
-        varietyId: filterVarietas?.value || undefined,
-        greenhouseId: filterLahan?.value || undefined,
-      });
+      };
 
-      if (res && res.data) {
-        const mapped = res.data.map(mapBackendToJadwalTanam);
-        setJadwalTanams(mapped);
-        if (res.pagination) {
-          setTotalRecords(res.pagination.total);
-          setTotalPages(res.pagination.totalPages);
-        }
-      } else {
-        setJadwalTanams([]);
-        setTotalRecords(0);
-        setTotalPages(1);
+      if (search.trim()) params.search = search.trim();
+      if (filterStatus && filterStatus !== 'all' && filterStatus !== 'Semua Status') {
+        params.statusJadwal = filterStatus;
       }
+      if (filterPetani && filterPetani !== 'all' && filterPetani !== 'Semua Petani') {
+        params.partnerId = filterPetani;
+      }
+      if (filterKomoditas && filterKomoditas !== 'all' && filterKomoditas !== 'Semua Komoditas') {
+        params.commodityId = filterKomoditas;
+      }
+      if (filterVarietas && filterVarietas !== 'all' && filterVarietas !== 'Semua Varietas') {
+        params.varietyId = filterVarietas;
+      }
+      if (filterPeriode && filterPeriode !== 'all' && filterPeriode !== 'Pilih periode') {
+        params.periodeTanam = filterPeriode;
+      }
+
+      const res = await jadwalTanamService.getJadwalTanamList(params);
+      const dataItems = res.data || [];
+      const pagination = (res as any).pagination || {};
+
+      setItems(dataItems);
+      setTotalRecords(pagination.total ?? dataItems.length);
+      setTotalPages(pagination.totalPages ?? (Math.ceil((pagination.total || dataItems.length) / pageSize) || 1));
     } catch (err: any) {
-      console.error('Error fetching Jadwal Tanam:', err);
-      setError(err.response?.data?.message || 'Gagal mengambil data jadwal tanam');
-      setJadwalTanams([]);
+      console.error('Error loading jadwal tanam:', err);
+      setError(err.response?.data?.message || 'Gagal memuat data jadwal tanam');
+      setItems([]);
       setTotalRecords(0);
       setTotalPages(1);
     } finally {
-      setIsTableLoading(false);
       setLoading(false);
     }
-  }, [currentPage, pageSize, search, filterStatus, filterKomoditas, filterVarietas, filterLahan]);
+  }, [currentPage, pageSize, search, filterStatus, filterPetani, filterKomoditas, filterVarietas, filterPeriode]);
+
+  useEffect(() => {
+    fetchStats();
+  }, [fetchStats]);
 
   useEffect(() => {
     fetchJadwalTanams();
@@ -168,17 +143,13 @@ export function useJadwalTanams() {
 
   const handleResetFilters = () => {
     setSearch('');
-    setFilterPeriode(null);
-    setFilterLahan(null);
-    setFilterKomoditas(null);
-    setFilterVarietas(null);
-    setFilterStatus(null);
+    setFilterPeriode('all');
+    setFilterStatus('all');
+    setFilterPetani('all');
+    setFilterKomoditas('all');
+    setFilterVarietas('all');
     setCurrentPage(1);
     toast.info('Filter berhasil direset');
-  };
-
-  const handleAdd = () => {
-    router.push('/produksi/jadwaltanam/create');
   };
 
   const handleDelete = async (id: string, kodeJadwal?: string) => {
@@ -187,11 +158,12 @@ export function useJadwalTanams() {
       ? `Apakah Anda yakin ingin menghapus Jadwal Tanam (${kodeJadwal})?`
       : 'Apakah Anda yakin ingin menghapus Jadwal Tanam ini?';
 
-    if (confirm(confirmMessage)) {
+    if (window.confirm(confirmMessage)) {
       try {
-        const res = await jadwalTanamService.deleteJadwalTanam(id);
-        toast.success(res?.message || 'Jadwal Tanam berhasil dihapus!');
+        await jadwalTanamService.deleteJadwalTanam(id);
+        toast.success('Jadwal Tanam berhasil dihapus!');
         fetchJadwalTanams();
+        fetchStats();
       } catch (err: any) {
         console.error('Error deleting Jadwal Tanam:', err);
         toast.error(err.response?.data?.message || 'Gagal menghapus Jadwal Tanam');
@@ -199,123 +171,70 @@ export function useJadwalTanams() {
     }
   };
 
-  const statMaster = useMemo(() => {
-    const lahanOptions = lands.map((item: Land) => ({
-      value: item.id || item.kodeLahan,
-      label: item.namaLahan
-    }));
+  const handleUpdateStatus = async (id: string, newStatus: string, keterangan?: string) => {
+    try {
+      await jadwalTanamService.updateStatusJadwalTanam(id, newStatus, keterangan);
+      toast.success(`Status berhasil diubah menjadi ${newStatus}`);
+      fetchJadwalTanams();
+      fetchStats();
+    } catch (err: any) {
+      console.error('Error updating status:', err);
+      toast.error(err.response?.data?.message || 'Gagal mengubah status');
+    }
+  };
 
-    const komoditasOptions = commodities.map((item: Commodity) => ({
-      value: item.id || item.kodeKomoditas,
-      label: item.namaKomoditas
-    }));
+  // Selection toggle
+  const handleSelectRow = (id: string) => {
+    setSelectedRowIds((prev) =>
+      prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
+    );
+  };
 
-    const varietasOptions = varieties.map((item: Variety) => ({
-      value: item.id || item.kodeVarietas,
-      label: item.namaVarietas
-    }));
-
-    return {
-      lahanOptions,
-      komoditasOptions,
-      varietasOptions,
-    };
-  }, [lands, commodities, varieties]);
-
-  const statItems = useMemo(() => {
-    const totalLuas = jadwalTanams.reduce((acc, item) => acc + (Number(item.lahanKomoditas?.luasTanam) || 0), 0);
-    const uniqueKomoditas = new Set(jadwalTanams.map(i => i.lahanKomoditas?.komoditas).filter(Boolean)).size;
-    const akanTanamCount = jadwalTanams.filter(i => i.status === 'Akan Tanam' || i.informasiUmum?.statusJadwal === 'Draft').length;
-    const berlangsungCount = jadwalTanams.filter(i => i.status === 'Sedang Berlangsung' || i.informasiUmum?.statusJadwal === 'Sedang Berlangsung' || i.informasiUmum?.statusJadwal === 'Berjalan').length;
-    const selesaiCount = jadwalTanams.filter(i => i.status === 'Selesai' || i.informasiUmum?.statusJadwal === 'Selesai').length;
-
-    return [
-      {
-        title: 'Total Jadwal',
-        value: totalRecords,
-        subtitle: 'Jadwal tanam',
-        icon: 'ri-calendar-event-line',
-        bgColor: 'bg-emerald-100/80',
-        textColor: 'text-emerald-700'
-      },
-      {
-        title: 'Total Lahan',
-        value: `${totalLuas.toFixed(2).replace('.', ',')} Ha`,
-        subtitle: 'Luas total lahan',
-        icon: 'ri-landscape-line',
-        bgColor: 'bg-blue-100/80',
-        textColor: 'text-blue-700'
-      },
-      {
-        title: 'Komoditas',
-        value: uniqueKomoditas,
-        subtitle: 'Jenis komoditas',
-        icon: 'ri-plant-line',
-        bgColor: 'bg-purple-100/80',
-        textColor: 'text-purple-700'
-      },
-      {
-        title: 'Akan Tanam',
-        value: akanTanamCount,
-        subtitle: 'Dalam 7 hari ke depan',
-        icon: 'ri-calendar-schedule-line',
-        bgColor: 'bg-orange-100/80',
-        textColor: 'text-orange-700'
-      },
-      {
-        title: 'Sedang Berlangsung',
-        value: berlangsungCount,
-        subtitle: 'Jadwal aktif',
-        icon: 'ri-seedling-line',
-        bgColor: 'bg-emerald-100/80',
-        textColor: 'text-emerald-700'
-      },
-      {
-        title: 'Selesai',
-        value: selesaiCount,
-        subtitle: 'Periode ini',
-        icon: 'ri-calendar-check-line',
-        bgColor: 'bg-rose-100/80',
-        textColor: 'text-rose-700'
-      },
-    ];
-  }, [jadwalTanams, totalRecords]);
+  const handleSelectAllRows = () => {
+    if (selectedRowIds.length === items.length) {
+      setSelectedRowIds([]);
+    } else {
+      setSelectedRowIds(items.map((i) => i.id));
+    }
+  };
 
   return {
-    jadwalTanams,
+    items,
     loading,
     error,
+    stats,
     search,
     setSearch,
     filterPeriode,
     setFilterPeriode,
-    filterLahan,
-    setFilterLahan,
+    filterStatus,
+    setFilterStatus,
+    filterPetani,
+    setFilterPetani,
     filterKomoditas,
     setFilterKomoditas,
     filterVarietas,
     setFilterVarietas,
-    filterStatus,
-    setFilterStatus,
+    partnerList,
+    commodityList,
+    varietyList,
     currentPage,
     setCurrentPage,
     pageSize,
     setPageSize,
     totalRecords,
-    setTotalRecords,
     totalPages,
-    setTotalPages,
-    statusOptions,
-    lahanOptions: statMaster.lahanOptions,
-    komoditasOptions: statMaster.komoditasOptions,
-    varietasOptions: statMaster.varietasOptions,
-    isTableLoading,
+    selectedRowIds,
+    handleSelectRow,
+    handleSelectAllRows,
     handleApplyFilters,
     handleResetFilters,
-    handleAdd,
     handleDelete,
-    statMaster,
-    statItems
+    handleUpdateStatus,
+    refreshData: () => {
+      fetchJadwalTanams();
+      fetchStats();
+    },
   };
 }
 

@@ -1,647 +1,582 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { panenService, PanenItem } from '../services/panenService';
-import { kesiapanPanenService } from '../services/kesiapanPanenService';
-import { KesiapanPanenItem } from '../types/kesiapanPanen';
-import { INITIAL_KESIAPAN_PANEN_LIST } from './useKesiapanPanen';
+import {
+  panenService,
+  PanenItem,
+  PanenStats,
+  RingkasanKomoditasItem,
+  ChartPanenData,
+  ReferensiJadwalTanamPanen,
+} from '../services/panenService';
 import { toast } from 'react-toastify';
-import { StatItem } from '../(components)/(content-layout)/shared/StatsWidgets';
-import commodityService from '../services/commodityService';
-import varietyService from '../services/varietyService';
-import { Commodity } from '../types/commodity';
-import { Variety } from '../types/variety';
 
-const getInitialMonthRange = (): [Date, Date] => {
-  const now = new Date();
-  const start = new Date(now.getFullYear(), now.getMonth(), 1);
-  const end = new Date(now.getFullYear(), now.getMonth() + 1, 0);
-  return [start, end];
-};
-
-const formatDateYYYYMMDD = (d: Date | null) => {
-  if (!d) return '';
-  const year = d.getFullYear();
-  const month = String(d.getMonth() + 1).padStart(2, '0');
-  const day = String(d.getDate()).padStart(2, '0');
-  return `${year}-${month}-${day}`;
-};
 export const INITIAL_PANEN_LIST: PanenItem[] = [
   {
-    id: 'pn-1',
-    kodePanen: 'PN-2606-0001',
+    id: 'pn-18',
+    kodePanen: 'PN-2026-06-0018',
+    kodeJadwalTanam: 'JT-2026-0018',
+    petani: 'Budi Santoso',
+    petaniKode: 'BTN-001',
+    lahan: 'LHN-001 / Blok 01',
+    blokLahan: 'Blok 01',
+    jenisHasil: 'Glondong / Buah',
+    komoditas: 'Melon',
+    varietas: 'Melon Tere F1',
+    rencanaPanen: '2026-09-30',
+    tanggalPanen: '2026-09-28',
+    luasHa: 1.00,
+    perkiraanHasil: 1500,
+    produksiKg: 1480,
+    jumlahBuah: 1520,
+    beratBruto: 1520,
+    beratNetto: 1480,
+    kondisiHasil: 'Baik',
+    status: 'Selesai',
+    statusPengolahan: 'Menunggu Pengolahan',
+    catatan: 'Kondisi tanaman sehat dan hasil panen sesuai standar.',
+    penanggungJawab: 'Admin Produksi',
+    dokumentasi: [
+      { url: 'https://images.unsplash.com/photo-1592417817098-8f3d69109853?w=500&auto=format&fit=crop&q=60', caption: 'Lahan Panen', date: '28 Sep 2026', size: '1.4 MB' },
+      { url: 'https://images.unsplash.com/photo-1589923188900-85dae523342b?w=500&auto=format&fit=crop&q=60', caption: 'Kualitas Buah', date: '28 Sep 2026', size: '2.1 MB' },
+      { url: 'https://images.unsplash.com/photo-1598170845058-32b9d6a5da37?w=500&auto=format&fit=crop&q=60', caption: 'Pemetikan Buah', date: '28 Sep 2026', size: '1.8 MB' },
+      { url: 'https://images.unsplash.com/photo-1574943320219-553eb213f72d?w=500&auto=format&fit=crop&q=60', caption: 'Penimbangan', date: '28 Sep 2026', size: '1.9 MB' },
+    ],
+  },
+  {
+    id: 'pn-17',
+    kodePanen: 'PN-2026-06-0017',
+    kodeJadwalTanam: 'JT-2026-0017',
+    petani: 'Siti Rahayu',
+    petaniKode: 'SRN-002',
+    lahan: 'LHN-002 / Blok 02',
+    blokLahan: 'Blok 02',
+    jenisHasil: 'OC / Benih',
+    komoditas: 'Cabai',
+    varietas: 'Cabai Keriting',
+    rencanaPanen: '2026-11-01',
+    tanggalPanen: '2026-11-01',
+    luasHa: 1.20,
+    perkiraanHasil: 2000,
+    produksiKg: 0,
+    jumlahBuah: 0,
+    beratBruto: 0,
+    beratNetto: 0,
+    kondisiHasil: 'Baik',
+    status: 'Dalam Proses',
+    statusPengolahan: 'Belum Diproses',
+    catatan: 'Tanaman dalam masa pematangan buah akhir.',
+    penanggungJawab: 'Siti Rahayu',
+    dokumentasi: [],
+  },
+  {
+    id: 'pn-16',
+    kodePanen: 'PN-2026-06-0016',
+    kodeJadwalTanam: 'JT-2026-0016',
+    petani: 'Agus Setiawan',
+    petaniKode: 'AGS-003',
+    lahan: 'LHN-003 / Blok Utara',
+    blokLahan: 'Blok Utara',
+    jenisHasil: 'Glondong / Buah',
     komoditas: 'Padi',
     varietas: 'Inpari 32',
-    lahan: 'Blok A Subang - Petak 1',
-    tanggalPanen: '2026-05-25',
-    luasHa: 2.5,
-    produksiKg: 16800,
-    hasilKgHa: 6720,
+    rencanaPanen: '2026-10-04',
+    tanggalPanen: '2026-10-04',
+    luasHa: 2.00,
+    perkiraanHasil: 3500,
+    produksiKg: 0,
+    jumlahBuah: 0,
+    beratBruto: 0,
+    beratNetto: 0,
+    kondisiHasil: 'Baik',
+    status: 'Dalam Proses',
+    statusPengolahan: 'Belum Diproses',
+    catatan: 'Padi mulai menguning rata.',
+    penanggungJawab: 'Agus Setiawan',
+    dokumentasi: [],
+  },
+  {
+    id: 'pn-15',
+    kodePanen: 'PN-2026-06-0015',
+    kodeJadwalTanam: 'JT-2026-0015',
+    petani: 'Dewi Lestari',
+    petaniKode: 'DLR-004',
+    lahan: 'LHN-004 / Blok 02',
+    blokLahan: 'Blok 02',
+    jenisHasil: 'Glondong / Buah',
+    komoditas: 'Tomat',
+    varietas: 'Grand Rapids',
+    rencanaPanen: '2026-10-08',
+    tanggalPanen: '2026-10-07',
+    luasHa: 1.50,
+    perkiraanHasil: 2000,
+    produksiKg: 1950,
+    jumlahBuah: 3200,
+    beratBruto: 2000,
+    beratNetto: 1950,
+    kondisiHasil: 'Baik',
     status: 'Selesai',
+    statusPengolahan: 'Selesai',
+    catatan: 'Hasil panen tomat merah segar dan seragam.',
+    penanggungJawab: 'Dewi Lestari',
+    dokumentasi: [
+      { url: 'https://images.unsplash.com/photo-1592417817098-8f3d69109853?w=500&auto=format&fit=crop&q=60', caption: 'Panen Tomat', date: '07 Okt 2026', size: '1.2 MB' },
+    ],
+  },
+  {
+    id: 'pn-14',
+    kodePanen: 'PN-2026-06-0014',
+    kodeJadwalTanam: 'JT-2026-0014',
+    petani: 'Budi Santoso',
+    petaniKode: 'BTN-001',
+    lahan: 'LHN-005 / Blok 03',
+    blokLahan: 'Blok 03',
+    jenisHasil: 'Glondong / Buah',
+    komoditas: 'Melon',
+    varietas: 'Melon Tere F1',
+    rencanaPanen: '2026-10-10',
+    tanggalPanen: '2026-10-10',
+    luasHa: 1.80,
+    perkiraanHasil: 2500,
+    produksiKg: 0,
+    jumlahBuah: 0,
+    beratBruto: 0,
+    beratNetto: 0,
+    kondisiHasil: 'Cukup',
+    status: 'Tertunda',
+    statusPengolahan: 'Belum Diproses',
+    catatan: 'Curah hujan tinggi, panen ditunda 3 hari untuk menjaga kualitas buah.',
     penanggungJawab: 'Budi Santoso',
-    metodePanen: 'Combine Harvester',
-    produksiKotorKg: 17500,
-    kadarAir: 14.2,
-    kebersihan: 98.0,
-    catatan: 'Hasil panen bersih dan kualitas baik.'
+    dokumentasi: [],
   },
   {
-    id: 'pn-2',
-    kodePanen: 'PN-2606-0002',
+    id: 'pn-13',
+    kodePanen: 'PN-2026-06-0013',
+    kodeJadwalTanam: 'JT-2026-0013',
+    petani: 'Rini Wulandari',
+    petaniKode: 'RW-005',
+    lahan: 'LHN-006 / Blok 06',
+    blokLahan: 'Blok 06',
+    jenisHasil: 'OC / Benih',
+    komoditas: 'Cabai',
+    varietas: 'Cabai Rawit',
+    rencanaPanen: '2026-11-12',
+    tanggalPanen: '2026-11-12',
+    luasHa: 1.00,
+    perkiraanHasil: 1500,
+    produksiKg: 0,
+    jumlahBuah: 0,
+    beratBruto: 0,
+    beratNetto: 0,
+    kondisiHasil: 'Baik',
+    status: 'Dalam Proses',
+    statusPengolahan: 'Belum Diproses',
+    catatan: 'Cabai rawit fase pematangan.',
+    penanggungJawab: 'Rini Wulandari',
+    dokumentasi: [],
+  },
+  {
+    id: 'pn-12',
+    kodePanen: 'PN-2026-06-0012',
+    kodeJadwalTanam: 'JT-2026-0012',
+    petani: 'Endang Sulastri',
+    petaniKode: 'ENS-007',
+    lahan: 'LHN-007 / Blok 07',
+    blokLahan: 'Blok 07',
+    jenisHasil: 'Glondong / Buah',
     komoditas: 'Padi',
-    varietas: 'Inpari 42',
-    lahan: 'Blok A Subang - Petak 2',
-    tanggalPanen: '2026-06-02',
-    luasHa: 3.0,
-    produksiKg: 21500,
-    hasilKgHa: 7166.67,
-    status: 'Selesai',
-    penanggungJawab: 'Siti Nurhayati',
-    metodePanen: 'Combine Harvester',
-    produksiKotorKg: 22200,
-    kadarAir: 14.0,
-    kebersihan: 97.5,
-    catatan: 'Produktivitas melampaui target.'
+    varietas: 'Inpari 32',
+    rencanaPanen: '2026-10-20',
+    tanggalPanen: '2026-10-20',
+    luasHa: 2.50,
+    perkiraanHasil: 4000,
+    produksiKg: 0,
+    jumlahBuah: 0,
+    beratBruto: 0,
+    beratNetto: 0,
+    kondisiHasil: 'Baik',
+    status: 'Dalam Proses',
+    statusPengolahan: 'Belum Diproses',
+    catatan: 'Monitoring pengisian bulir padi.',
+    penanggungJawab: 'Endang Sulastri',
+    dokumentasi: [],
   },
   {
-    id: 'pn-3',
-    kodePanen: 'PN-2606-0003',
-    komoditas: 'Jagung',
-    varietas: 'Jagung Hibrida P-21',
-    lahan: 'Blok B Karawang - Petak 1',
-    tanggalPanen: '2026-05-28',
-    luasHa: 4.0,
-    produksiKg: 31000,
-    hasilKgHa: 7750,
-    status: 'Selesai',
-    penanggungJawab: 'Agus Widodo',
-    metodePanen: 'Manual (Arit/Sabit)',
-    produksiKotorKg: 32500,
-    kadarAir: 18.0,
-    kebersihan: 96.0,
-    catatan: 'Tongkol jagung besar berisi.'
-  },
-  {
-    id: 'pn-4',
-    kodePanen: 'PN-2606-0004',
-    komoditas: 'Kedelai',
-    varietas: 'Kedelai Grobogan',
-    lahan: 'Blok B Karawang - Petak 2',
-    tanggalPanen: '2026-05-16',
-    luasHa: 2.0,
-    produksiKg: 5200,
-    hasilKgHa: 2600,
-    status: 'Selesai',
-    penanggungJawab: 'Rizky Pratama',
-    metodePanen: 'Manual (Sabit)',
-    produksiKotorKg: 5450,
-    kadarAir: 13.5,
-    kebersihan: 97.0,
-    catatan: 'Biji kedelai utuh dan tidak pecah.'
-  },
-  {
-    id: 'pn-5',
-    kodePanen: 'PN-2606-0005',
-    komoditas: 'Padi',
-    varietas: 'Ciherang',
-    lahan: 'Blok C Lamongan - Petak 1',
-    tanggalPanen: '2026-05-20',
-    luasHa: 1.5,
-    produksiKg: 10200,
-    hasilKgHa: 6800,
-    status: 'Selesai',
-    penanggungJawab: 'Ir. Handoko',
-    metodePanen: 'Combine Harvester',
-    produksiKotorKg: 10500,
-    kadarAir: 14.5,
-    kebersihan: 98.5,
-    catatan: 'Benih penjenis BS lulus inspeksi.'
-  },
-  {
-    id: 'pn-6',
-    kodePanen: 'PN-2606-0006',
-    komoditas: 'Jagung',
-    varietas: 'Jagung Hibrida N-27',
-    lahan: 'Blok C Lamongan - Petak 2',
-    tanggalPanen: '2026-06-05',
-    luasHa: 5.0,
-    produksiKg: 43500,
-    hasilKgHa: 8700,
-    status: 'Selesai',
-    penanggungJawab: 'M. Fadli',
-    metodePanen: 'Corn Harvester Machine',
-    produksiKotorKg: 45200,
-    kadarAir: 19.5,
-    kebersihan: 95.5,
-    catatan: 'Panen skala besar lancar.'
-  },
-  {
-    id: 'pn-7',
-    kodePanen: 'PN-2606-0007',
-    komoditas: 'Kacang Tanah',
-    varietas: 'Kacang Tanah Kelinci',
-    lahan: 'Blok D Garut - Petak 1',
-    tanggalPanen: '2026-06-08',
-    luasHa: 1.8,
-    produksiKg: 4300,
-    hasilKgHa: 2388.89,
-    status: 'Selesai',
-    penanggungJawab: 'Dedi Kurniawan',
-    metodePanen: 'Manual (Pencabutan)',
-    produksiKotorKg: 4600,
-    kadarAir: 19.0,
-    kebersihan: 94.0,
-    catatan: 'Polong isi penuh.'
-  },
-  {
-    id: 'pn-8',
-    kodePanen: 'PN-2606-0008',
-    komoditas: 'Padi',
-    varietas: 'Mekongga',
-    lahan: 'Blok D Garut - Petak 2',
-    tanggalPanen: '2026-06-05',
-    luasHa: 3.5,
-    produksiKg: 24100,
-    hasilKgHa: 6885.71,
-    status: 'Selesai',
-    penanggungJawab: 'Hendra Wijaya',
-    metodePanen: 'Combine Harvester',
-    produksiKotorKg: 24800,
-    kadarAir: 14.1,
-    kebersihan: 98.0,
-    catatan: 'Panen musim hujan berjalan baik.'
-  },
-  {
-    id: 'pn-9',
-    kodePanen: 'PN-2606-0009',
-    komoditas: 'Kedelai',
-    varietas: 'Kedelai Anjasmoro',
-    lahan: 'Blok E Subang - Petak 3',
-    tanggalPanen: '2026-06-10',
-    luasHa: 1.2,
-    produksiKg: 2700,
-    hasilKgHa: 2250,
-    status: 'Berlangsung',
-    penanggungJawab: 'Dian Prasetyo',
-    metodePanen: 'Manual (Sabit)',
-    produksiKotorKg: 2850,
-    kadarAir: 14.8,
-    kebersihan: 96.0,
-    catatan: 'Proses perontokan polong.'
+    id: 'pn-11',
+    kodePanen: 'PN-2026-06-0011',
+    kodeJadwalTanam: 'JT-2026-0011',
+    petani: 'Slamet Riyadi',
+    petaniKode: 'SRM-008',
+    lahan: 'LHN-008 / Blok 08',
+    blokLahan: 'Blok 08',
+    jenisHasil: 'Glondong / Buah',
+    komoditas: 'Kangkung',
+    varietas: 'Bima',
+    rencanaPanen: '2026-10-25',
+    tanggalPanen: '2026-10-25',
+    luasHa: 0.80,
+    perkiraanHasil: 1200,
+    produksiKg: 0,
+    jumlahBuah: 0,
+    beratBruto: 0,
+    beratNetto: 0,
+    kondisiHasil: 'Baik',
+    status: 'Menunggu',
+    statusPengolahan: 'Belum Diproses',
+    catatan: 'Menunggu kesiapan vegetatif akhir.',
+    penanggungJawab: 'Slamet Riyadi',
+    dokumentasi: [],
   },
   {
     id: 'pn-10',
-    kodePanen: 'PN-2606-0010',
+    kodePanen: 'PN-2026-06-0010',
+    kodeJadwalTanam: 'JT-2026-0010',
+    petani: 'Budi Santoso',
+    petaniKode: 'BTN-001',
+    lahan: 'LHN-001 / Blok 02',
+    blokLahan: 'Blok 02',
+    jenisHasil: 'Glondong / Buah',
+    komoditas: 'Melon',
+    varietas: 'Melon Tere F1',
+    rencanaPanen: '2026-09-20',
+    tanggalPanen: '2026-09-18',
+    luasHa: 1.20,
+    perkiraanHasil: 2000,
+    produksiKg: 2000,
+    jumlahBuah: 1980,
+    beratBruto: 2050,
+    beratNetto: 2000,
+    kondisiHasil: 'Sangat Baik',
+    status: 'Selesai',
+    statusPengolahan: 'Selesai',
+    catatan: 'Kualitas buah manis Brix 14+.',
+    penanggungJawab: 'Budi Santoso',
+    dokumentasi: [],
+  },
+  {
+    id: 'pn-09',
+    kodePanen: 'PN-2026-06-0009',
+    kodeJadwalTanam: 'JT-2026-0009',
+    petani: 'Agus Setiawan',
+    petaniKode: 'AGS-003',
+    lahan: 'LHN-003 / Blok Selatan',
+    blokLahan: 'Blok Selatan',
+    jenisHasil: 'OC / Benih',
     komoditas: 'Padi',
-    varietas: 'Situ Bagendit',
-    lahan: 'Blok E Subang - Petak 4',
-    tanggalPanen: '2026-06-11',
-    luasHa: 1.0,
-    produksiKg: 3850,
-    hasilKgHa: 3850,
-    status: 'Berlangsung',
-    penanggungJawab: 'Dewi Lestari',
-    metodePanen: 'Combine Harvester',
-    produksiKotorKg: 4000,
-    kadarAir: 15.0,
-    kebersihan: 97.0,
-    catatan: 'Pengangkutan ke gudang pengeringan.'
-  }
+    varietas: 'Inpari 32',
+    rencanaPanen: '2026-09-22',
+    tanggalPanen: '2026-09-21',
+    luasHa: 2.00,
+    perkiraanHasil: 3100,
+    produksiKg: 3100,
+    jumlahBuah: 0,
+    beratBruto: 3200,
+    beratNetto: 3100,
+    kondisiHasil: 'Baik',
+    status: 'Selesai',
+    statusPengolahan: 'Selesai',
+    catatan: 'Hasil panen benih padi lolos sortasi awal.',
+    penanggungJawab: 'Agus Setiawan',
+    dokumentasi: [],
+  },
 ];
-export function usePanen() {
+
+export const INITIAL_STATS: PanenStats = {
+  totalJadwal: 10,
+  selesaiCount: 6,
+  dalamProsesCount: 2,
+  tertundaCount: 1,
+  totalHasilKg: 12450,
+  glondongKg: 8250,
+  glondongJadwal: 6,
+  ocKg: 4200,
+  ocJadwal: 4,
+};
+
+export const INITIAL_RINGKASAN: RingkasanKomoditasItem[] = [
+  { no: 1, komoditas: 'Melon', varietas: 'Melon Tere F1', jumlahJadwal: 3, selesai: 2, dalamProses: 1, tertunda: 0, totalHasilKg: 3480 },
+  { no: 2, komoditas: 'Cabai', varietas: 'Cabai Keriting', jumlahJadwal: 2, selesai: 1, dalamProses: 1, tertunda: 0, totalHasilKg: 1950 },
+  { no: 3, komoditas: 'Padi', varietas: 'Inpari 32', jumlahJadwal: 2, selesai: 1, dalamProses: 1, tertunda: 0, totalHasilKg: 3100 },
+  { no: 4, komoditas: 'Tomat', varietas: 'Grand Rapids', jumlahJadwal: 1, selesai: 1, dalamProses: 0, tertunda: 0, totalHasilKg: 1950 },
+  { no: 5, komoditas: 'Kangkung', varietas: 'Bima', jumlahJadwal: 1, selesai: 1, dalamProses: 0, tertunda: 0, totalHasilKg: 1200 },
+];
+
+export const INITIAL_CHART_DATA: ChartPanenData = {
+  categories: ['23 Jun', '24 Jun', '25 Jun', '26 Jun', '27 Jun', '28 Jun', '29 Jun'],
+  series: [
+    { name: 'Melon', data: [1200, 1500, 1100, 1800, 1400, 2100, 1950] },
+    { name: 'Cabai', data: [800, 950, 850, 1200, 1100, 1450, 1300] },
+    { name: 'Padi', data: [1500, 1800, 1400, 2000, 1750, 2300, 2200] },
+    { name: 'Tomat', data: [600, 800, 750, 900, 850, 1100, 1050] },
+    { name: 'Kangkung', data: [400, 550, 450, 650, 600, 750, 700] },
+  ],
+};
+
+export default function usePanen() {
   const [panenList, setPanenList] = useState<PanenItem[]>(INITIAL_PANEN_LIST);
-  const [isLoading, setIsLoading] = useState(false);
-  const [selectedPanen, setSelectedPanen] = useState<PanenItem | null>(INITIAL_PANEN_LIST[0]);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [isSaving, setIsSaving] = useState<boolean>(false);
 
-  // Kesiapan Panen list with status 'Siap Panen'
-  const [kesiapanSiapPanenList, setKesiapanSiapPanenList] = useState<KesiapanPanenItem[]>([]);
-
-  // Master Data from Services
-  const [masterCommodities, setMasterCommodities] = useState<Commodity[]>([]);
-  const [masterVarieties, setMasterVarieties] = useState<Variety[]>([]);
-
-  useEffect(() => {
-    const fetchMasterData = async () => {
-      try {
-        const [commRes, varRes] = await Promise.all([
-          commodityService.getCommodities({ pageSize: 1000, status: 'Aktif' }),
-          varietyService.getVarieties({ pageSize: 1000, status: 'Aktif' }),
-        ]);
-
-        if (commRes?.status === 'success' && commRes?.data) {
-          setMasterCommodities(commRes.data);
-        }
-        if (varRes?.status === 'success' && varRes?.data) {
-          setMasterVarieties(varRes.data);
-        }
-      } catch (err) {
-        console.error('Error fetching master commodities/varieties for filter:', err);
-      }
-    };
-    fetchMasterData();
-  }, []);
-
-  // Filter States
-  const [search, setSearch] = useState('');
-  const [filterPeriode, setFilterPeriode] = useState<[Date | null, Date | null]>(getInitialMonthRange());
-  const [filterKomoditas, setFilterKomoditas] = useState<any>(null);
-  const [filterVarietas, setFilterVarietas] = useState<any>(null);
-  const [filterStatus, setFilterStatus] = useState<any>(null);
+  // Filters
+  const [search, setSearch] = useState<string>('');
+  const [filterPeriode, setFilterPeriode] = useState<any>(null);
+  const [filterKomoditas, setFilterKomoditas] = useState<string>('Semua Komoditas');
+  const [filterVarietas, setFilterVarietas] = useState<string>('Semua Varietas');
+  const [filterStatus, setFilterStatus] = useState<string>('Semua Status');
+  const [filterPetani, setFilterPetani] = useState<string>('Semua Petani');
+  const [filterJenisHasil, setFilterJenisHasil] = useState<string>('Semua Jenis');
 
   // Pagination
-  const [currentPage, setCurrentPage] = useState(1);
-  const [pageSize, setPageSize] = useState(10);
-  const [totalRecords, setTotalRecords] = useState(0);
-  const [totalPages, setTotalPages] = useState(1);
+  const [currentPage, setCurrentPage] = useState<number>(1);
+  const [pageSize, setPageSize] = useState<number>(8);
+  const [totalRecords, setTotalRecords] = useState<number>(10);
+  const [totalPages, setTotalPages] = useState<number>(2);
 
-  // Backend Stats
-  const [apiStats, setApiStats] = useState<any>(null);
+  // Stats & Summaries
+  const [stats, setStats] = useState<PanenStats>(INITIAL_STATS);
+  const [ringkasanKomoditas, setRingkasanKomoditas] = useState<RingkasanKomoditasItem[]>(INITIAL_RINGKASAN);
+  const [chartData, setChartData] = useState<ChartPanenData>(INITIAL_CHART_DATA);
 
-  // Modal States
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  // Eligible Jadwal Tanam for Create Modal
+  const [eligibleJadwals, setEligibleJadwals] = useState<ReferensiJadwalTanamPanen[]>([]);
+
+  // Selected Item for Detail Show/Hide panel (default hidden)
+  const [selectedDetailPanen, setSelectedDetailPanen] = useState<PanenItem | null>(null);
+
+  // Modal Create/Edit
+  const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
   const [editingItem, setEditingItem] = useState<PanenItem | null>(null);
 
-  const fetchPanens = useCallback(async () => {
+  // Lightbox / Detail Foto Modal
+  const [isFotoModalOpen, setIsFotoModalOpen] = useState<boolean>(false);
+
+  // Fetch list data
+  const fetchPanenList = useCallback(async () => {
     setIsLoading(true);
     try {
-      const commVal = filterKomoditas?.value || (typeof filterKomoditas === 'string' && filterKomoditas !== 'Semua Komoditas' ? filterKomoditas : undefined);
-      const varVal = filterVarietas?.value || (typeof filterVarietas === 'string' && filterVarietas !== 'Semua Varietas' ? filterVarietas : undefined);
-      const statusVal = filterStatus?.value || (typeof filterStatus === 'string' && filterStatus !== 'Semua Status' ? filterStatus : undefined);
-      const startDateStr = formatDateYYYYMMDD(filterPeriode[0]);
-      const endDateStr = formatDateYYYYMMDD(filterPeriode[1]);
-
       const res = await panenService.getPanenList({
         page: currentPage,
         limit: pageSize,
         search: search || undefined,
-        komoditas: commVal || undefined,
-        varietas: varVal || undefined,
-        status: statusVal || undefined,
-        startDate: startDateStr || undefined,
-        endDate: endDateStr || undefined,
+        komoditas: filterKomoditas !== 'Semua Komoditas' ? filterKomoditas : undefined,
+        varietas: filterVarietas !== 'Semua Varietas' ? filterVarietas : undefined,
+        status: filterStatus !== 'Semua Status' ? filterStatus : undefined,
+        petani: filterPetani !== 'Semua Petani' ? filterPetani : undefined,
+        jenisHasil: filterJenisHasil !== 'Semua Jenis' ? filterJenisHasil : undefined,
       });
 
-      const list: PanenItem[] = res?.data || [];
-      if (list.length > 0) {
-        setPanenList(list);
-        setTotalRecords(res?.meta?.total || list.length);
-        setTotalPages(res?.meta?.totalPages || 1);
-        if (res?.stats) setApiStats(res.stats);
-        if (!selectedPanen) {
-          setSelectedPanSelected(list[0]);
+      if (res && res.data && res.data.length > 0) {
+        setPanenList(res.data);
+        if (res.meta) {
+          setTotalRecords(res.meta.total || res.data.length);
+          setTotalPages(res.meta.totalPages || 1);
         }
-      } else {
-        setPanenList(INITIAL_PANEN_LIST);
-        setTotalRecords(INITIAL_PANEN_LIST.length);
-        setTotalPages(1);
-        if (!selectedPanen) {
-          setSelectedPanSelected(INITIAL_PANEN_LIST[0]);
+        if (res.stats) {
+          setStats(res.stats);
         }
       }
-    } catch (err: any) {
-      console.error('Error fetching Panen list:', err);
-      setPanenList(INITIAL_PANEN_LIST);
-      setTotalRecords(INITIAL_PANEN_LIST.length);
-      if (!selectedPanen) {
-        setSelectedPanSelected(INITIAL_PANEN_LIST[0]);
-      }
+    } catch (err) {
+      console.warn('Using initial panen list due to network/api error:', err);
     } finally {
       setIsLoading(false);
     }
-  }, [currentPage, pageSize, search, filterKomoditas, filterVarietas, filterStatus, filterPeriode]);
+  }, [currentPage, pageSize, search, filterKomoditas, filterVarietas, filterStatus, filterPetani, filterJenisHasil]);
 
-  // Helper setter for auto-select
-  const setSelectedPanSelected = (item: PanenItem | null) => {
-    setSelectedPanen(item);
-  };
-
-  useEffect(() => {
-    fetchPanens();
-  }, [fetchPanens]);
-
-  const fetchKesiapanSiapPanen = useCallback(async () => {
+  // Fetch Stats, Ringkasan, Chart, Eligible
+  const fetchAuxiliaryData = useCallback(async () => {
     try {
-      const res = await kesiapanPanenService.getKesiapanPanenList({ status: 'Siap Panen', limit: 100 });
-      const list: KesiapanPanenItem[] = res?.data || [];
-      const filtered = list.filter((i) => i.statusKesiapan === 'Siap Panen');
-      if (filtered.length > 0) {
-        setKesiapanSiapPanenList(filtered);
-      } else {
-        const fallbacks = INITIAL_KESIAPAN_PANEN_LIST.filter((i) => i.statusKesiapan === 'Siap Panen');
-        setKesiapanSiapPanenList(fallbacks);
+      const [statsRes, ringkasanRes, chartRes, eligibleRes] = await Promise.allSettled([
+        panenService.getStats(),
+        panenService.getRingkasanKomoditas(),
+        panenService.getChartData('7_hari'),
+        panenService.getReferensiJadwalTanam(),
+      ]);
+
+      if (statsRes.status === 'fulfilled' && statsRes.value.data) {
+        setStats(statsRes.value.data);
       }
-    } catch (err) {
-      console.error('Error fetching kesiapan panen (Siap Panen):', err);
-      const fallbacks = INITIAL_KESIAPAN_PANEN_LIST.filter((i) => i.statusKesiapan === 'Siap Panen');
-      setKesiapanSiapPanenList(fallbacks);
+      if (ringkasanRes.status === 'fulfilled' && ringkasanRes.value.data) {
+        setRingkasanKomoditas(ringkasanRes.value.data);
+      }
+      if (chartRes.status === 'fulfilled' && chartRes.value.data) {
+        setChartData(chartRes.value.data);
+      }
+      if (eligibleRes.status === 'fulfilled' && eligibleRes.value.data) {
+        setEligibleJadwals(eligibleRes.value.data);
+      }
+    } catch (e) {
+      console.warn('Auxiliary data fetch fallback:', e);
     }
   }, []);
 
   useEffect(() => {
-    fetchKesiapanSiapPanen();
-  }, [fetchKesiapanSiapPanen]);
+    fetchPanenList();
+  }, [fetchPanenList]);
 
-  // Dynamic Options for filters based on Master Data
-  const komoditasOptions = useMemo(() => {
-    if (masterCommodities.length > 0) {
-      return [
-        { value: '', label: 'Semua Komoditas' },
-        ...masterCommodities.map((c) => ({
-          value: c.namaKomoditas,
-          label: c.namaKomoditas,
-        })),
-      ];
+  useEffect(() => {
+    fetchAuxiliaryData();
+  }, [fetchAuxiliaryData]);
+
+  // Filter options
+  const komoditasOptions = useMemo(() => [
+    { label: 'Semua Komoditas', value: 'Semua Komoditas' },
+    { label: 'Melon', value: 'Melon' },
+    { label: 'Cabai', value: 'Cabai' },
+    { label: 'Padi', value: 'Padi' },
+    { label: 'Tomat', value: 'Tomat' },
+    { label: 'Kangkung', value: 'Kangkung' },
+  ], []);
+
+  const statusOptions = useMemo(() => [
+    { label: 'Semua Status', value: 'Semua Status' },
+    { label: 'Selesai', value: 'Selesai' },
+    { label: 'Dalam Proses', value: 'Dalam Proses' },
+    { label: 'Tertunda', value: 'Tertunda' },
+    { label: 'Menunggu', value: 'Menunggu' },
+  ], []);
+
+  const petaniOptions = useMemo(() => [
+    { label: 'Semua Petani', value: 'Semua Petani' },
+    { label: 'Budi Santoso', value: 'Budi Santoso' },
+    { label: 'Siti Rahayu', value: 'Siti Rahayu' },
+    { label: 'Agus Setiawan', value: 'Agus Setiawan' },
+    { label: 'Dewi Lestari', value: 'Dewi Lestari' },
+    { label: 'Rini Wulandari', value: 'Rini Wulandari' },
+    { label: 'Endang Sulastri', value: 'Endang Sulastri' },
+    { label: 'Slamet Riyadi', value: 'Slamet Riyadi' },
+  ], []);
+
+  const jenisHasilOptions = useMemo(() => [
+    { label: 'Semua Jenis', value: 'Semua Jenis' },
+    { label: 'Glondong / Buah', value: 'Glondong / Buah' },
+    { label: 'OC / Benih', value: 'OC / Benih' },
+  ], []);
+
+  // Show / Hide Detail Panen toggle
+  const handleToggleDetail = (item: PanenItem) => {
+    if (selectedDetailPanen && selectedDetailPanen.id === item.id) {
+      // If currently showing this item, toggle to hide
+      setSelectedDetailPanen(null);
+    } else {
+      // Show this item
+      setSelectedDetailPanen(item);
     }
-    return [
-      { value: '', label: 'Semua Komoditas' },
-      { value: 'Padi', label: 'Padi' },
-      { value: 'Jagung', label: 'Jagung' },
-      { value: 'Kedelai', label: 'Kedelai' },
-      { value: 'Kacang Hijau', label: 'Kacang Hijau' },
-    ];
-  }, [masterCommodities]);
-
-  const selectedKomoditasVal = filterKomoditas?.value || (typeof filterKomoditas === 'string' ? filterKomoditas : '');
-
-  const varietasOptions = useMemo(() => {
-    let filteredVarieties = masterVarieties;
-
-    if (selectedKomoditasVal && selectedKomoditasVal !== 'Semua Komoditas') {
-      const matchedComm = masterCommodities.find(
-        (c) => c.namaKomoditas.toLowerCase() === selectedKomoditasVal.toLowerCase() || c.id === selectedKomoditasVal
-      );
-
-      filteredVarieties = masterVarieties.filter((v) => {
-        if (matchedComm && v.commodityId === matchedComm.id) return true;
-        if (v.commodity?.namaKomoditas?.toLowerCase() === selectedKomoditasVal.toLowerCase()) return true;
-        return false;
-      });
-    }
-
-    if (filteredVarieties.length > 0) {
-      return [
-        { value: '', label: 'Semua Varietas' },
-        ...filteredVarieties.map((v) => ({
-          value: v.namaVarietas,
-          label: v.namaVarietas,
-        })),
-      ];
-    }
-
-    const fallbackMap: Record<string, string[]> = {
-      Padi: ['Inpari 32', 'Inpari 42', 'Ciherang', 'Mekongga', 'Sintanur'],
-      Jagung: ['Pioneer 21', 'Bisi 18', 'P21'],
-      Kedelai: ['Anjasmoro', 'Dega 1'],
-      'Kacang Hijau': ['Vima 1'],
-    };
-
-    if (selectedKomoditasVal && fallbackMap[selectedKomoditasVal]) {
-      return [
-        { value: '', label: 'Semua Varietas' },
-        ...fallbackMap[selectedKomoditasVal].map((v) => ({ value: v, label: v })),
-      ];
-    }
-
-    return [
-      { value: '', label: 'Semua Varietas' },
-      { value: 'Inpari 32', label: 'Inpari 32' },
-      { value: 'Inpari 42', label: 'Inpari 42' },
-      { value: 'Ciherang', label: 'Ciherang' },
-      { value: 'Pioneer 21', label: 'Pioneer 21' },
-      { value: 'Bisi 18', label: 'Bisi 18' },
-      { value: 'P21', label: 'P21' },
-      { value: 'Anjasmoro', label: 'Anjasmoro' },
-      { value: 'Dega 1', label: 'Dega 1' },
-      { value: 'Vima 1', label: 'Vima 1' },
-    ];
-  }, [masterVarieties, masterCommodities, selectedKomoditasVal]);
-
-  const handleFilterKomoditasChange = (val: any) => {
-    setFilterKomoditas(val);
-    setFilterVarietas(null);
   };
 
-  const statusOptions = [
-    { value: '', label: 'Semua Status' },
-    { value: 'Selesai', label: 'Selesai' },
-    { value: 'Berlangsung', label: 'Berlangsung' },
-    { value: 'Belum Mulai', label: 'Belum Mulai' },
-  ];
-
-  // Filter actions
   const handleApplyFilters = () => {
     setCurrentPage(1);
-    fetchPanens();
+    fetchPanenList();
   };
 
   const handleResetFilters = () => {
     setSearch('');
-    setFilterKomoditas(null);
-    setFilterVarietas(null);
-    setFilterStatus(null);
-    setFilterPeriode(getInitialMonthRange());
+    setFilterPeriode(null);
+    setFilterKomoditas('Semua Komoditas');
+    setFilterVarietas('Semua Varietas');
+    setFilterStatus('Semua Status');
+    setFilterPetani('Semua Petani');
+    setFilterJenisHasil('Semua Jenis');
     setCurrentPage(1);
   };
 
-  // CRUD actions
-  const handleAddPanen = () => {
+  const handleOpenCreateModal = () => {
     setEditingItem(null);
     setIsModalOpen(true);
   };
 
-  const handleEditPanen = (item: PanenItem) => {
+  const handleOpenEditModal = (item: PanenItem) => {
     setEditingItem(item);
     setIsModalOpen(true);
   };
 
-  const handleDeletePanen = async (id: string, kodePanen?: string) => {
-    const confirmMessage = kodePanen
-      ? `Apakah Anda yakin ingin menghapus data panen "${kodePanen}"?`
-      : 'Apakah Anda yakin ingin menghapus data panen ini?';
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+    setEditingItem(null);
+  };
 
-    if (confirm(confirmMessage)) {
+  const handleSavePanen = async (payload: any): Promise<boolean> => {
+    setIsSaving(true);
+    try {
+      if (editingItem) {
+        await panenService.updatePanen(editingItem.id, payload);
+        toast.success('Data panen berhasil diperbarui');
+      } else {
+        await panenService.createPanen(payload);
+        toast.success('Data panen baru berhasil disimpan');
+      }
+      handleCloseModal();
+      await fetchPanenList();
+      await fetchAuxiliaryData();
+      return true;
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || 'Gagal menyimpan data panen');
+      return false;
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleDeletePanen = async (item: PanenItem) => {
+    if (confirm(`Apakah Anda yakin ingin menghapus data panen ${item.kodePanen}?`)) {
       try {
-        const res = await panenService.deletePanen(id);
-        toast.success(res?.message || 'Data panen berhasil dihapus');
-        if (selectedPanen?.id === id) {
-          setSelectedPanen(null);
+        await panenService.deletePanen(item.id);
+        toast.success('Data panen berhasil dihapus');
+        if (selectedDetailPanen?.id === item.id) {
+          setSelectedDetailPanen(null);
         }
-        fetchPanens();
+        await fetchPanenList();
+        await fetchAuxiliaryData();
       } catch (err: any) {
-        console.error('Error deleting Panen:', err);
         toast.error(err.response?.data?.message || 'Gagal menghapus data panen');
       }
     }
   };
 
-  const handleSavePanen = async (formData: Partial<PanenItem>) => {
-    try {
-      if (editingItem) {
-        const res = await panenService.updatePanen(editingItem.id, formData);
-        toast.success(res?.message || 'Data panen berhasil diperbarui');
-      } else {
-        const res = await panenService.createPanen(formData);
-        toast.success(res?.message || 'Data panen berhasil ditambahkan');
-      }
-      setIsModalOpen(false);
-      fetchPanens();
-    } catch (err: any) {
-      console.error('Error saving Panen:', err);
-      // Fallback local update if API error occurs
-      if (editingItem) {
-        setPanenList((prev) =>
-          prev.map((item) => (item.id === editingItem.id ? { ...item, ...formData } : item))
-        );
-        toast.success('Data panen berhasil diperbarui (lokal)');
-      } else {
-        const newItem: PanenItem = {
-          id: `pn-temp-${Date.now()}`,
-          kodePanen: formData.kodePanen || `PN-2606-00${panenList.length + 1}`,
-          komoditas: formData.komoditas || 'Padi',
-          varietas: formData.varietas || 'Inpari 32',
-          lahan: formData.lahan || 'Lahan A1 - Blok 01',
-          tanggalPanen: formData.tanggalPanen || new Date().toISOString(),
-          luasHa: formData.luasHa || 0,
-          produksiKg: formData.produksiKg || 0,
-          hasilKgHa: formData.luasHa ? Math.round((formData.produksiKg || 0) / formData.luasHa) : 0,
-          status: formData.status || 'Selesai',
-          penanggungJawab: formData.penanggungJawab || 'Budi Santoso',
-          metodePanen: formData.metodePanen || 'Combine Harvester',
-          produksiKotorKg: formData.produksiKotorKg || 0,
-          kadarAir: formData.kadarAir || 14,
-          kebersihan: formData.kebersihan || 98,
-          catatan: formData.catatan || '',
-          ...formData,
-        };
-        setPanenList((prev) => [newItem, ...prev]);
-        setTotalRecords((prev) => prev + 1);
-        toast.success('Data panen berhasil ditambahkan');
-      }
-      setIsModalOpen(false);
-    }
-  };
-
-  // Aggregated Stat Items matching the top 7 stat cards
-  const statItems: StatItem[] = useMemo(() => {
-    const totalPanen = apiStats?.totalPanen || totalRecords || panenList.length;
-    const totalLuas = apiStats?.totalLuas !== undefined 
-      ? apiStats.totalLuas 
-      : panenList.reduce((acc, i) => acc + (i.luasHa || 0), 0);
-    const totalProduksi = apiStats?.totalProduksi !== undefined 
-      ? apiStats.totalProduksi 
-      : panenList.reduce((acc, i) => acc + (i.produksiKg || 0), 0);
-    const rataHasil = apiStats?.rataHasil !== undefined
-      ? apiStats.rataHasil
-      : (totalLuas > 0 ? Math.round(totalProduksi / totalLuas) : 0);
-
-    const selesaiCount = apiStats?.selesaiCount !== undefined
-      ? apiStats.selesaiCount
-      : panenList.filter(i => i.status === 'Selesai').length;
-
-    const berlangsungCount = apiStats?.berlangsungCount !== undefined
-      ? apiStats.berlangsungCount
-      : panenList.filter(i => i.status === 'Berlangsung' || i.status === 'Sedang Berlangsung').length;
-
-    const belumMulaiCount = apiStats?.belumMulaiCount !== undefined
-      ? apiStats.belumMulaiCount
-      : panenList.filter(i => i.status === 'Belum Mulai').length;
-
-    return [
-      {
-        title: 'Total Panen (Periode)',
-        value: totalPanen,
-        subtitle: 'Kegiatan Panen',
-        icon: 'ri-plant-line',
-        bgColor: 'bg-emerald-100/80',
-        textColor: 'text-emerald-700'
-      },
-      {
-        title: 'Total Luas Dipanen',
-        value: `${totalLuas.toFixed(2).replace('.', ',')} Ha`,
-        subtitle: 'Luas Dipanen',
-        icon: 'ri-landscape-line',
-        bgColor: 'bg-purple-100/80',
-        textColor: 'text-purple-700'
-      },
-      {
-        title: 'Total Produksi',
-        value: `${totalProduksi.toLocaleString('id-ID')} Kg`,
-        subtitle: 'Berat Bersih',
-        icon: 'ri-inbox-archive-line',
-        bgColor: 'bg-orange-100/80',
-        textColor: 'text-orange-700'
-      },
-      {
-        title: 'Rata-rata Hasil',
-        value: `${rataHasil.toLocaleString('id-ID')} Kg/Ha`,
-        subtitle: 'Produktivitas Rata-rata',
-        icon: 'ri-leaf-line',
-        bgColor: 'bg-blue-100/80',
-        textColor: 'text-blue-700'
-      },
-      {
-        title: 'Selesai',
-        value: selesaiCount,
-        subtitle: 'Kegiatan Selesai',
-        icon: 'ri-checkbox-circle-line',
-        bgColor: 'bg-emerald-100/80',
-        textColor: 'text-emerald-700'
-      },
-      {
-        title: 'Berlangsung',
-        value: berlangsungCount,
-        subtitle: 'Sedang Berlangsung',
-        icon: 'ri-time-line',
-        bgColor: 'bg-amber-100/80',
-        textColor: 'text-amber-700'
-      },
-      {
-        title: 'Belum Mulai',
-        value: belumMulaiCount,
-        subtitle: 'Belum Dilaksanakan',
-        icon: 'ri-history-line',
-        bgColor: 'bg-rose-100/80',
-        textColor: 'text-rose-700'
-      }
-    ];
-  }, [apiStats, totalRecords, panenList]);
-
   return {
     panenList,
     isLoading,
-    selectedPanen,
-    setSelectedPanen,
+    isSaving,
     search,
     setSearch,
     filterPeriode,
     setFilterPeriode,
     filterKomoditas,
-    setFilterKomoditas: handleFilterKomoditasChange,
+    setFilterKomoditas,
     filterVarietas,
     setFilterVarietas,
     filterStatus,
     setFilterStatus,
+    filterPetani,
+    setFilterPetani,
+    filterJenisHasil,
+    setFilterJenisHasil,
     currentPage,
     setCurrentPage,
     pageSize,
     setPageSize,
     totalRecords,
     totalPages,
-    statItems,
-    komoditasOptions,
-    varietasOptions,
-    statusOptions,
-    handleApplyFilters,
-    handleResetFilters,
-    handleAddPanen,
-    handleEditPanen,
-    handleDeletePanen,
-    handleSavePanen,
+    stats,
+    ringkasanKomoditas,
+    chartData,
+    eligibleJadwals,
+    selectedDetailPanen,
+    setSelectedDetailPanen,
+    handleToggleDetail,
     isModalOpen,
     setIsModalOpen,
     editingItem,
-    fetchPanens,
-    kesiapanSiapPanenList,
-    fetchKesiapanSiapPanen,
+    handleOpenCreateModal,
+    handleOpenEditModal,
+    handleCloseModal,
+    handleSavePanen,
+    handleDeletePanen,
+    handleApplyFilters,
+    handleResetFilters,
+    komoditasOptions,
+    statusOptions,
+    petaniOptions,
+    jenisHasilOptions,
+    isFotoModalOpen,
+    setIsFotoModalOpen,
+    fetchPanenList,
   };
 }
-
-export default usePanen;

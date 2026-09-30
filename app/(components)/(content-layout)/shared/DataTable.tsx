@@ -12,6 +12,12 @@ interface DataTableProps<T> {
   onPageSizeChange: (size: number) => void;
   emptyMessage?: string;
   isLoading?: boolean;
+  tableClassName?: string;
+  headerClassName?: string;
+  thClassName?: string;
+  bodyClassName?: string;
+  headerTextSize?: string | number;
+  bodyTextSize?: string | number;
 }
 
 export default function DataTable({
@@ -25,20 +31,32 @@ export default function DataTable({
   onPageChange,
   onPageSizeChange,
   emptyMessage = 'Tidak ada data tersedia',
-  isLoading = false
+  isLoading = false,
+  tableClassName = "table whitespace-nowrap table-bordered min-w-full",
+  headerClassName = "text-xs",
+  thClassName = "p-4",
+  bodyClassName = "text-sm text-gray-600",
+  headerTextSize,
+  bodyTextSize
 }: DataTableProps<any>) {
   return (
     <div className="box border border-defaultborder/60 bg-white shadow-sm rounded-md overflow-hidden">
+      {(headerTextSize || bodyTextSize) && (
+        <style>{`
+          .custom-data-table th { ${headerTextSize ? `font-size: ${headerTextSize} !important;` : ''} }
+          .custom-data-table td { ${bodyTextSize ? `font-size: ${bodyTextSize} !important;` : ''} }
+        `}</style>
+      )}
       <div className="table-responsive">
-        <table className="table whitespace-nowrap table-bordered min-w-full">
+        <table className={`${tableClassName} custom-data-table`}>
           <thead>
-            <tr className="border-b border-defaultborder bg-gray-50 text-gray-700 text-xs font-semibold uppercase">
+            <tr className={`border-b border-defaultborder bg-gray-50 text-gray-700 font-semibold uppercase ${headerClassName}`}>
               {headers.map((header, i) => (
-                <th key={i} scope="col" className="text-start p-4">{header}</th>
+                <th key={i} scope="col" className={`text-start ${thClassName}`}>{header}</th>
               ))}
             </tr>
           </thead>
-          <tbody className="divide-y divide-defaultborder text-sm text-gray-600">
+          <tbody className={`divide-y divide-defaultborder ${bodyClassName}`}>
             {isLoading ? (
               <tr>
                 <td colSpan={headers.length} className="p-8 text-center text-gray-400">
