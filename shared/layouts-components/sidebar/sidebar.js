@@ -694,6 +694,18 @@ const Sidebar = () => {
 		}
 	}, [Baselocation]);
 
+	// Auto-scroll active menu into center view
+	useEffect(() => {
+		const timeoutId = setTimeout(() => {
+			const activeMenuItem = document.querySelector(".side-menu__item.active");
+			if (activeMenuItem) {
+				activeMenuItem.scrollIntoView({ behavior: "smooth", block: "center" });
+			}
+		}, 300); // Slight delay to ensure DOM is fully updated
+		return () => clearTimeout(timeoutId);
+	}, [Baselocation, openMenu]);
+
+
 
 	const Sideclick = () => {
 		if (window.innerWidth > 992) {

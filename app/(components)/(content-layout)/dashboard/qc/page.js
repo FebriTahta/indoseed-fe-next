@@ -1,320 +1,469 @@
-"use client"
-import React, { Fragment, useState } from "react";
-import Pageheader from "@/shared/layouts-components/page-header/pageheader";
-import Seo from "@/shared/layouts-components/seo/seo";
-import Spkapexcharts from "@/shared/@spk-reusable-components/spk-packages/apexcharts-component";
-import Spktables from "@/shared/@spk-reusable-components/tables/spk-tables";
-import SpkBadge from "@/shared/@spk-reusable-components/uielements/spk-badge";
+"use client";
 
-const DashboardQC = () => {
-    // Mock Data for Top Cards
-    const summaryCards = [
-        { title: "TOTAL SAMPEL", value: "136", unit: "Sampel", percent: "18.8%", trend: "up", icon: "ri-flask-line", color: "primary" },
-        { title: "UJI SELESAI", value: "102", unit: "Sampel", percent: "22.1%", trend: "up", icon: "ri-clipboard-line", color: "info" },
-        { title: "UJI PROSES", value: "24", unit: "Sampel", percent: "4.3%", trend: "up", icon: "ri-time-line", color: "warning" },
-        { title: "UJI TIDAK LULUS", value: "10", unit: "Sampel", percent: "2.1%", trend: "down", icon: "ri-close-circle-line", color: "danger" },
-        { title: "TINGKAT KELULUSAN", value: "90.2%", unit: "Lulus", percent: "3.6%", trend: "up", icon: "ri-checkbox-circle-line", color: "success" },
-        { title: "SERTIFIKAT DITERBITKAN", value: "28", unit: "Sertifikat", percent: "16.7%", trend: "up", icon: "ri-file-paper-2-line", color: "warning" },
-    ];
+import React from "react";
+import dynamic from "next/dynamic";
+import { useRouter } from "next/navigation";
 
-    // Mock Data for Charts
-    const ringkasanHasilSeries = [122, 10, 4];
-    const ringkasanHasilOptions = {
-        chart: { type: 'donut', height: 250 },
-        labels: ['Lulus', 'Tidak Lulus', 'Proses'],
-        colors: ['#22c55e', '#ef4444', '#eab308'],
-        plotOptions: {
-            pie: { donut: { size: '75%', labels: { show: true, name: { show: true }, value: { show: true } } } }
+const ApexCharts = dynamic(() => import("react-apexcharts"), { ssr: false });
+
+export default function DashboardQC() {
+  const router = useRouter();
+
+  // --- MOCK DATA ---
+
+  // Donut Chart
+  const statusOptions = {
+    chart: { type: "donut", toolbar: { show: false } },
+    labels: [
+      "Menunggu Sampel",
+      "Sampel Diterima",
+      "Dalam Pengujian",
+      "Menunggu Review",
+      "Selesai",
+    ],
+    colors: ["#94a3b8", "#3b82f6", "#eab308", "#f97316", "#10b981"],
+    plotOptions: {
+      pie: {
+        donut: {
+          size: "80%",
+          labels: {
+            show: true,
+            name: { show: true, offsetY: -10, color: "#6b7280", fontSize: "12px" },
+            value: {
+              show: true,
+              fontSize: "24px",
+              fontWeight: "bold",
+              offsetY: 5,
+              color: "#1f2937",
+              formatter: (val) => val,
+            },
+            total: {
+              show: true,
+              label: "Total Sampel",
+              color: "#6b7280",
+              formatter: () => "24",
+            },
+          },
         },
-        dataLabels: { enabled: false },
-        legend: { show: false }
-    };
+      },
+    },
+    dataLabels: { enabled: false },
+    legend: { show: false },
+    stroke: { width: 0 },
+  };
+  const statusSeries = [3, 5, 8, 4, 18];
 
-    const hasilPerParameterSeries = [
-        { name: 'Lulus (%)', data: [92.1, 88.3, 91.6, 87.5, 92.7] },
-        { name: 'Tidak Lulus (%)', data: [7.9, 11.7, 8.4, 12.5, 7.3] }
-    ];
-    const hasilPerParameterOptions = {
-        chart: { type: 'bar', height: 250, stacked: false },
-        colors: ['#22c55e', '#ef4444'],
-        plotOptions: { bar: { columnWidth: '40%', borderRadius: 2 } },
-        xaxis: { categories: ['Daya Tumbuh', 'Kadar Air', 'Kemurnian', 'Vigor', 'Uji Lab'] },
-        dataLabels: { enabled: false },
-        legend: { position: 'top', horizontalAlign: 'left' }
-    };
+  const statusLegend = [
+    { label: "Menunggu Sampel", value: 3, percent: "12.5%", color: "bg-gray-400" },
+    { label: "Sampel Diterima", value: 5, percent: "20.8%", color: "bg-blue-500" },
+    { label: "Dalam Pengujian", value: 8, percent: "33.3%", color: "bg-yellow-500" },
+    { label: "Menunggu Review", value: 4, percent: "16.7%", color: "bg-orange-500" },
+    { label: "Selesai", value: 18, percent: "75.0%", color: "bg-emerald-500" },
+  ];
 
-    const trendKelulusanSeries = [{ name: 'Tingkat Kelulusan (%)', data: [83.2, 85.1, 87.3, 89.6, 90.2] }];
-    const trendKelulusanOptions = {
-        chart: { type: 'line', height: 250 },
-        colors: ['#22c55e'],
-        stroke: { width: 3, curve: 'smooth' },
-        markers: { size: 4 },
-        xaxis: { categories: ['1-5 Jun', '6-10 Jun', '11-14 Jun', '15-20 Jun', '21-25 Jun'] },
-        dataLabels: { enabled: true, offsetY: -10, style: { fontSize: '10px' } },
-    };
+  // Jenis Pengujian (Progress Bars)
+  const jenisPengujian = [
+    { label: "Kadar Air", value: 24, percent: 100 },
+    { label: "Kemurnian", value: 20, percent: 83 },
+    { label: "Daya Berkecambah", value: 16, percent: 67 },
+    { label: "Benih Murni", value: 12, percent: 50 },
+    { label: "Kesehatan Benih", value: 8, percent: 33 },
+    { label: "Berat 1.000 Butir", value: 6, percent: 25 },
+    { label: "Lainnya", value: 4, percent: 17 },
+  ];
 
-    // Table Data
-    const tableData = [
-        { id: "SMP-2406-001", produk: "Padi IR64", batch: "BCH-2406-001", param: "Daya Tumbuh", penguji: "Budi Santoso", tgl: "14/06/2024", status: "Selesai", hasil: "Lulus", badge: "success", text: "success" },
-        { id: "SMP-2406-002", produk: "Padi Ciherang", batch: "BCH-2406-002", param: "Kadar Air", penguji: "Ani Wulandari", tgl: "14/06/2024", status: "Selesai", hasil: "Lulus", badge: "success", text: "success" },
-        { id: "SMP-2406-003", produk: "Tomat Servo", batch: "BCH-2406-003", param: "Kemurnian", penguji: "Rudi Hartono", tgl: "13/06/2024", status: "Selesai", hasil: "Tidak Lulus", badge: "danger", text: "danger" },
-        { id: "SMP-2406-004", produk: "Cabai Lado F1", batch: "BCH-2406-004", param: "Vigor", penguji: "Budi Santoso", tgl: "13/06/2024", status: "Proses", hasil: "-", badge: "warning", text: "warning" },
-        { id: "SMP-2406-005", produk: "Sawi Caisim", batch: "BCH-2406-005", param: "Uji Lab", penguji: "Ani Wulandari", tgl: "12/06/2024", status: "Selesai", hasil: "Lulus", badge: "success", text: "success" },
-    ];
+  // Alur QC
+  const alurQC = [
+    { no: 1, title: "Permintaan Pengujian", desc: "Sampel dan dokumen diterima", value: 24, color: "text-emerald-600", bg: "bg-emerald-100", dot: "bg-emerald-500", border: "border-emerald-200" },
+    { no: 2, title: "Pengujian", desc: "Proses analisa di laboratorium", value: 18, color: "text-emerald-600", bg: "bg-emerald-100", dot: "bg-emerald-500", border: "border-emerald-200" },
+    { no: 3, title: "Review Hasil", desc: "Pemeriksaan oleh supervisor", value: 4, color: "text-emerald-600", bg: "bg-emerald-100", dot: "bg-emerald-500", border: "border-emerald-200" },
+    { no: 4, title: "Lulus / Rilis", desc: "Sertifikat QC diterbitkan", value: 18, color: "text-emerald-600", bg: "bg-emerald-100", dot: "bg-emerald-500", border: "border-gray-200" },
+    { no: 5, title: "Tidak Lulus", desc: "Temuan dan tindakan koreksi", value: 2, color: "text-red-600", bg: "bg-red-100", dot: "bg-red-500", border: "border-transparent" },
+  ];
 
-    return (
-        <Fragment>
-            <Seo title="Dashboard QC" />
-            <Pageheader title="Dashboard QC" currentpage="Quality Control" activepage="Dashboard QC" />
+  // Pengujian Terbaru Table
+  const tableTerbaru = [
+    { req: "RQ-QC-2026-00125", batch: "BTH-2026-00125", komoditas: "Melon", varietas: "Melon Tere F1", uji: "Kadar Air, Kemurnian", status: "Selesai", tgl: "16 Jun 2026", stColor: "bg-emerald-50 text-emerald-600 border-emerald-200", stIcon: "ri-checkbox-circle-fill" },
+    { req: "RQ-QC-2026-00124", batch: "BTH-2026-00124", komoditas: "Cabai", varietas: "Cabai Keriting", uji: "Daya Berkecambah", status: "Review", tgl: "15 Jun 2026", stColor: "bg-orange-50 text-orange-600 border-orange-200", stIcon: "ri-search-eye-line" },
+    { req: "RQ-QC-2026-00123", batch: "BTH-2026-00122", komoditas: "Padi", varietas: "Inpari 32", uji: "Kemurnian, Kotoran", status: "Pengujian", tgl: "14 Jun 2026", stColor: "bg-blue-50 text-blue-600 border-blue-200", stIcon: "ri-flask-fill" },
+    { req: "RQ-QC-2026-00122", batch: "BTH-2026-00121", komoditas: "Melon", varietas: "Melon Tere F1", uji: "Germinasi", status: "Selesai", tgl: "13 Jun 2026", stColor: "bg-emerald-50 text-emerald-600 border-emerald-200", stIcon: "ri-checkbox-circle-fill" },
+    { req: "RQ-QC-2026-00121", batch: "BTH-2026-00119", komoditas: "Cabai", varietas: "Cabai Rawit", uji: "Kesehatan Benih", status: "Tidak Lulus", tgl: "12 Jun 2026", stColor: "bg-red-50 text-red-600 border-red-200", stIcon: "ri-close-circle-fill" },
+    { req: "RQ-QC-2026-00120", batch: "BTH-2026-00118", komoditas: "Padi", varietas: "Inpari 32", uji: "Kadar Air", status: "Selesai", tgl: "11 Jun 2026", stColor: "bg-emerald-50 text-emerald-600 border-emerald-200", stIcon: "ri-checkbox-circle-fill" },
+    { req: "RQ-QC-2026-00119", batch: "BTH-2026-00117", komoditas: "Tomat", varietas: "Tomat Servo F1", uji: "Kemurnian", status: "Menunggu Review", tgl: "10 Jun 2026", stColor: "bg-orange-50 text-orange-600 border-orange-200", stIcon: "ri-search-eye-line" },
+    { req: "RQ-QC-2026-00118", batch: "BTH-2026-00116", komoditas: "Kacang Panjang", varietas: "Kacang Panjang", uji: "Daya Berkecambah", status: "Pengujian", tgl: "09 Jun 2026", stColor: "bg-blue-50 text-blue-600 border-blue-200", stIcon: "ri-flask-fill" },
+  ];
 
-            {/* Filter Section (Simulated) */}
-            <div className="flex justify-between items-center mb-6">
-                <div>
-                    <h5 className="text-lg font-semibold dark:text-white">Ringkasan aktivitas Quality Control secara real-time</h5>
-                </div>
-                <div className="flex gap-2">
-                    <button type="button" className="ti-btn ti-btn-outline-light bg-white dark:bg-bodybg">
-                        <i className="ri-calendar-line"></i> 01/06/2024 - 14/06/2024
-                    </button>
-                    <button type="button" className="ti-btn ti-btn-success text-white">
-                        <i className="ri-filter-3-line"></i> Filter
-                    </button>
-                </div>
+  // Komoditas Stacked Bar
+  const komoditasOptions = {
+    chart: { type: "bar", stacked: true, toolbar: { show: false }, height: 260 },
+    plotOptions: { bar: { horizontal: true, barHeight: "45%", borderRadius: 2 } },
+    colors: ["#10b981", "#ef4444"], // Lulus (Green), Tidak Lulus (Red)
+    dataLabels: {
+      enabled: true,
+      textAnchor: "middle",
+      style: { fontSize: "10px", colors: ["#fff"] },
+    },
+    xaxis: {
+      categories: ["Melon", "Cabai", "Padi", "Tomat", "Kacang Panjang"],
+      labels: { style: { colors: "#6b7280", fontSize: "11px" } },
+      axisBorder: { show: false },
+      axisTicks: { show: false },
+    },
+    yaxis: {
+      labels: { style: { colors: "#374151", fontSize: "12px", fontWeight: 500 } },
+    },
+    grid: { strokeDashArray: 3, borderColor: "#e5e7eb" },
+    legend: { position: "top", horizontalAlign: "right", markers: { radius: 12 } },
+  };
+  const komoditasSeries = [
+    { name: "Lulus", data: [6, 5, 4, 3, 2] },
+    { name: "Tidak Lulus", data: [1, 1, 0, 0, 0] },
+  ];
+
+  // Temuan QC
+  const tableTemuan = [
+    { id: "TQ-2026-0005", batch: "BTH-2026-00121", komoditas: "Cabai", jenis: "Daya Berkecambah", status: "Open", stColor: "text-red-600 border-red-200 bg-red-50" },
+    { id: "TQ-2026-0004", batch: "BTH-2026-00115", komoditas: "Melon", jenis: "Kadar Air", status: "Closed", stColor: "text-emerald-600 border-emerald-200 bg-emerald-50" },
+    { id: "TQ-2026-0003", batch: "BTH-2026-00112", komoditas: "Padi", jenis: "Kemurnian", status: "In Progress", stColor: "text-blue-600 border-blue-200 bg-blue-50" },
+    { id: "TQ-2026-0002", batch: "BTH-2026-00108", komoditas: "Tomat", jenis: "Kotoran Benih", status: "Closed", stColor: "text-emerald-600 border-emerald-200 bg-emerald-50" },
+    { id: "TQ-2026-0001", batch: "BTH-2026-00103", komoditas: "Kacang Panjang", jenis: "Daya Berkecambah", status: "Closed", stColor: "text-emerald-600 border-emerald-200 bg-emerald-50" },
+  ];
+
+  // Dokumen
+  const dokumen = [
+    { type: "COA", id: "BTH-2026-00125", komoditas: "Melon Tere F1", tgl: "16 Jun 2026" },
+    { type: "Laporan Uji", id: "BTH-2026-00124", komoditas: "Cabai Keriting", tgl: "15 Jun 2026" },
+    { type: "Sertifikat QC", id: "BTH-2026-00122", komoditas: "Inpari 32", tgl: "14 Jun 2026" },
+    { type: "Laporan Uji", id: "BTH-2026-00121", komoditas: "Melon Tere F1", tgl: "12 Jun 2026" },
+  ];
+
+  return (
+    <div className="space-y-6 pb-10">
+      {/* HEADER */}
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-white p-5 rounded-2xl shadow-sm border border-gray-100">
+        <div className="flex items-center gap-4">
+          <div className="w-14 h-14 bg-emerald-50 text-emerald-600 rounded-xl flex items-center justify-center shrink-0">
+            <i className="ri-leaf-fill text-3xl"></i>
+          </div>
+          <div>
+            <h2 className="text-2xl font-bold text-gray-800 mb-1">Dashboard QC & LAB</h2>
+            <p className="text-sm text-gray-500 font-medium">Monitor kualitas benih mulai dari penerimaan sampel hingga hasil pengujian.</p>
+          </div>
+        </div>
+        <div className="flex gap-2 shrink-0">
+          <button className="px-5 py-2.5 bg-emerald-600 text-white rounded-lg text-sm font-semibold hover:bg-emerald-700 flex items-center gap-2 transition-all shadow-sm shadow-emerald-600/20">
+            <i className="ri-add-line"></i> Permintaan Pengujian
+          </button>
+          <button className="px-5 py-2.5 bg-white text-emerald-600 border border-emerald-200 rounded-lg text-sm font-semibold hover:bg-emerald-50 flex items-center gap-2 transition-all shadow-sm">
+            <i className="ri-history-line"></i> Lihat Riwayat
+          </button>
+        </div>
+      </div>
+
+      {/* TOP CARDS */}
+      <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+        <div className="bg-white p-5 rounded-xl shadow-sm border border-emerald-100 relative overflow-hidden group">
+          <div className="flex items-center gap-3 mb-3">
+            <div className="w-10 h-10 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center border border-emerald-100">
+              <i className="ri-flask-line text-xl"></i>
             </div>
-
-            {/* Summary Cards Row */}
-            <div className="grid grid-cols-12 gap-x-6">
-                {summaryCards.map((card, idx) => (
-                    <div className="col-span-12 md:col-span-4 xl:col-span-2" key={idx}>
-                        <div className="box">
-                            <div className="box-body flex items-center justify-between p-4">
-                                <div>
-                                    <span className="text-textmuted text-[12px] font-semibold mb-1 block">{card.title}</span>
-                                    <h4 className="font-bold text-[22px] mb-1">{card.value}</h4>
-                                    <span className="text-[12px] text-textmuted block mb-2">{card.unit}</span>
-                                    <div className="flex items-center text-[12px]">
-                                        <span className={`text-${card.trend === 'up' ? 'success' : 'danger'} font-semibold flex items-center`}>
-                                            <i className={`ri-arrow-${card.trend}-s-fill text-[14px]`}></i> {card.percent}
-                                        </span>
-                                        <span className="ms-1 text-textmuted">dari periode lalu</span>
-                                    </div>
-                                </div>
-                                <div className={`avatar avatar-md bg-${card.color}/10 text-${card.color} rounded-full`}>
-                                    <i className={`${card.icon} text-[20px]`}></i>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                ))}
+            <p className="text-sm font-semibold text-gray-600">Sampel Masuk</p>
+          </div>
+          <h3 className="text-3xl font-bold text-gray-800 mb-2">24</h3>
+          <p className="text-xs font-medium text-emerald-600 flex items-center gap-1">
+            <i className="ri-arrow-up-line"></i> 12% dari bulan lalu
+          </p>
+        </div>
+        
+        <div className="bg-white p-5 rounded-xl shadow-sm border border-blue-100 relative overflow-hidden group">
+          <div className="flex items-center gap-3 mb-3">
+            <div className="w-10 h-10 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center border border-blue-100">
+              <i className="ri-settings-4-line text-xl"></i>
             </div>
+            <p className="text-sm font-semibold text-gray-600">Pengujian Berjalan</p>
+          </div>
+          <h3 className="text-3xl font-bold text-gray-800 mb-2">18</h3>
+          <p className="text-xs font-medium text-blue-600 flex items-center gap-1">
+            <i className="ri-arrow-up-line"></i> 8% dari bulan lalu
+          </p>
+        </div>
 
-            {/* Charts Row */}
-            <div className="grid grid-cols-12 gap-x-6 mb-6">
-                <div className="xl:col-span-4 col-span-12">
-                    <div className="box custom-box h-full">
-                        <div className="box-header">
-                            <div className="box-title">Ringkasan Hasil Uji</div>
-                        </div>
-                        <div className="box-body">
-                            <div className="flex flex-col justify-center items-center">
-                                <Spkapexcharts chartOptions={ringkasanHasilOptions} chartSeries={ringkasanHasilSeries} type="donut" width={"100%"} height={250} />
-                                <div className="mt-4 w-full">
-                                    <div className="flex justify-between items-center mb-2">
-                                        <span className="flex items-center text-sm"><span className="w-2 h-2 rounded-full bg-success me-2"></span>Lulus</span>
-                                        <span className="text-sm font-semibold">122 (90.2%)</span>
-                                    </div>
-                                    <div className="flex justify-between items-center mb-2">
-                                        <span className="flex items-center text-sm"><span className="w-2 h-2 rounded-full bg-danger me-2"></span>Tidak Lulus</span>
-                                        <span className="text-sm font-semibold">10 (7.4%)</span>
-                                    </div>
-                                    <div className="flex justify-between items-center">
-                                        <span className="flex items-center text-sm"><span className="w-2 h-2 rounded-full bg-warning me-2"></span>Proses</span>
-                                        <span className="text-sm font-semibold">4 (2.4%)</span>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div className="xl:col-span-4 col-span-12">
-                    <div className="box custom-box h-full">
-                        <div className="box-header">
-                            <div className="box-title">Hasil Uji per Parameter</div>
-                        </div>
-                        <div className="box-body">
-                            <Spkapexcharts chartOptions={hasilPerParameterOptions} chartSeries={hasilPerParameterSeries} type="bar" width={"100%"} height={320} />
-                        </div>
-                    </div>
-                </div>
-                <div className="xl:col-span-4 col-span-12">
-                    <div className="box custom-box h-full">
-                        <div className="box-header">
-                            <div className="box-title">Trend Tingkat Kelulusan</div>
-                        </div>
-                        <div className="box-body">
-                            <Spkapexcharts chartOptions={trendKelulusanOptions} chartSeries={trendKelulusanSeries} type="line" width={"100%"} height={320} />
-                        </div>
-                    </div>
-                </div>
+        <div className="bg-white p-5 rounded-xl shadow-sm border border-orange-100 relative overflow-hidden group">
+          <div className="flex items-center gap-3 mb-3">
+            <div className="w-10 h-10 rounded-lg bg-orange-50 text-orange-600 flex items-center justify-center border border-orange-100">
+              <i className="ri-time-line text-xl"></i>
             </div>
+            <p className="text-sm font-semibold text-gray-600">Menunggu Review</p>
+          </div>
+          <h3 className="text-3xl font-bold text-gray-800 mb-2">4</h3>
+          <p className="text-xs font-medium text-orange-600 flex items-center gap-1">
+            <i className="ri-arrow-down-line"></i> 20% dari bulan lalu
+          </p>
+        </div>
 
-            {/* Bottom Row */}
-            <div className="grid grid-cols-12 gap-x-6">
-                <div className="xl:col-span-6 col-span-12">
-                    <div className="box custom-box h-full">
-                        <div className="box-header justify-between">
-                            <div className="box-title">Sampel Terbaru</div>
-                            <a href="#!" className="text-primary text-[13px]">Lihat semua sampel <i className="ri-arrow-right-line"></i></a>
-                        </div>
-                        <div className="box-body p-0">
-                            <div className="table-responsive">
-                                <Spktables tableClass='table whitespace-nowrap table-hover border-b border-defaultborder' header={[{ title: 'No.' }, { title: 'Kode Sampel' }, { title: 'Produk / Varietas' }, { title: 'Batch' }, { title: 'Parameter Uji' }, { title: 'Penguji' }, { title: 'Tgl Uji' }, { title: 'Status' }, { title: 'Hasil' }]}>
-                                    {tableData.map((row, index) => (
-                                        <tr key={index} className="border-b border-defaultborder">
-                                            <td>{index + 1}</td>
-                                            <td><span className="font-semibold">{row.id}</span></td>
-                                            <td>{row.produk}</td>
-                                            <td>{row.batch}</td>
-                                            <td>{row.param}</td>
-                                            <td>{row.penguji}</td>
-                                            <td>{row.tgl}</td>
-                                            <td>
-                                                <SpkBadge variant={`${row.badge}/10`} customClass={`text-${row.text}`}>
-                                                    {row.status}
-                                                </SpkBadge>
-                                            </td>
-                                            <td>
-                                                <span className={row.hasil === 'Lulus' ? 'text-success font-semibold' : row.hasil === 'Tidak Lulus' ? 'text-danger font-semibold' : ''}>{row.hasil}</span>
-                                            </td>
-                                        </tr>
-                                    ))}
-                                </Spktables>
-                            </div>
-                        </div>
-                    </div>
+        <div className="bg-white p-5 rounded-xl shadow-sm border border-red-100 relative overflow-hidden group">
+          <div className="flex items-center gap-3 mb-3">
+            <div className="w-10 h-10 rounded-lg bg-red-50 text-red-600 flex items-center justify-center border border-red-100">
+              <i className="ri-close-line text-xl"></i>
+            </div>
+            <p className="text-sm font-semibold text-gray-600">Tidak Lulus</p>
+          </div>
+          <h3 className="text-3xl font-bold text-gray-800 mb-2">2</h3>
+          <p className="text-xs font-medium text-red-600 flex items-center gap-1">
+            <i className="ri-arrow-down-line"></i> 50% dari bulan lalu
+          </p>
+        </div>
+
+        <div className="bg-white p-5 rounded-xl shadow-sm border border-emerald-100 relative overflow-hidden group">
+          <div className="flex items-center gap-3 mb-3">
+            <div className="w-10 h-10 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center border border-emerald-100">
+              <i className="ri-check-line text-xl"></i>
+            </div>
+            <p className="text-sm font-semibold text-gray-600">Lulus</p>
+          </div>
+          <h3 className="text-3xl font-bold text-gray-800 mb-2">18</h3>
+          <p className="text-xs font-medium text-emerald-600 flex items-center gap-1">
+            <i className="ri-arrow-up-line"></i> 13% dari bulan lalu
+          </p>
+        </div>
+      </div>
+
+      {/* MIDDLE ROW (3 Cols) */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Status Pengujian */}
+        <div className="bg-white p-5 rounded-xl shadow-sm border border-gray-100 flex flex-col">
+          <div className="flex items-center gap-2 mb-4">
+            <i className="ri-pie-chart-2-fill text-emerald-600"></i>
+            <h3 className="font-bold text-gray-800">Status Pengujian</h3>
+          </div>
+          <div className="flex-1 flex items-center">
+            <div className="w-1/2 -ml-4">
+              <ApexCharts options={statusOptions} series={statusSeries} type="donut" height={220} />
+            </div>
+            <div className="w-1/2 pl-2 space-y-3">
+              {statusLegend.map((item, idx) => (
+                <div key={idx} className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <div className={`w-2 h-2 rounded-full ${item.color}`}></div>
+                    <span className="text-xs text-gray-600">{item.label}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-semibold text-gray-800">{item.value}</span>
+                    <span className="text-[10px] text-gray-400 w-8 text-right">({item.percent})</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Jenis Pengujian */}
+        <div className="bg-white p-5 rounded-xl shadow-sm border border-gray-100 flex flex-col">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="font-bold text-gray-800">Jenis Pengujian <span className="text-gray-400 font-normal text-sm">(Total)</span></h3>
+          </div>
+          <div className="flex-1 flex flex-col justify-center space-y-4">
+            {jenisPengujian.map((item, idx) => (
+              <div key={idx} className="flex items-center gap-3">
+                <div className="w-32 text-xs font-medium text-gray-600 truncate">{item.label}</div>
+                <div className="w-8 text-xs font-bold text-gray-800 text-right">{item.value}</div>
+                <div className="flex-1 h-2 bg-gray-100 rounded-full overflow-hidden">
+                  <div className="h-full bg-emerald-500 rounded-full" style={{ width: `${item.percent}%` }}></div>
+                </div>
+                <div className="w-8 text-[10px] text-gray-400 text-right">{item.percent}%</div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Alur QC */}
+        <div className="bg-white p-5 rounded-xl shadow-sm border border-gray-100 flex flex-col">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="font-bold text-gray-800">Alur QC</h3>
+          </div>
+          <div className="flex-1 relative pl-2 pt-2 pb-2">
+            {alurQC.map((step, idx) => (
+              <div key={idx} className="relative flex items-start gap-4 mb-4 last:mb-0 group">
+                {/* Line connector */}
+                {idx !== alurQC.length - 1 && (
+                  <div className={`absolute left-3.5 top-8 bottom-[-16px] w-[2px] ${step.border}`}></div>
+                )}
+                
+                {/* Dot */}
+                <div className={`relative z-10 w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold bg-white border-2 border-gray-200 group-hover:border-emerald-500 transition-colors`}>
+                  <div className={`w-2.5 h-2.5 rounded-full ${step.dot}`}></div>
                 </div>
                 
-                {/* Simplified remaining sections just for layout */}
-                <div className="xl:col-span-3 col-span-12">
-                     <div className="box custom-box h-full">
-                        <div className="box-header">
-                            <div className="box-title">Distribusi Parameter Uji</div>
-                        </div>
-                        <div className="box-body">
-                             {/* Mock donut chart for distribution */}
-                             <div className="flex justify-center mb-4">
-                                <Spkapexcharts chartOptions={{...ringkasanHasilOptions, labels: ['Daya Tumbuh', 'Kadar Air', 'Kemurnian', 'Vigor', 'Uji Lab'], colors: ['#22c55e', '#3b82f6', '#f59e0b', '#8b5cf6', '#6b7280']}} chartSeries={[36, 28, 26, 24, 22]} type="donut" width={"100%"} height={275} />
-                             </div>
-                             <a href="#!" className="text-primary text-[13px]">Lihat detail parameter <i className="ri-arrow-right-line"></i></a>
-                        </div>
+                {/* Content */}
+                <div className="flex-1 pt-0.5">
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <h4 className="text-sm font-semibold text-gray-800">{step.no}. {step.title}</h4>
+                      <p className="text-[11px] text-gray-500 mt-0.5">{step.desc}</p>
                     </div>
+                    <div className={`px-2.5 py-1 rounded-md text-xs font-bold ${step.bg} ${step.color}`}>
+                      {step.value}
+                    </div>
+                  </div>
                 </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
 
-                <div className="xl:col-span-3 col-span-12">
-                    <div className="box custom-box h-full">
-                        <div className="box-header justify-between">
-                            <div className="box-title">Notifikasi QC</div>
-                            <a href="#!" className="text-success text-[13px]">Lihat semua</a>
-                        </div>
-                        <div className="box-body">
-                            <ul className="list-none mb-0">
-                                <li className="mb-4">
-                                    <div className="flex items-start">
-                                        <div className="avatar avatar-sm bg-danger/10 text-danger rounded-full me-3">
-                                            <i className="ri-close-circle-line"></i>
-                                        </div>
-                                        <div>
-                                            <p className="mb-0 font-semibold text-[13px]">10 sampel tidak lulus uji</p>
-                                            <p className="text-textmuted text-[12px]">Beberapa sampel pada parameter kemurnian</p>
-                                        </div>
-                                        <div className="ms-auto text-[11px] text-textmuted">1 jam lalu</div>
-                                    </div>
-                                </li>
-                                <li className="mb-4">
-                                    <div className="flex items-start">
-                                        <div className="avatar avatar-sm bg-warning/10 text-warning rounded-full me-3">
-                                            <i className="ri-time-line"></i>
-                                        </div>
-                                        <div>
-                                            <p className="mb-0 font-semibold text-[13px]">24 sampel sedang diuji</p>
-                                            <p className="text-textmuted text-[12px]">Proses pengujian sedang berlangsung</p>
-                                        </div>
-                                        <div className="ms-auto text-[11px] text-textmuted">2 jam lalu</div>
-                                    </div>
-                                </li>
-                                <li>
-                                    <div className="flex items-start">
-                                        <div className="avatar avatar-sm bg-success/10 text-success rounded-full me-3">
-                                            <i className="ri-checkbox-circle-line"></i>
-                                        </div>
-                                        <div>
-                                            <p className="mb-0 font-semibold text-[13px]">28 sertifikat QC diterbitkan</p>
-                                            <p className="text-textmuted text-[12px]">Sertifikat berhasil dibuat</p>
-                                        </div>
-                                        <div className="ms-auto text-[11px] text-textmuted">3 jam lalu</div>
-                                    </div>
-                                </li>
-                            </ul>
-                        </div>
-                    </div>
-                </div>
+      {/* BOTTOM ROW (2 Cols) */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        
+        {/* LEFT COL (Tables & Docs) */}
+        <div className="lg:col-span-2 space-y-6">
+          {/* Pengujian Terbaru */}
+          <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+            <div className="p-4 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
+              <div className="flex items-center gap-2">
+                <i className="ri-table-line text-emerald-600"></i>
+                <h3 className="font-bold text-gray-800">Pengujian Terbaru</h3>
+              </div>
+              <button className="text-xs text-blue-600 font-semibold hover:underline">Lihat Semua</button>
             </div>
-            
-            {/* Footer Performance Summary */}
-            <div className="box mt-4">
-                <div className="box-header">
-                    <div className="box-title">Ringkasan Performa QC</div>
-                </div>
-                <div className="box-body">
-                    <div className="grid grid-cols-12 gap-4 text-center">
-                        <div className="col-span-12 md:col-span-2">
-                            <div className="flex flex-col items-center">
-                                <i className="ri-timer-line text-[24px] text-primary mb-2"></i>
-                                <span className="text-textmuted text-[12px]">Rata-rata Waktu Uji</span>
-                                <h4 className="font-bold text-[20px]">2.4 Hari</h4>
-                            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="border-b border-gray-200 bg-white text-[11px] uppercase tracking-wider text-gray-500">
+                    <th className="py-3 px-4 font-semibold text-center w-10">No.</th>
+                    <th className="py-3 px-4 font-semibold">No. Permintaan</th>
+                    <th className="py-3 px-4 font-semibold">No. Batch</th>
+                    <th className="py-3 px-4 font-semibold">Komoditas</th>
+                    <th className="py-3 px-4 font-semibold">Varietas</th>
+                    <th className="py-3 px-4 font-semibold">Jenis Uji</th>
+                    <th className="py-3 px-4 font-semibold">Status</th>
+                    <th className="py-3 px-4 font-semibold">Tanggal Sampling</th>
+                    <th className="py-3 px-4 font-semibold text-center">Aksi</th>
+                  </tr>
+                </thead>
+                <tbody className="text-xs text-gray-700 divide-y divide-gray-100">
+                  {tableTerbaru.map((row, idx) => (
+                    <tr key={idx} className="hover:bg-gray-50 transition-colors">
+                      <td className="py-2.5 px-4 text-center font-medium">{idx + 1}</td>
+                      <td className="py-2.5 px-4 text-emerald-600 font-medium whitespace-nowrap">{row.req}</td>
+                      <td className="py-2.5 px-4 text-gray-500 whitespace-nowrap">{row.batch}</td>
+                      <td className="py-2.5 px-4">{row.komoditas}</td>
+                      <td className="py-2.5 px-4">{row.varietas}</td>
+                      <td className="py-2.5 px-4 text-gray-500 max-w-[150px] truncate">{row.uji}</td>
+                      <td className="py-2.5 px-4 whitespace-nowrap">
+                        <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-md border text-[10px] font-semibold ${row.stColor}`}>
+                          <i className={`${row.stIcon}`}></i> {row.status}
+                        </span>
+                      </td>
+                      <td className="py-2.5 px-4 text-gray-500 whitespace-nowrap">{row.tgl}</td>
+                      <td className="py-2.5 px-4">
+                        <div className="flex gap-1 justify-center">
+                          <button className="w-6 h-6 rounded flex items-center justify-center text-blue-600 hover:bg-blue-50">
+                            <i className="ri-eye-line text-xs"></i>
+                          </button>
+                          <button className="w-6 h-6 rounded flex items-center justify-center text-gray-400 hover:bg-gray-100">
+                            <i className="ri-more-2-fill text-xs"></i>
+                          </button>
                         </div>
-                        <div className="col-span-12 md:col-span-2">
-                             <div className="flex flex-col items-center">
-                                <i className="ri-group-line text-[24px] text-info mb-2"></i>
-                                <span className="text-textmuted text-[12px]">Sampel per Penguji</span>
-                                <h4 className="font-bold text-[20px]">27</h4>
-                            </div>
-                        </div>
-                        <div className="col-span-12 md:col-span-2">
-                             <div className="flex flex-col items-center">
-                                <i className="ri-flask-line text-[24px] text-success mb-2"></i>
-                                <span className="text-textmuted text-[12px]">Metode Uji Aktif</span>
-                                <h4 className="font-bold text-[20px]">15</h4>
-                            </div>
-                        </div>
-                         <div className="col-span-12 md:col-span-2">
-                             <div className="flex flex-col items-center">
-                                <i className="ri-bookmark-line text-[24px] text-warning mb-2"></i>
-                                <span className="text-textmuted text-[12px]">Standar Acuan Aktif</span>
-                                <h4 className="font-bold text-[20px]">23</h4>
-                            </div>
-                        </div>
-                        <div className="col-span-12 md:col-span-2">
-                             <div className="flex flex-col items-center">
-                                <i className="ri-folder-2-line text-[24px] text-primary mb-2"></i>
-                                <span className="text-textmuted text-[12px]">Dokumen Pendukung</span>
-                                <h4 className="font-bold text-[20px]">42</h4>
-                            </div>
-                        </div>
-                        <div className="col-span-12 md:col-span-2">
-                             <div className="flex flex-col items-center">
-                                <i className="ri-tools-line text-[24px] text-success mb-2"></i>
-                                <span className="text-textmuted text-[12px]">Alat Terkalibrasi</span>
-                                <h4 className="font-bold text-[20px]">18 / 20</h4>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
+          </div>
 
-        </Fragment>
-    );
-};
+          {/* Dokumen & Sertifikat */}
+          <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+            <div className="p-4 border-b border-gray-100 flex justify-between items-center">
+              <div className="flex items-center gap-2">
+                <i className="ri-file-text-line text-emerald-600"></i>
+                <h3 className="font-bold text-gray-800">Dokumen & Sertifikat</h3>
+              </div>
+              <button className="text-xs text-blue-600 font-semibold hover:underline">Lihat Semua</button>
+            </div>
+            <div className="p-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              {dokumen.map((doc, idx) => (
+                <div key={idx} className="border border-gray-100 rounded-lg p-3 hover:shadow-md transition-shadow cursor-pointer group bg-gray-50/50">
+                  <div className="flex items-start gap-3">
+                    <div className="w-10 h-10 rounded-lg bg-red-50 text-red-500 flex items-center justify-center shrink-0">
+                      <i className="ri-file-pdf-2-line text-xl"></i>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <h4 className="text-xs font-bold text-gray-800 truncate">{doc.type} - {doc.id}</h4>
+                      <p className="text-[10px] text-gray-500 truncate mt-0.5">{doc.komoditas}</p>
+                      <p className="text-[10px] text-gray-400 mt-1">{doc.tgl}</p>
+                    </div>
+                  </div>
+                  <div className="mt-3 text-right">
+                    <i className="ri-download-2-line text-gray-400 group-hover:text-emerald-600 transition-colors"></i>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
 
-export default DashboardQC;
+        {/* RIGHT COL (Charts & Small Table) */}
+        <div className="space-y-6">
+          {/* Pengujian Berdasarkan Komoditas */}
+          <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+            <div className="p-4 border-b border-gray-100 flex justify-between items-center">
+              <div className="flex items-center gap-2">
+                <i className="ri-bar-chart-horizontal-fill text-emerald-600"></i>
+                <h3 className="font-bold text-gray-800">Pengujian Berdasarkan Komoditas</h3>
+              </div>
+            </div>
+            <div className="p-4 pt-2">
+              <div className="flex justify-end mb-2">
+                <span className="text-[10px] text-gray-500 bg-gray-100 px-2 py-1 rounded-md">Periode: <strong className="text-gray-700">Juni 2026</strong></span>
+              </div>
+              <ApexCharts options={komoditasOptions} series={komoditasSeries} type="bar" height={260} />
+            </div>
+          </div>
+
+          {/* Temuan QC */}
+          <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+            <div className="p-4 border-b border-gray-100 flex justify-between items-center">
+              <div className="flex items-center gap-2">
+                <i className="ri-error-warning-fill text-emerald-600"></i>
+                <h3 className="font-bold text-gray-800">Temuan QC (Terbaru)</h3>
+              </div>
+              <button className="text-xs text-blue-600 font-semibold hover:underline">Lihat Semua</button>
+            </div>
+            <div className="p-0 overflow-x-auto">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="border-b border-gray-100 bg-gray-50 text-[10px] uppercase tracking-wider text-gray-500">
+                    <th className="py-2.5 px-3 font-semibold text-center w-8">No.</th>
+                    <th className="py-2.5 px-3 font-semibold">No. Temuan</th>
+                    <th className="py-2.5 px-3 font-semibold">Batch</th>
+                    <th className="py-2.5 px-3 font-semibold">Komoditas</th>
+                    <th className="py-2.5 px-3 font-semibold">Jenis Temuan</th>
+                    <th className="py-2.5 px-3 font-semibold">Status</th>
+                  </tr>
+                </thead>
+                <tbody className="text-[11px] text-gray-700 divide-y divide-gray-100">
+                  {tableTemuan.map((row, idx) => (
+                    <tr key={idx} className="hover:bg-gray-50">
+                      <td className="py-2 px-3 text-center">{idx + 1}</td>
+                      <td className="py-2 px-3 text-emerald-600 font-medium whitespace-nowrap">{row.id}</td>
+                      <td className="py-2 px-3 text-gray-500 whitespace-nowrap">{row.batch}</td>
+                      <td className="py-2 px-3">{row.komoditas}</td>
+                      <td className="py-2 px-3">{row.jenis}</td>
+                      <td className="py-2 px-3">
+                        <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded border text-[9px] font-semibold ${row.stColor}`}>
+                          <i className={`${row.status === 'Closed' ? 'ri-checkbox-circle-line' : row.status === 'Open' ? 'ri-error-warning-line' : 'ri-time-line'}`}></i> {row.status}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}

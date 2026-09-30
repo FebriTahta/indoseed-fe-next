@@ -181,9 +181,9 @@ const PemeriksaanList = () => {
     }
   };
 
-  const renderAction = (status: string, id: string) => {
+  const renderAction = (status: string, noPengujian: string) => {
     const handleAction = () => {
-      router.push(`/qc/pemeriksaan-pengujian/${id}`);
+      router.push(`/qc/pemeriksaan-pengujian/${noPengujian}`);
     };
 
     if (status === "Menunggu Pengujian") {
@@ -236,7 +236,7 @@ const PemeriksaanList = () => {
       <td className="py-1 px-2 whitespace-nowrap !text-[11px]">{item.petugasQC}</td>
       <td className="py-1 px-2 whitespace-nowrap !text-[11px]">
         <div className="flex gap-2 justify-center items-center">
-          {renderAction(item.status, item.id)}
+          {renderAction(item.status, item.noPengujian)}
         </div>
       </td>
     </tr>
