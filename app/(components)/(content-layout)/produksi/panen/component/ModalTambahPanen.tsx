@@ -13,6 +13,79 @@ interface ModalTambahPanenProps {
   totalRecords: number;
 }
 
+const FALLBACK_ELIGIBLE_JADWALS: ReferensiJadwalTanamPanen[] = [
+  {
+    id: 'jt-ref-1',
+    kodeJadwalTanam: 'JT-2026-009',
+    komoditas: 'Tomat',
+    varietas: 'Melisa',
+    namaPetani: 'Siti Rahayu',
+    kodePetani: 'SRN-002',
+    lahan: 'Lahan B / Blok 02',
+    luasLahan: 1.5,
+    targetProduksi: 2000,
+    perkiraanPanen: '2026-10-01',
+    statusJadwal: 'Disetujui',
+    statusPersetujuan: 'Disetujui',
+  },
+  {
+    id: 'jt-ref-2',
+    kodeJadwalTanam: 'JT-2026-011',
+    komoditas: 'Kangkung',
+    varietas: 'Super Sempit',
+    namaPetani: 'Budi Santoso',
+    kodePetani: 'BTN-001',
+    lahan: 'Lahan A / Blok 01',
+    luasLahan: 1.0,
+    targetProduksi: 1500,
+    perkiraanPanen: '2026-09-30',
+    statusJadwal: 'Disetujui',
+    statusPersetujuan: 'Disetujui',
+  },
+  {
+    id: 'jt-ref-3',
+    kodeJadwalTanam: 'JT-2026-012',
+    komoditas: 'Melon',
+    varietas: 'Melon Tere F1',
+    namaPetani: 'Budi Santoso',
+    kodePetani: 'BTN-001',
+    lahan: 'Lahan A / Blok 01',
+    luasLahan: 1.0,
+    targetProduksi: 1500,
+    perkiraanPanen: '2026-09-30',
+    statusJadwal: 'Disetujui',
+    statusPersetujuan: 'Disetujui',
+  },
+  {
+    id: 'jt-ref-4',
+    kodeJadwalTanam: 'JT-2026-0018',
+    komoditas: 'Melon',
+    varietas: 'Melon Tere F1',
+    namaPetani: 'Budi Santoso',
+    kodePetani: 'BTN-001',
+    lahan: 'LHN-001 / Blok 01',
+    luasLahan: 1.0,
+    targetProduksi: 1500,
+    perkiraanPanen: '2026-09-30',
+    statusJadwal: 'Disetujui',
+    statusPersetujuan: 'Disetujui',
+  },
+  {
+    id: 'jt-ref-5',
+    kodeJadwalTanam: 'JT-2026-0017',
+    komoditas: 'Cabai',
+    varietas: 'Cabai Keriting',
+    namaPetani: 'Siti Rahayu',
+    kodePetani: 'SRN-002',
+    lahan: 'LHN-002 / Blok 02',
+    luasLahan: 1.2,
+    targetProduksi: 2000,
+    perkiraanPanen: '2026-11-01',
+    statusJadwal: 'Disetujui',
+    statusPersetujuan: 'Disetujui',
+  },
+];
+
 export default function ModalTambahPanen({
   isOpen,
   onClose,
@@ -26,7 +99,7 @@ export default function ModalTambahPanen({
   const [kodePanen, setKodePanen] = useState<string>('');
   const [selectedJadwalId, setSelectedJadwalId] = useState<string>('');
 
-  // Auto-filled fields
+  // Auto-filled fields (read only)
   const [komoditas, setKomoditas] = useState<string>('');
   const [varietas, setVarietas] = useState<string>('');
   const [petani, setPetani] = useState<string>('');
@@ -34,22 +107,23 @@ export default function ModalTambahPanen({
   const [lahan, setLahan] = useState<string>('');
   const [blokLahan, setBlokLahan] = useState<string>('');
 
-  // Data Panen fields
+  // Data Panen fields (empty by default on create)
   const [tanggalPanen, setTanggalPanen] = useState<string>('');
-  const [luasDipanen, setLuasDipanen] = useState<number | string>(1.5);
-  const [jumlahBuah, setJumlahBuah] = useState<number | string>(2800);
-  const [beratBruto, setBeratBruto] = useState<number | string>(3200);
-  const [beratNetto, setBeratNetto] = useState<number | string>(2950);
+  const [luasDipanen, setLuasDipanen] = useState<number | string>('');
+  const [jumlahBuah, setJumlahBuah] = useState<number | string>('');
+  const [kadarAir, setKadarAir] = useState<number | string>('');
+  const [beratBruto, setBeratBruto] = useState<number | string>('');
+  const [beratNetto, setBeratNetto] = useState<number | string>('');
   const [kondisiHasil, setKondisiHasil] = useState<string>('Baik');
 
-  // Dokumentasi photos
-  const [photos, setPhotos] = useState<string[]>([
-    'https://images.unsplash.com/photo-1592417817098-8f3d69109853?w=500&auto=format&fit=crop&q=60',
-    'https://images.unsplash.com/photo-1589923188900-85dae523342b?w=500&auto=format&fit=crop&q=60',
-    'https://images.unsplash.com/photo-1598170845058-32b9d6a5da37?w=500&auto=format&fit=crop&q=60',
-  ]);
+  // Dokumentasi photos (empty by default on create)
+  const [photos, setPhotos] = useState<string[]>([]);
 
   const [catatan, setCatatan] = useState<string>('');
+
+  // Combine fetched jadwals or fallback
+  const availableJadwals =
+    eligibleJadwals && eligibleJadwals.length > 0 ? eligibleJadwals : FALLBACK_ELIGIBLE_JADWALS;
 
   // Initialize or reset when opened
   useEffect(() => {
@@ -61,7 +135,7 @@ export default function ModalTambahPanen({
           ? 'OC / Benih'
           : 'Glondong / Buah'
       );
-      setKodePanen(initialData.kodePanen);
+      setKodePanen(initialData.kodePanen || '');
       setSelectedJadwalId(initialData.jadwalTanamId || initialData.kodeJadwalTanam || '');
       setKomoditas(initialData.komoditas || '');
       setVarietas(initialData.varietas || '');
@@ -69,61 +143,77 @@ export default function ModalTambahPanen({
       setPetaniKode(initialData.petaniKode || '');
       setLahan(initialData.lahan || '');
       setBlokLahan(initialData.blokLahan || '');
-      setTanggalPanen(initialData.tanggalPanen ? initialData.tanggalPanen.split('T')[0] : new Date().toISOString().split('T')[0]);
-      setLuasDipanen(initialData.luasHa || 1.0);
-      setJumlahBuah(initialData.jumlahBuah || 0);
-      setBeratBruto(initialData.beratBruto || initialData.produksiKg || 1500);
-      setBeratNetto(initialData.beratNetto || initialData.produksiKg || 1480);
+      setTanggalPanen(
+        initialData.tanggalPanen
+          ? initialData.tanggalPanen.split('T')[0]
+          : new Date().toISOString().split('T')[0]
+      );
+      setLuasDipanen(initialData.luasHa ?? '');
+      setJumlahBuah(initialData.jumlahBuah ?? '');
+      setKadarAir(initialData.kadarAir ?? '');
+      setBeratBruto(initialData.beratBruto ?? '');
+      setBeratNetto(initialData.beratNetto ?? '');
       setKondisiHasil(initialData.kondisiHasil || 'Baik');
       setCatatan(initialData.catatan || '');
+      if (initialData.dokumentasi && Array.isArray(initialData.dokumentasi)) {
+        setPhotos(
+          initialData.dokumentasi
+            .map((d: any) => (typeof d === 'string' ? d : d?.url))
+            .filter(Boolean)
+        );
+      } else {
+        setPhotos([]);
+      }
     } else {
-      // Create mode
+      // Create mode: Default harusnya kosong
       const nextNum = String(totalRecords + 19).padStart(4, '0');
       setKodePanen(`PN-2026-06-${nextNum}`);
+      setSelectedJadwalId('');
+      setKomoditas('');
+      setVarietas('');
+      setPetani('');
+      setPetaniKode('');
+      setLahan('');
+      setBlokLahan('');
       setTanggalPanen(new Date().toISOString().split('T')[0]);
       setJenisHasil('Glondong / Buah');
-      setLuasDipanen(1.5);
-      setJumlahBuah(2800);
-      setBeratBruto(3200);
-      setBeratNetto(2950);
+      setLuasDipanen('');
+      setJumlahBuah('');
+      setKadarAir('');
+      setBeratBruto('');
+      setBeratNetto('');
       setKondisiHasil('Baik');
+      setPhotos([]);
       setCatatan('');
-
-      // If eligible jadwals exist, auto select first
-      if (eligibleJadwals && eligibleJadwals.length > 0) {
-        const first = eligibleJadwals[0];
-        setSelectedJadwalId(first.id);
-        setKomoditas(first.komoditas);
-        setVarietas(first.varietas);
-        setPetani(first.namaPetani);
-        setPetaniKode(first.kodePetani || 'BTN-001');
-        setLahan(first.lahan);
-        setLuasDipanen(first.luasLahan || 1.5);
-      } else {
-        // Fallback default sample
-        setSelectedJadwalId('JT-2026-009');
-        setKomoditas('Tomat');
-        setVarietas('Melisa');
-        setPetani('Siti Rahayu');
-        setPetaniKode('SRN-002');
-        setLahan('Lahan B / Blok 02');
-      }
     }
-  }, [isOpen, initialData, eligibleJadwals, totalRecords]);
+  }, [isOpen, initialData, totalRecords]);
 
-  // Handle Jadwal Tanam select change
+  // Handle Jadwal Tanam select change -> Informasi Panen terisi otomatis
   const handleJadwalChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const val = e.target.value;
     setSelectedJadwalId(val);
 
-    const found = eligibleJadwals.find((j) => j.id === val || j.kodeJadwalTanam === val);
+    if (!val) {
+      setKomoditas('');
+      setVarietas('');
+      setPetani('');
+      setPetaniKode('');
+      setLahan('');
+      setBlokLahan('');
+      setLuasDipanen('');
+      return;
+    }
+
+    const found = availableJadwals.find((j) => j.id === val || j.kodeJadwalTanam === val);
     if (found) {
-      setKomoditas(found.komoditas);
-      setVarietas(found.varietas);
-      setPetani(found.namaPetani);
-      setPetaniKode(found.kodePetani || 'BTN-001');
-      setLahan(found.lahan);
-      if (found.luasLahan) setLuasDipanen(found.luasLahan);
+      setKomoditas(found.komoditas || '');
+      setVarietas(found.varietas || '');
+      setPetani(found.namaPetani || '');
+      setPetaniKode(found.kodePetani || '');
+      setLahan(found.lahan || '');
+      if (found.luasLahan) {
+        setLuasDipanen(found.luasLahan);
+      }
     }
   };
 
@@ -152,7 +242,9 @@ export default function ModalTambahPanen({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    const selectedJadwal = eligibleJadwals.find((j) => j.id === selectedJadwalId || j.kodeJadwalTanam === selectedJadwalId);
+    const selectedJadwal = availableJadwals.find(
+      (j) => j.id === selectedJadwalId || j.kodeJadwalTanam === selectedJadwalId
+    );
 
     const payload = {
       kodePanen,
@@ -166,11 +258,12 @@ export default function ModalTambahPanen({
       lahan,
       blokLahan,
       tanggalPanen,
-      luasHa: Number(luasDipanen) || 1.0,
-      jumlahBuah: jenisHasil === 'Glondong / Buah' ? Number(jumlahBuah) || 0 : 0,
-      beratBruto: Number(beratBruto) || 0,
-      beratNetto: Number(beratNetto) || 0,
-      produksiKg: Number(beratNetto) || 0,
+      luasHa: luasDipanen !== '' ? Number(luasDipanen) : 0,
+      jumlahBuah: jenisHasil === 'Glondong / Buah' ? (jumlahBuah !== '' ? Number(jumlahBuah) : 0) : 0,
+      kadarAir: jenisHasil === 'OC / Benih' ? (kadarAir !== '' ? Number(kadarAir) : 0) : undefined,
+      beratBruto: beratBruto !== '' ? Number(beratBruto) : 0,
+      beratNetto: beratNetto !== '' ? Number(beratNetto) : 0,
+      produksiKg: beratNetto !== '' ? Number(beratNetto) : 0,
       kondisiHasil,
       catatan,
       status: 'Selesai',
@@ -308,84 +401,100 @@ export default function ModalTambahPanen({
                 <select
                   value={selectedJadwalId}
                   onChange={handleJadwalChange}
-                  className="w-full h-9 px-3 rounded-lg border border-gray-200 bg-white text-xs text-gray-800 focus:outline-none focus:border-emerald-500"
+                  className="w-full h-9 px-3 rounded-lg border border-gray-200 bg-white text-xs text-gray-800 focus:outline-none focus:border-emerald-500 cursor-pointer"
                   required
                 >
-                  <option value="" disabled>Pilih Jadwal Tanam yang Disetujui</option>
-                  {eligibleJadwals.length > 0 ? (
-                    eligibleJadwals.map((j) => (
-                      <option key={j.id} value={j.id}>
-                        {j.kodeJadwalTanam} - {j.komoditas} ({j.varietas}) - {j.namaPetani}
-                      </option>
-                    ))
-                  ) : (
-                    <>
-                      <option value="JT-2026-009">JT-2026-009 - Tomat (Melisa) - Siti Rahayu</option>
-                      <option value="JT-2026-011">JT-2026-011 - Kangkung (Super Sempit) - Budi Santoso</option>
-                      <option value="JT-2026-012">JT-2026-012 - Melon (Melon Tere F1) - Budi Santoso</option>
-                    </>
-                  )}
+                  <option value="">Pilih Jadwal Tanam yang Disetujui</option>
+                  {availableJadwals.map((j) => (
+                    <option key={j.id} value={j.id}>
+                      {j.kodeJadwalTanam} - {j.komoditas} ({j.varietas}) - {j.namaPetani}
+                    </option>
+                  ))}
                 </select>
                 <span className="text-[10px] text-gray-400 mt-0.5 block">
                   Hanya menampilkan jadwal yang telah disetujui pada Persetujuan Produksi.
                 </span>
               </div>
 
-              {/* Komoditas & Varietas (Auto-filled) */}
+              {/* Komoditas & Varietas (Auto-filled, Read Only) */}
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-[11px] font-semibold text-gray-700 mb-1">
-                    Komoditas <span className="text-red-500">*</span>
-                  </label>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="block text-[11px] font-semibold text-gray-700">
+                      Komoditas <span className="text-red-500">*</span>
+                    </label>
+                    <span className="text-[9px] uppercase tracking-wider font-semibold text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded">
+                      Read only
+                    </span>
+                  </div>
                   <input
                     type="text"
                     value={komoditas}
-                    onChange={(e) => setKomoditas(e.target.value)}
-                    className="w-full h-9 px-3 rounded-lg border border-gray-200 bg-gray-50 text-xs font-medium text-gray-800 focus:outline-none"
-                    placeholder="Komoditas"
+                    readOnly
+                    tabIndex={-1}
+                    className="w-full h-9 px-3 rounded-lg border border-gray-200 bg-gray-100/70 text-xs font-medium text-gray-700 cursor-not-allowed select-none focus:outline-none"
+                    placeholder="Otomatis dari Jadwal Tanam"
                     required
                   />
                 </div>
                 <div>
-                  <label className="block text-[11px] font-semibold text-gray-700 mb-1">
-                    Varietas <span className="text-red-500">*</span>
-                  </label>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="block text-[11px] font-semibold text-gray-700">
+                      Varietas <span className="text-red-500">*</span>
+                    </label>
+                    <span className="text-[9px] uppercase tracking-wider font-semibold text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded">
+                      Read only
+                    </span>
+                  </div>
                   <input
                     type="text"
                     value={varietas}
-                    onChange={(e) => setVarietas(e.target.value)}
-                    className="w-full h-9 px-3 rounded-lg border border-gray-200 bg-gray-50 text-xs font-medium text-gray-800 focus:outline-none"
-                    placeholder="Varietas"
+                    readOnly
+                    tabIndex={-1}
+                    className="w-full h-9 px-3 rounded-lg border border-gray-200 bg-gray-100/70 text-xs font-medium text-gray-700 cursor-not-allowed select-none focus:outline-none"
+                    placeholder="Otomatis dari Jadwal Tanam"
                     required
                   />
                 </div>
               </div>
 
-              {/* Petani & Lahan (Auto-filled) */}
+              {/* Petani & Lahan (Auto-filled, Read Only) */}
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-[11px] font-semibold text-gray-700 mb-1">
-                    Petani <span className="text-red-500">*</span>
-                  </label>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="block text-[11px] font-semibold text-gray-700">
+                      Petani <span className="text-red-500">*</span>
+                    </label>
+                    <span className="text-[9px] uppercase tracking-wider font-semibold text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded">
+                      Read only
+                    </span>
+                  </div>
                   <input
                     type="text"
                     value={petani}
-                    onChange={(e) => setPetani(e.target.value)}
-                    className="w-full h-9 px-3 rounded-lg border border-gray-200 bg-gray-50 text-xs font-medium text-gray-800 focus:outline-none"
-                    placeholder="Nama Petani"
+                    readOnly
+                    tabIndex={-1}
+                    className="w-full h-9 px-3 rounded-lg border border-gray-200 bg-gray-100/70 text-xs font-medium text-gray-700 cursor-not-allowed select-none focus:outline-none"
+                    placeholder="Otomatis dari Jadwal Tanam"
                     required
                   />
                 </div>
                 <div>
-                  <label className="block text-[11px] font-semibold text-gray-700 mb-1">
-                    Lahan <span className="text-red-500">*</span>
-                  </label>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="block text-[11px] font-semibold text-gray-700">
+                      Lahan <span className="text-red-500">*</span>
+                    </label>
+                    <span className="text-[9px] uppercase tracking-wider font-semibold text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded">
+                      Read only
+                    </span>
+                  </div>
                   <input
                     type="text"
                     value={lahan}
-                    onChange={(e) => setLahan(e.target.value)}
-                    className="w-full h-9 px-3 rounded-lg border border-gray-200 bg-gray-50 text-xs font-medium text-gray-800 focus:outline-none"
-                    placeholder="Lahan / Blok"
+                    readOnly
+                    tabIndex={-1}
+                    className="w-full h-9 px-3 rounded-lg border border-gray-200 bg-gray-100/70 text-xs font-medium text-gray-700 cursor-not-allowed select-none focus:outline-none"
+                    placeholder="Otomatis dari Jadwal Tanam"
                     required
                   />
                 </div>
@@ -425,7 +534,7 @@ export default function ModalTambahPanen({
                       value={luasDipanen}
                       onChange={(e) => setLuasDipanen(e.target.value)}
                       className="w-full h-9 pl-3 pr-8 rounded-lg border border-gray-200 bg-white text-xs text-gray-800 focus:outline-none focus:border-emerald-500"
-                      placeholder="1.50"
+                      placeholder="0.00"
                       required
                     />
                     <span className="absolute right-3 top-2.5 text-gray-400 font-medium text-xs">Ha</span>
@@ -446,7 +555,7 @@ export default function ModalTambahPanen({
                         value={jumlahBuah}
                         onChange={(e) => setJumlahBuah(e.target.value)}
                         className="w-full h-9 pl-3 pr-12 rounded-lg border border-gray-200 bg-white text-xs text-gray-800 focus:outline-none focus:border-emerald-500"
-                        placeholder="2800"
+                        placeholder="0"
                         required
                       />
                       <span className="absolute right-3 top-2.5 text-gray-400 font-medium text-xs">buah</span>
@@ -461,9 +570,10 @@ export default function ModalTambahPanen({
                       <input
                         type="number"
                         step="0.1"
-                        defaultValue={14.0}
+                        value={kadarAir}
+                        onChange={(e) => setKadarAir(e.target.value)}
                         className="w-full h-9 pl-3 pr-8 rounded-lg border border-gray-200 bg-white text-xs text-gray-800 focus:outline-none focus:border-emerald-500"
-                        placeholder="14.0"
+                        placeholder="0.0"
                       />
                       <span className="absolute right-3 top-2.5 text-gray-400 font-medium text-xs">%</span>
                     </div>
@@ -481,7 +591,7 @@ export default function ModalTambahPanen({
                       value={beratBruto}
                       onChange={(e) => setBeratBruto(e.target.value)}
                       className="w-full h-9 pl-3 pr-8 rounded-lg border border-gray-200 bg-white text-xs text-gray-800 focus:outline-none focus:border-emerald-500"
-                      placeholder="3200"
+                      placeholder="0"
                       required
                     />
                     <span className="absolute right-3 top-2.5 text-gray-400 font-medium text-xs">kg</span>
@@ -502,7 +612,7 @@ export default function ModalTambahPanen({
                       value={beratNetto}
                       onChange={(e) => setBeratNetto(e.target.value)}
                       className="w-full h-9 pl-3 pr-8 rounded-lg border border-gray-200 bg-white text-xs text-gray-800 focus:outline-none focus:border-emerald-500"
-                      placeholder="2950"
+                      placeholder="0"
                       required
                     />
                     <span className="absolute right-3 top-2.5 text-gray-400 font-medium text-xs">kg</span>
@@ -558,39 +668,47 @@ export default function ModalTambahPanen({
 
               {/* Photo Previews */}
               <div className="md:col-span-7 flex flex-wrap items-center gap-2">
-                {photos.map((photo, idx) => (
-                  <div
-                    key={idx}
-                    className="relative w-16 h-16 rounded-lg overflow-hidden border border-gray-200 group bg-gray-100 flex-shrink-0"
-                  >
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={photo}
-                      alt={`Preview ${idx + 1}`}
-                      className="w-full h-full object-cover"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => handleRemovePhoto(idx)}
-                      className="absolute top-1 right-1 w-4 h-4 rounded-full bg-red-600 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity text-[10px]"
-                      title="Hapus foto"
-                    >
-                      <i className="ri-close-line"></i>
-                    </button>
+                {photos.length === 0 ? (
+                  <div className="w-full text-xs text-gray-400 italic py-3 px-4 border border-dashed border-gray-200 rounded-xl bg-gray-50/50 flex items-center justify-center">
+                    Belum ada foto dokumentasi yang diunggah
                   </div>
-                ))}
+                ) : (
+                  <>
+                    {photos.map((photo, idx) => (
+                      <div
+                        key={idx}
+                        className="relative w-16 h-16 rounded-lg overflow-hidden border border-gray-200 group bg-gray-100 flex-shrink-0"
+                      >
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src={photo}
+                          alt={`Preview ${idx + 1}`}
+                          className="w-full h-full object-cover"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => handleRemovePhoto(idx)}
+                          className="absolute top-1 right-1 w-4 h-4 rounded-full bg-red-600 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity text-[10px]"
+                          title="Hapus foto"
+                        >
+                          <i className="ri-close-line"></i>
+                        </button>
+                      </div>
+                    ))}
 
-                {/* Add Photo Button */}
-                <label className="w-16 h-16 rounded-lg border-2 border-dashed border-gray-200 hover:border-emerald-500 flex items-center justify-center cursor-pointer text-gray-400 hover:text-emerald-600 transition-colors bg-white">
-                  <input
-                    type="file"
-                    multiple
-                    accept="image/*"
-                    onChange={handlePhotoUpload}
-                    className="hidden"
-                  />
-                  <i className="ri-add-line text-xl"></i>
-                </label>
+                    {/* Add Photo Button */}
+                    <label className="w-16 h-16 rounded-lg border-2 border-dashed border-gray-200 hover:border-emerald-500 flex items-center justify-center cursor-pointer text-gray-400 hover:text-emerald-600 transition-colors bg-white">
+                      <input
+                        type="file"
+                        multiple
+                        accept="image/*"
+                        onChange={handlePhotoUpload}
+                        className="hidden"
+                      />
+                      <i className="ri-add-line text-xl"></i>
+                    </label>
+                  </>
+                )}
               </div>
             </div>
           </div>

@@ -22,6 +22,7 @@ export const MENUITEMS = [
   { path: "/master/varietas", icon: <i className="bx bx-layer side-menu__icon"></i>, type: "link", active: false, selected: false, title: "Varietas" },
   { path: "/master/supplier", icon: <i className="bx bx-store side-menu__icon"></i>, type: "link", active: false, selected: false, title: "Supplier" },
   { path: "/master/customer", icon: <i className="bx bx-user-circle side-menu__icon"></i>, type: "link", active: false, selected: false, title: "Customer" },
+  { path: "/master/penanggung-jawab", icon: <i className="bx bx-user-check side-menu__icon"></i>, type: "link", active: false, selected: false, title: "Penanggung Jawab" },
   { path: "/master/petani-mitra", icon: <i className="bx bx-group side-menu__icon"></i>, type: "link", active: false, selected: false, title: "Petani Mitra" },
   { path: "/master/greenhouse", icon: <i className="bx bx-leaf side-menu__icon"></i>, type: "link", active: false, selected: false, title: "Lahan & Greenhouse" },
   { path: "/master/gudang", icon: <i className="bx bx-buildings side-menu__icon"></i>, type: "link", active: false, selected: false, title: "Gudang" },

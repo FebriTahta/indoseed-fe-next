@@ -340,6 +340,7 @@ export default function TambahPetaniMitraPage() {
           JSON.stringify(
             lahanList.map((l) => ({
               namaLahan: l.namaLahan,
+              jenisLahan: l.jenisLahan || 'Lahan Terbuka',
               luas: l.luas,
               komoditas: l.komoditas,
               commodityId: l.commodityId,
@@ -348,6 +349,12 @@ export default function TambahPetaniMitraPage() {
               koordinat: `${l.latitude}, ${l.longitude}`,
               status: l.status,
               detailLokasi: l.detailLokasi,
+              image: l.fotoUrl || null,
+              fotoUrl: l.fotoUrl || null,
+              fotoNama: l.fotoNama || null,
+              dokumenUrl: l.dokumenUrl || null,
+              dokumenNama: l.dokumenNama || null,
+              dokumenSize: l.dokumenSize || null,
             }))
           )
         );
@@ -883,7 +890,60 @@ export default function TambahPetaniMitraPage() {
                     lahanList.map((item, index) => (
                       <tr key={item.id || index} className="hover:bg-gray-50/60 transition">
                         <td className="py-3 px-3.5 font-medium">{index + 1}</td>
-                        <td className="py-3 px-3.5 font-bold text-gray-800">{item.namaLahan}</td>
+                        <td className="py-3 px-3.5 font-bold text-gray-800">
+                          <div className="flex items-center gap-2.5">
+                            {item.fotoUrl && (
+                              <img
+                                src={item.fotoUrl}
+                                alt="Foto Lahan"
+                                className="w-8 h-8 object-cover rounded-lg border border-gray-200 shadow-2xs shrink-0"
+                              />
+                            )}
+                            <div>
+                              <div className="flex items-center gap-1.5 flex-wrap">
+                                <span>{item.namaLahan}</span>
+                                {item.jenisLahan && (
+                                  <span
+                                    className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold ${
+                                      item.jenisLahan === 'Greenhouse'
+                                        ? 'bg-indigo-50 text-indigo-700 border border-indigo-200'
+                                        : 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                                    }`}
+                                  >
+                                    <i
+                                      className={
+                                        item.jenisLahan === 'Greenhouse'
+                                          ? 'ri-building-line text-[9px]'
+                                          : 'ri-landscape-line text-[9px]'
+                                      }
+                                    ></i>
+                                    <span>{item.jenisLahan}</span>
+                                  </span>
+                                )}
+                              </div>
+                              <div className="flex items-center gap-1.5 mt-0.5">
+                                {item.dokumenUrl && (
+                                  <span
+                                    className="inline-flex items-center gap-0.5 text-[10px] text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200"
+                                    title={item.dokumenNama || 'Dokumen Lahan'}
+                                  >
+                                    <i className="ri-file-text-line text-[10px]"></i>
+                                    <span>Dokumen</span>
+                                  </span>
+                                )}
+                                {item.fotoUrl && (
+                                  <span
+                                    className="inline-flex items-center gap-0.5 text-[10px] text-blue-700 bg-blue-50 px-1.5 py-0.5 rounded border border-blue-200"
+                                    title={item.fotoNama || 'Foto Lahan'}
+                                  >
+                                    <i className="ri-image-line text-[10px]"></i>
+                                    <span>Foto</span>
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        </td>
                         <td className="py-3 px-3.5 font-semibold text-gray-700">
                           {item.luas.toLocaleString('id-ID')} m²
                         </td>

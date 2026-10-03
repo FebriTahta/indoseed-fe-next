@@ -14,6 +14,7 @@ import { Variety } from '@/app/types/variety';
 import { Partner } from '@/app/types/partner';
 import { Land } from '@/app/types/greenhouse';
 import { PerencanaanProduksiPetani } from '@/app/types/perencanaanProduksi';
+import { parseVarietyData } from '@/app/(components)/(content-layout)/master/varietas/varietyHelper';
 
 export default function TambahPerencanaanProduksiPage() {
   const router = useRouter();
@@ -97,7 +98,8 @@ export default function TambahPerencanaanProduksiPage() {
           commodityId: selectedCommodityId,
           status: 'Aktif',
         });
-        setVarieties(res.data || []);
+        const parsed = (res.data || []).map((v: Variety) => parseVarietyData(v));
+        setVarieties(parsed);
         setSelectedVarietyId('');
         setSelectedVarietyName('');
       } catch (err) {
@@ -146,6 +148,68 @@ export default function TambahPerencanaanProduksiPage() {
     setSelectedVarietyName(found ? found.namaVarietas : '');
   };
 
+  const selectedVariety = useMemo(() => {
+    if (!selectedVarietyId) return null;
+    return varieties.find((v) => v.id === selectedVarietyId) || null;
+  }, [varieties, selectedVarietyId]);
+
+  // Range parser helper functions
+  const cleanNumber = (s: string): number => {
+    let cleaned = s.trim();
+    if (/\.\d{3}$/.test(cleaned) && !cleaned.includes(',')) {
+      cleaned = cleaned.replace(/\./g, '');
+    } else if (cleaned.includes(',') && !cleaned.includes('.')) {
+      cleaned = cleaned.replace(',', '.');
+    } else if (cleaned.includes('.') && cleaned.includes(',')) {
+      cleaned = cleaned.replace(/\./g, '').replace(',', '.');
+    }
+    cleaned = cleaned.replace(/[^0-9.]/g, '');
+    return parseFloat(cleaned);
+  };
+
+  const parseRangeString = (val?: string | number | null): { min: number; max: number } | null => {
+    if (val === undefined || val === null) return null;
+    const str = String(val).trim();
+    if (!str || str === '-') return null;
+
+    if (str.includes('-')) {
+      const parts = str.split('-');
+      if (parts.length >= 2) {
+        const min = cleanNumber(parts[0]);
+        const max = cleanNumber(parts[1]);
+        if (!isNaN(min) && !isNaN(max) && min >= 0 && max >= 0) {
+          return {
+            min: Math.min(min, max),
+            max: Math.max(min, max),
+          };
+        }
+      }
+    }
+
+    const num = cleanNumber(str);
+    if (!isNaN(num) && num > 0) {
+      return { min: num, max: num };
+    }
+    return null;
+  };
+
+  const formatNumberId = (num: number, maxFractionDigits: number = 2): string => {
+    if (Number.isInteger(num)) {
+      return num.toLocaleString('id-ID');
+    }
+    return num.toLocaleString('id-ID', {
+      minimumFractionDigits: 0,
+      maximumFractionDigits: maxFractionDigits,
+    });
+  };
+
+  const formatRangeDisplay = (min: number, max: number, maxFractionDigits: number = 2): string => {
+    if (min === max) {
+      return formatNumberId(min, maxFractionDigits);
+    }
+    return `${formatNumberId(min, maxFractionDigits)} - ${formatNumberId(max, maxFractionDigits)}`;
+  };
+
   // Auto-calculated stats for Section 2
   const totalLuasLahan = useMemo(() => {
     return petaniList.reduce((acc, curr) => acc + (Number(curr.luasLahan) || 0), 0);
@@ -156,21 +220,80 @@ export default function TambahPerencanaanProduksiPage() {
     return uniqueFarmers.size;
   }, [petaniList]);
 
-  const estimasiHasilPanen = useMemo(() => {
-    const totalPetaniTarget = petaniList.reduce((acc, curr) => acc + (Number(curr.targetProduksi) || 0), 0);
-    return totalPetaniTarget > 0 ? totalPetaniTarget : Number(targetProduksi) || 0;
-  }, [petaniList, targetProduksi]);
+  // Perhitungan Kebutuhan Benih:
+  // Rumus: (Target Produksi / Perkiraan Hasil Benih Varietas) * Kebutuhan Benih Varietas
+  // Menghasilkan rentang x - x
+  const kebutuhanBenihInfo = useMemo(() => {
+    const target = Number(targetProduksi) || 0;
+    if (target <= 0) {
+      return { min: 0, max: 0, text: '0', nominal: 0 };
+    }
 
-  const kebutuhanBenih = useMemo(() => {
-    // Estimasi standar: rata-rata ~25-30 kg benih per hektar atau rasio target produksi
-    if (totalLuasLahan > 0) {
-      return Math.round(totalLuasLahan * 25);
+    const yieldRange = parseRangeString(selectedVariety?.produksiParam?.perkiraanHasil || '300 - 500');
+    const seedRateRange = parseRangeString(selectedVariety?.produksiParam?.kebutuhanBenih || '0,5 - 1');
+
+    if (!yieldRange || yieldRange.max <= 0 || !seedRateRange) {
+      const fallback = Math.round((target / 1000) * 20) || 5;
+      return { min: fallback, max: fallback, text: formatNumberId(fallback), nominal: fallback };
     }
-    if (Number(targetProduksi) > 0) {
-      return Math.round((Number(targetProduksi) / 1000) * 20) || 5;
+
+    // Luas acuan = Target Produksi / Perkiraan Hasil Maksimum Varietas (cth: 1000 / 500 = 2 ha)
+    const baseYield = yieldRange.max > 0 ? yieldRange.max : yieldRange.min;
+    const targetLuas = target / baseYield;
+
+    const min = targetLuas * seedRateRange.min;
+    const max = targetLuas * seedRateRange.max;
+
+    const finalMin = Math.min(min, max);
+    const finalMax = Math.max(min, max);
+
+    return {
+      min: finalMin,
+      max: finalMax,
+      text: formatRangeDisplay(finalMin, finalMax, 2),
+      nominal: Math.round(finalMax * 100) / 100,
+    };
+  }, [targetProduksi, selectedVariety]);
+
+  // Perhitungan Estimasi Hasil Panen:
+  // Menghasilkan rentang x - x berdasarkan luas lahan & perkiraan hasil varietas
+  const estimasiHasilPanenInfo = useMemo(() => {
+    const target = Number(targetProduksi) || 0;
+    const yieldRange = parseRangeString(selectedVariety?.produksiParam?.perkiraanHasil || '300 - 500');
+
+    // Jika sudah ada lahan petani mitra yang didistribusikan
+    if (totalLuasLahan > 0 && yieldRange) {
+      const min = Math.round(totalLuasLahan * yieldRange.min);
+      const max = Math.round(totalLuasLahan * yieldRange.max);
+      return {
+        min,
+        max,
+        text: formatRangeDisplay(min, max, 0),
+        nominal: max,
+      };
     }
-    return 0;
-  }, [totalLuasLahan, targetProduksi]);
+
+    // Jika belum ada lahan petani mitra, dihitung dari luas acuan (Target / Perkiraan Hasil Maksimum)
+    // Cth: 1000 / 500 = 2 ha -> (2 * 300) s/d (2 * 500) = 600 - 1.000 kg
+    if (target > 0 && yieldRange && (yieldRange.max > 0 || yieldRange.min > 0)) {
+      const baseYield = yieldRange.max > 0 ? yieldRange.max : yieldRange.min;
+      const targetLuas = target / baseYield;
+      const min = Math.round(targetLuas * yieldRange.min);
+      const max = Math.round(targetLuas * yieldRange.max);
+      return {
+        min,
+        max,
+        text: formatRangeDisplay(min, max, 0),
+        nominal: target,
+      };
+    }
+
+    if (target > 0) {
+      return { min: target, max: target, text: formatNumberId(target, 0), nominal: target };
+    }
+
+    return { min: 0, max: 0, text: '0', nominal: 0 };
+  }, [totalLuasLahan, targetProduksi, selectedVariety]);
 
   // Petani Distribution Modal Handlers
   const handleOpenTambahPetani = () => {
@@ -291,11 +414,17 @@ export default function TambahPerencanaanProduksiPage() {
         metodeTanam: metodeProduksi,
         status: status,
         catatan: catatan || null,
-        targetLuasLahan: totalLuasLahan > 0 ? totalLuasLahan : Number((Number(targetProduksi) / 5000).toFixed(2)),
+        targetLuasLahan: totalLuasLahan > 0
+          ? totalLuasLahan
+          : (Number(targetProduksi) > 0 && selectedVariety?.produksiParam?.perkiraanHasil
+              ? Number((Number(targetProduksi) / (parseRangeString(selectedVariety.produksiParam.perkiraanHasil)?.max || 500)).toFixed(2))
+              : Number((Number(targetProduksi) / 5000).toFixed(2))),
         lahanTersedia: totalLuasLahan > 0 ? totalLuasLahan : 0,
         realisasiTanam: 0,
-        kebutuhanBenih: kebutuhanBenih,
-        estimasiHasilPerHa: totalLuasLahan > 0 ? Number((Number(targetProduksi) / totalLuasLahan).toFixed(2)) : 0,
+        kebutuhanBenih: kebutuhanBenihInfo.nominal,
+        estimasiHasilPerHa: totalLuasLahan > 0
+          ? Number((Number(targetProduksi) / totalLuasLahan).toFixed(2))
+          : (parseRangeString(selectedVariety?.produksiParam?.perkiraanHasil)?.max || 0),
         // First partner as default penanggung jawab if available
         partnerId: petaniList[0]?.partnerId || null,
         namaPetani: petaniList[0]?.namaPetani || null,
@@ -574,15 +703,26 @@ export default function TambahPerencanaanProduksiPage() {
           </div>
 
           {/* Info Notice Banner */}
-          <div className="bg-emerald-50/70 border border-emerald-200/80 rounded-xl p-3.5 mb-5 flex items-center gap-2.5 text-xs text-emerald-800">
-            <div className="w-5 h-5 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0">
-              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
+          <div className="bg-emerald-50/70 border border-emerald-200/80 rounded-xl p-3.5 mb-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2.5 text-xs text-emerald-800">
+            <div className="flex items-center gap-2.5">
+              <div className="w-5 h-5 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0">
+                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </div>
+              <p className="font-normal leading-relaxed">
+                Kebutuhan benih dihitung otomatis dari <span className="font-semibold">(Target Produksi ÷ Perkiraan Hasil) × Kebutuhan Benih Varietas</span>.
+              </p>
             </div>
-            <p className="font-normal leading-relaxed">
-              Kebutuhan benih, lahan, dan jumlah petani akan dihitung otomatis berdasarkan target produksi dan data produktivitas (jika tersedia).
-            </p>
+            {selectedVariety && (
+              <div className="flex items-center gap-2 shrink-0 bg-white/80 border border-emerald-200/60 px-2.5 py-1 rounded-lg text-[11px] text-emerald-800 font-medium">
+                <span>Varietas: <strong className="font-bold text-emerald-950">{selectedVariety.namaVarietas}</strong></span>
+                <span className="text-emerald-300">|</span>
+                <span>Hasil: <strong>{selectedVariety.produksiParam?.perkiraanHasil || '300 - 500'} kg/ha</strong></span>
+                <span className="text-emerald-300">|</span>
+                <span>Benih: <strong>{selectedVariety.produksiParam?.kebutuhanBenih || '0,5 - 1'} kg/ha</strong></span>
+              </div>
+            )}
           </div>
 
           {/* 4 Stat Cards */}
@@ -594,10 +734,13 @@ export default function TambahPerencanaanProduksiPage() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
                 </svg>
               </div>
-              <div>
+              <div className="min-w-0 flex-1">
                 <span className="text-[11px] font-medium text-gray-500 block">Kebutuhan Benih</span>
-                <span className="text-base font-extrabold text-gray-900 tracking-tight">
-                  {kebutuhanBenih.toLocaleString('id-ID')} <span className="text-xs font-semibold text-gray-500">kg</span>
+                <span className="text-base font-extrabold text-gray-900 tracking-tight block">
+                  {kebutuhanBenihInfo.text} <span className="text-xs font-semibold text-gray-500">kg</span>
+                </span>
+                <span className="text-[10px] text-gray-400 block mt-0.5 truncate">
+                  Rentang kebutuhan tanam
                 </span>
               </div>
             </div>
@@ -609,10 +752,13 @@ export default function TambahPerencanaanProduksiPage() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8" d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z" />
                 </svg>
               </div>
-              <div>
+              <div className="min-w-0 flex-1">
                 <span className="text-[11px] font-medium text-gray-500 block">Luas Lahan</span>
-                <span className="text-base font-extrabold text-gray-900 tracking-tight">
+                <span className="text-base font-extrabold text-gray-900 tracking-tight block">
                   {totalLuasLahan.toLocaleString('id-ID')} <span className="text-xs font-semibold text-gray-500">ha</span>
+                </span>
+                <span className="text-[10px] text-gray-400 block mt-0.5 truncate">
+                  Total dari distribusi petani
                 </span>
               </div>
             </div>
@@ -624,10 +770,13 @@ export default function TambahPerencanaanProduksiPage() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
                 </svg>
               </div>
-              <div>
+              <div className="min-w-0 flex-1">
                 <span className="text-[11px] font-medium text-gray-500 block">Jumlah Petani</span>
-                <span className="text-base font-extrabold text-gray-900 tracking-tight">
+                <span className="text-base font-extrabold text-gray-900 tracking-tight block">
                   {jumlahPetani} <span className="text-xs font-semibold text-gray-500">orang</span>
+                </span>
+                <span className="text-[10px] text-gray-400 block mt-0.5 truncate">
+                  Petani mitra terdaftar
                 </span>
               </div>
             </div>
@@ -639,10 +788,13 @@ export default function TambahPerencanaanProduksiPage() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
                 </svg>
               </div>
-              <div>
+              <div className="min-w-0 flex-1">
                 <span className="text-[11px] font-medium text-gray-500 block">Estimasi Hasil Panen</span>
-                <span className="text-base font-extrabold text-gray-900 tracking-tight">
-                  {estimasiHasilPanen.toLocaleString('id-ID')} <span className="text-xs font-semibold text-gray-500">kg</span>
+                <span className="text-base font-extrabold text-gray-900 tracking-tight block">
+                  {estimasiHasilPanenInfo.text} <span className="text-xs font-semibold text-gray-500">kg</span>
+                </span>
+                <span className="text-[10px] text-gray-400 block mt-0.5 truncate">
+                  {totalLuasLahan > 0 ? `Dihitung dari ${totalLuasLahan} ha lahan` : 'Estimasi hasil panen varietas'}
                 </span>
               </div>
             </div>

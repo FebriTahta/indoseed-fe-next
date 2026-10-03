@@ -664,9 +664,8 @@ function TambahVarietasForm() {
   return (
     <div className="pb-12">
       <Seo
-        title={`${
-          isEditMode ? 'Edit' : 'Tambah'
-        } Varietas / Kode Benih - Master Data`}
+        title={`${isEditMode ? 'Edit' : 'Tambah'
+          } Varietas / Kode Benih - Master Data`}
       />
       <ToastContainer position="top-right" autoClose={3000} theme="colored" />
 
@@ -743,11 +742,10 @@ function TambahVarietasForm() {
                 key={tab.id}
                 type="button"
                 onClick={() => setActiveTab(tab.id as any)}
-                className={`flex items-center gap-2 px-4 py-2.5 rounded-lg text-xs font-semibold transition-all ${
-                  isActive
+                className={`flex items-center gap-2 px-4 py-2.5 rounded-lg text-xs font-semibold transition-all ${isActive
                     ? 'bg-emerald-50 text-emerald-800 border-b-2 border-emerald-600 shadow-2xs font-bold'
                     : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
-                }`}
+                  }`}
               >
                 <i className={`${tab.icon} text-sm ${isActive ? 'text-emerald-600' : 'text-gray-400'}`}></i>
                 <span>{tab.label}</span>
@@ -1023,16 +1021,14 @@ function TambahVarietasForm() {
                         <td className="py-2.5 px-3.5 text-gray-600">{brand.tipe}</td>
                         <td className="py-2.5 px-3.5 text-center">
                           <span
-                            className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold ${
-                              brand.status === 'Aktif'
+                            className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold ${brand.status === 'Aktif'
                                 ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
                                 : 'bg-rose-50 text-rose-700 border border-rose-200'
-                            }`}
+                              }`}
                           >
                             <span
-                              className={`w-1.5 h-1.5 rounded-full ${
-                                brand.status === 'Aktif' ? 'bg-emerald-500' : 'bg-rose-500'
-                              }`}
+                              className={`w-1.5 h-1.5 rounded-full ${brand.status === 'Aktif' ? 'bg-emerald-500' : 'bg-rose-500'
+                                }`}
                             ></span>
                             {brand.status}
                           </span>
@@ -1094,16 +1090,14 @@ function TambahVarietasForm() {
                 <div>
                   <span className="text-gray-500 block text-[11px]">Status</span>
                   <span
-                    className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold mt-0.5 ${
-                      status === 'Aktif'
+                    className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold mt-0.5 ${status === 'Aktif'
                         ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
                         : 'bg-rose-50 text-rose-700 border border-rose-200'
-                    }`}
+                      }`}
                   >
                     <span
-                      className={`w-1.5 h-1.5 rounded-full ${
-                        status === 'Aktif' ? 'bg-emerald-500' : 'bg-rose-500'
-                      }`}
+                      className={`w-1.5 h-1.5 rounded-full ${status === 'Aktif' ? 'bg-emerald-500' : 'bg-rose-500'
+                        }`}
                     ></span>
                     {status}
                   </span>
@@ -1158,16 +1152,14 @@ function TambahVarietasForm() {
                         <td className="py-3 px-3.5 text-gray-600">{brand.tipe}</td>
                         <td className="py-3 px-3.5 text-center">
                           <span
-                            className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold ${
-                              brand.status === 'Aktif'
+                            className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold ${brand.status === 'Aktif'
                                 ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
                                 : 'bg-rose-50 text-rose-700 border border-rose-200'
-                            }`}
+                              }`}
                           >
                             <span
-                              className={`w-1.5 h-1.5 rounded-full ${
-                                brand.status === 'Aktif' ? 'bg-emerald-500' : 'bg-rose-500'
-                              }`}
+                              className={`w-1.5 h-1.5 rounded-full ${brand.status === 'Aktif' ? 'bg-emerald-500' : 'bg-rose-500'
+                                }`}
                             ></span>
                             {brand.status}
                           </span>
@@ -1279,9 +1271,8 @@ function TambahVarietasForm() {
                         karakteristikList.map((item, idx) => (
                           <tr
                             key={item.id}
-                            className={`transition-colors ${
-                              item.isUsed !== false ? 'hover:bg-gray-50/60' : 'bg-gray-50/40 text-gray-400'
-                            }`}
+                            className={`transition-colors ${item.isUsed !== false ? 'hover:bg-gray-50/60' : 'bg-gray-50/40 text-gray-400'
+                              }`}
                           >
                             <td className="py-3 px-3.5 text-center text-gray-500">{idx + 1}</td>
                             <td className="py-3 px-3.5 font-semibold text-gray-900">
@@ -1305,17 +1296,15 @@ function TambahVarietasForm() {
                               <button
                                 type="button"
                                 onClick={() => handleToggleCharUsed(item.id)}
-                                className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-semibold transition-all border ${
-                                  item.isUsed !== false
+                                className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-semibold transition-all border ${item.isUsed !== false
                                     ? 'bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100'
                                     : 'bg-gray-100 text-gray-500 border-gray-200 hover:bg-gray-200'
-                                }`}
+                                  }`}
                                 title="Klik untuk toggle flag Dipakai / Tidak Dipakai"
                               >
                                 <span
-                                  className={`w-1.5 h-1.5 rounded-full ${
-                                    item.isUsed !== false ? 'bg-emerald-500' : 'bg-gray-400'
-                                  }`}
+                                  className={`w-1.5 h-1.5 rounded-full ${item.isUsed !== false ? 'bg-emerald-500' : 'bg-gray-400'
+                                    }`}
                                 ></span>
                                 <span>{item.isUsed !== false ? 'Dipakai' : 'Tidak Dipakai'}</span>
                               </button>
@@ -1785,11 +1774,10 @@ function TambahVarietasForm() {
                     <button
                       type="button"
                       onClick={() => setQcStatus('Wajib QC')}
-                      className={`flex-1 py-2 px-2.5 rounded-xl border text-xs font-semibold flex items-center justify-center gap-1.5 transition-all ${
-                        qcStatus === 'Wajib QC'
+                      className={`flex-1 py-2 px-2.5 rounded-xl border text-xs font-semibold flex items-center justify-center gap-1.5 transition-all ${qcStatus === 'Wajib QC'
                           ? 'bg-emerald-800 text-white border-emerald-800 shadow-2xs'
                           : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'
-                      }`}
+                        }`}
                     >
                       <i className="ri-checkbox-circle-fill text-xs"></i>
                       <span>Wajib QC</span>
@@ -1797,11 +1785,10 @@ function TambahVarietasForm() {
                     <button
                       type="button"
                       onClick={() => setQcStatus('Tidak Wajib')}
-                      className={`flex-1 py-2 px-2.5 rounded-xl border text-xs font-semibold flex items-center justify-center gap-1.5 transition-all ${
-                        qcStatus === 'Tidak Wajib'
+                      className={`flex-1 py-2 px-2.5 rounded-xl border text-xs font-semibold flex items-center justify-center gap-1.5 transition-all ${qcStatus === 'Tidak Wajib'
                           ? 'bg-emerald-800 text-white border-emerald-800 shadow-2xs'
                           : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'
-                      }`}
+                        }`}
                     >
                       <span>Tidak Wajib</span>
                     </button>
@@ -1935,9 +1922,8 @@ function TambahVarietasForm() {
                       qcParameters.map((item, idx) => (
                         <tr
                           key={item.id}
-                          className={`transition-colors ${
-                            item.isUsed !== false ? 'hover:bg-gray-50/60' : 'bg-gray-50/40 text-gray-400'
-                          }`}
+                          className={`transition-colors ${item.isUsed !== false ? 'hover:bg-gray-50/60' : 'bg-gray-50/40 text-gray-400'
+                            }`}
                         >
                           <td className="py-3 px-3.5 text-center text-gray-500">{idx + 1}</td>
                           <td className="py-3 px-3.5 font-semibold text-gray-900">
@@ -1956,17 +1942,15 @@ function TambahVarietasForm() {
                             <button
                               type="button"
                               onClick={() => handleToggleQcUsed(item.id)}
-                              className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-semibold transition-all border ${
-                                item.isUsed !== false
+                              className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-semibold transition-all border ${item.isUsed !== false
                                   ? 'bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100'
                                   : 'bg-gray-100 text-gray-500 border-gray-200 hover:bg-gray-200'
-                              }`}
+                                }`}
                               title="Klik untuk toggle flag Dipakai / Tidak Dipakai"
                             >
                               <span
-                                className={`w-1.5 h-1.5 rounded-full ${
-                                  item.isUsed !== false ? 'bg-emerald-500' : 'bg-gray-400'
-                                }`}
+                                className={`w-1.5 h-1.5 rounded-full ${item.isUsed !== false ? 'bg-emerald-500' : 'bg-gray-400'
+                                  }`}
                               ></span>
                               <span>{item.isUsed !== false ? 'Dipakai' : 'Tidak Dipakai'}</span>
                             </button>
@@ -2094,11 +2078,10 @@ function TambahVarietasForm() {
                     <button
                       type="button"
                       onClick={() => setInvKelolaStok('Ya')}
-                      className={`flex-1 py-2 px-3 rounded-xl border text-xs font-semibold flex items-center justify-center gap-1.5 transition-all ${
-                        invKelolaStok === 'Ya'
+                      className={`w-[150px] py-2 px-3 rounded-xl border text-xs font-semibold flex items-center justify-center gap-1.5 transition-all ${invKelolaStok === 'Ya'
                           ? 'bg-emerald-800 text-white border-emerald-800 shadow-2xs'
                           : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'
-                      }`}
+                        }`}
                     >
                       <i className="ri-checkbox-circle-fill text-xs"></i>
                       <span>Ya</span>
@@ -2106,11 +2089,10 @@ function TambahVarietasForm() {
                     <button
                       type="button"
                       onClick={() => setInvKelolaStok('Tidak')}
-                      className={`flex-1 py-2 px-3 rounded-xl border text-xs font-semibold flex items-center justify-center gap-1.5 transition-all ${
-                        invKelolaStok === 'Tidak'
+                      className={`w-[150px] py-2 px-3 rounded-xl border text-xs font-semibold flex items-center justify-center gap-1.5 transition-all ${invKelolaStok === 'Tidak'
                           ? 'bg-emerald-800 text-white border-emerald-800 shadow-2xs'
                           : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'
-                      }`}
+                        }`}
                     >
                       <span>Tidak</span>
                     </button>
@@ -2304,11 +2286,10 @@ function TambahVarietasForm() {
                     <button
                       type="button"
                       onClick={() => setInvWajibLot('Ya')}
-                      className={`flex-1 py-2 px-2.5 rounded-xl border text-xs font-semibold flex items-center justify-center gap-1.5 transition-all ${
-                        invWajibLot === 'Ya'
+                      className={`w-[150px] py-2 px-2.5 rounded-xl border text-xs font-semibold flex items-center justify-center gap-1.5 transition-all ${invWajibLot === 'Ya'
                           ? 'bg-emerald-800 text-white border-emerald-800 shadow-2xs'
                           : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'
-                      }`}
+                        }`}
                     >
                       <i className="ri-checkbox-circle-fill text-xs"></i>
                       <span>Ya</span>
@@ -2316,11 +2297,10 @@ function TambahVarietasForm() {
                     <button
                       type="button"
                       onClick={() => setInvWajibLot('Tidak')}
-                      className={`flex-1 py-2 px-2.5 rounded-xl border text-xs font-semibold flex items-center justify-center gap-1.5 transition-all ${
-                        invWajibLot === 'Tidak'
+                      className={`w-[150px] py-2 px-2.5 rounded-xl border text-xs font-semibold flex items-center justify-center gap-1.5 transition-all ${invWajibLot === 'Tidak'
                           ? 'bg-emerald-800 text-white border-emerald-800 shadow-2xs'
                           : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'
-                      }`}
+                        }`}
                     >
                       <span>Tidak</span>
                     </button>
@@ -2336,11 +2316,10 @@ function TambahVarietasForm() {
                     <button
                       type="button"
                       onClick={() => setInvWajibTglProduksi('Ya')}
-                      className={`flex-1 py-2 px-2.5 rounded-xl border text-xs font-semibold flex items-center justify-center gap-1.5 transition-all ${
-                        invWajibTglProduksi === 'Ya'
+                      className={`w-[150px] py-2 px-2.5 rounded-xl border text-xs font-semibold flex items-center justify-center gap-1.5 transition-all ${invWajibTglProduksi === 'Ya'
                           ? 'bg-emerald-800 text-white border-emerald-800 shadow-2xs'
                           : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'
-                      }`}
+                        }`}
                     >
                       <i className="ri-checkbox-circle-fill text-xs"></i>
                       <span>Ya</span>
@@ -2348,11 +2327,10 @@ function TambahVarietasForm() {
                     <button
                       type="button"
                       onClick={() => setInvWajibTglProduksi('Tidak')}
-                      className={`flex-1 py-2 px-2.5 rounded-xl border text-xs font-semibold flex items-center justify-center gap-1.5 transition-all ${
-                        invWajibTglProduksi === 'Tidak'
+                      className={`w-[150px] py-2 px-2.5 rounded-xl border text-xs font-semibold flex items-center justify-center gap-1.5 transition-all ${invWajibTglProduksi === 'Tidak'
                           ? 'bg-emerald-800 text-white border-emerald-800 shadow-2xs'
                           : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'
-                      }`}
+                        }`}
                     >
                       <span>Tidak</span>
                     </button>
@@ -2368,22 +2346,20 @@ function TambahVarietasForm() {
                     <button
                       type="button"
                       onClick={() => setInvWajibTglKadaluarsa('Ya')}
-                      className={`flex-1 py-2 px-2.5 rounded-xl border text-xs font-semibold flex items-center justify-center gap-1.5 transition-all ${
-                        invWajibTglKadaluarsa === 'Ya'
+                      className={`w-[150px] py-2 px-2.5 rounded-xl border text-xs font-semibold flex items-center justify-center gap-1.5 transition-all ${invWajibTglKadaluarsa === 'Ya'
                           ? 'bg-emerald-800 text-white border-emerald-800 shadow-2xs'
                           : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'
-                      }`}
+                        }`}
                     >
                       <span>Ya</span>
                     </button>
                     <button
                       type="button"
                       onClick={() => setInvWajibTglKadaluarsa('Tidak')}
-                      className={`flex-1 py-2 px-2.5 rounded-xl border text-xs font-semibold flex items-center justify-center gap-1.5 transition-all ${
-                        invWajibTglKadaluarsa === 'Tidak'
+                      className={`w-[150px] py-2 px-2.5 rounded-xl border text-xs font-semibold flex items-center justify-center gap-1.5 transition-all ${invWajibTglKadaluarsa === 'Tidak'
                           ? 'bg-emerald-800 text-white border-emerald-800 shadow-2xs'
                           : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'
-                      }`}
+                        }`}
                     >
                       <i className="ri-close-circle-fill text-xs"></i>
                       <span>Tidak</span>
@@ -2400,22 +2376,20 @@ function TambahVarietasForm() {
                     <button
                       type="button"
                       onClick={() => setInvWajibNoSertifikat('Ya')}
-                      className={`flex-1 py-2 px-2.5 rounded-xl border text-xs font-semibold flex items-center justify-center gap-1.5 transition-all ${
-                        invWajibNoSertifikat === 'Ya'
+                      className={`w-[150px] py-2 px-2.5 rounded-xl border text-xs font-semibold flex items-center justify-center gap-1.5 transition-all ${invWajibNoSertifikat === 'Ya'
                           ? 'bg-emerald-800 text-white border-emerald-800 shadow-2xs'
                           : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'
-                      }`}
+                        }`}
                     >
                       <span>Ya</span>
                     </button>
                     <button
                       type="button"
                       onClick={() => setInvWajibNoSertifikat('Tidak')}
-                      className={`flex-1 py-2 px-2.5 rounded-xl border text-xs font-semibold flex items-center justify-center gap-1.5 transition-all ${
-                        invWajibNoSertifikat === 'Tidak'
+                      className={`w-[150px] py-2 px-2.5 rounded-xl border text-xs font-semibold flex items-center justify-center gap-1.5 transition-all ${invWajibNoSertifikat === 'Tidak'
                           ? 'bg-emerald-800 text-white border-emerald-800 shadow-2xs'
                           : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'
-                      }`}
+                        }`}
                     >
                       <i className="ri-close-circle-fill text-xs"></i>
                       <span>Tidak</span>
@@ -2435,11 +2409,10 @@ function TambahVarietasForm() {
                     <button
                       type="button"
                       onClick={() => setInvTraceabilityLot('Aktif')}
-                      className={`flex-1 py-2 px-3 rounded-xl border text-xs font-semibold flex items-center justify-center gap-1.5 transition-all ${
-                        invTraceabilityLot === 'Aktif'
+                      className={`w-[150px] py-2 px-3 rounded-xl border text-xs font-semibold flex items-center justify-center gap-1.5 transition-all ${invTraceabilityLot === 'Aktif'
                           ? 'bg-emerald-800 text-white border-emerald-800 shadow-2xs'
                           : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'
-                      }`}
+                        }`}
                     >
                       <i className="ri-checkbox-circle-fill text-xs"></i>
                       <span>Aktif</span>
@@ -2447,11 +2420,10 @@ function TambahVarietasForm() {
                     <button
                       type="button"
                       onClick={() => setInvTraceabilityLot('Tidak Aktif')}
-                      className={`flex-1 py-2 px-3 rounded-xl border text-xs font-semibold flex items-center justify-center gap-1.5 transition-all ${
-                        invTraceabilityLot === 'Tidak Aktif'
+                      className={`w-[150px] py-2 px-3 rounded-xl border text-xs font-semibold flex items-center justify-center gap-1.5 transition-all ${invTraceabilityLot === 'Tidak Aktif'
                           ? 'bg-emerald-800 text-white border-emerald-800 shadow-2xs'
                           : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'
-                      }`}
+                        }`}
                     >
                       <span>Tidak Aktif</span>
                     </button>
@@ -2542,16 +2514,14 @@ function TambahVarietasForm() {
                         <td className="py-3 px-3.5 text-gray-600">{item.satuan}</td>
                         <td className="py-3 px-3.5 text-center">
                           <span
-                            className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold ${
-                              item.status === 'Aktif'
+                            className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold ${item.status === 'Aktif'
                                 ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
                                 : 'bg-rose-50 text-rose-700 border border-rose-200'
-                            }`}
+                              }`}
                           >
                             <span
-                              className={`w-1.5 h-1.5 rounded-full ${
-                                item.status === 'Aktif' ? 'bg-emerald-500' : 'bg-rose-500'
-                              }`}
+                              className={`w-1.5 h-1.5 rounded-full ${item.status === 'Aktif' ? 'bg-emerald-500' : 'bg-rose-500'
+                                }`}
                             ></span>
                             {item.status}
                           </span>
