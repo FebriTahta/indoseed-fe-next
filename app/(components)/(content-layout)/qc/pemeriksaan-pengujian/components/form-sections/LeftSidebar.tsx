@@ -6,9 +6,9 @@ const LeftSidebar = () => {
     <div className="space-y-4">
       {/* Informasi Sampel */}
       <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-100">
-        <h5 className="font-medium text-emerald-800 mb-4 flex items-center gap-2">
+        <h6 className="font-medium text-emerald-800 mb-4 flex items-center gap-2">
           <i className="ri-file-list-3-line text-emerald-600"></i> Informasi Sampel
-        </h5>
+        </h6>
 
         <div className="space-y-3">
           <div className="flex justify-between items-center border-b border-gray-50 pb-2">
