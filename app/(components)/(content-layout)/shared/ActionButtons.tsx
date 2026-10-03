@@ -8,7 +8,7 @@ interface BaseButtonProps {
 }
 
 interface ActionButtonProps extends BaseButtonProps {
-  label: string;
+  label?: string;
 }
 
 export const HistoryButton: React.FC<BaseButtonProps> = ({ onClick, className = '' }) => {
@@ -23,7 +23,7 @@ export const HistoryButton: React.FC<BaseButtonProps> = ({ onClick, className = 
   );
 };
 
-export const AddButton: React.FC<ActionButtonProps> = ({ onClick, label, className = '' }) => {
+export const AddButton: React.FC<ActionButtonProps> = ({ onClick, label = "Tambah", className = '' }) => {
   return (
     <SpkButton
       onclickfunc={onClick}
@@ -35,19 +35,22 @@ export const AddButton: React.FC<ActionButtonProps> = ({ onClick, label, classNa
   );
 };
 
-export const EditButton: React.FC<ActionButtonProps> = ({ onClick, label, className = '' }) => {
+export const EditButton: React.FC<ActionButtonProps> = ({ onClick, label = "Edit", className = '', disabled = false }) => {
   return (
     <SpkButton
+      buttontype="button"
+      onClick={onClick}
       onclickfunc={onClick}
       variant="success"
-      customClass={`flex items-center justify-center gap-2 py-2.5 rounded-lg shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all font-semibold ${className}`}
+      disabled={disabled}
+      customClass={`flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all font-semibold ${disabled ? 'opacity-60 cursor-not-allowed pointer-events-none' : ''} ${className}`}
     >
-      <i className="ri-edit-box-line text-lg"></i> {label}
+      <i className="ri-edit-box-line text-lg"></i> <span className="font-medium">{label}</span>
     </SpkButton>
   );
 };
 
-export const ManageButton: React.FC<ActionButtonProps> = ({ onClick, label, className = '' }) => {
+export const ManageButton: React.FC<ActionButtonProps> = ({ onClick, label = "Kelola", className = '' }) => {
   return (
     <SpkButton
       onclickfunc={onClick}
@@ -99,26 +102,32 @@ export const ExportButton: React.FC<BaseButtonProps & { label?: string }> = ({ o
   );
 };
 
-export const FilterButton: React.FC<BaseButtonProps & { label?: string }> = ({ onClick, label = "Terapkan", className = '' }) => {
+export const FilterButton: React.FC<BaseButtonProps & { label?: string }> = ({ onClick, label = "Filter", className = '', disabled = false }) => {
   return (
     <SpkButton
+      buttontype="button"
+      onClick={onClick}
       onclickfunc={onClick}
       variant="primary"
-      customClass={`flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all font-semibold bg-[#1B4E3B] ${className}`}
+      disabled={disabled}
+      customClass={`flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all font-semibold bg-[#1B4E3B] text-white border-transparent ${disabled ? 'opacity-60 cursor-not-allowed pointer-events-none' : ''} ${className}`}
     >
-      <i className="ri-filter-3-line text-lg"></i> {label}
+      <i className="ri-filter-3-line text-lg"></i> <span className="font-medium">{label}</span>
     </SpkButton>
   );
 };
 
-export const ResetButton: React.FC<BaseButtonProps & { label?: string }> = ({ onClick, label = "", className = '' }) => { // ini untuk reset
+export const ResetButton: React.FC<BaseButtonProps & { label?: string }> = ({ onClick, label = "Reset", className = '', disabled = false }) => {
   return (
     <SpkButton
+      buttontype="button"
+      onClick={onClick}
       onclickfunc={onClick}
       variant="light"
-      customClass={`flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg shadow-sm hover:shadow-md transition-all font-semibold bg-gray-100 hover:bg-gray-200 text-gray-700 ${className}`}
+      disabled={disabled}
+      customClass={`flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg shadow-sm hover:shadow-md transition-all font-semibold bg-gray-100 hover:bg-gray-200 text-gray-700 border border-gray-200 ${disabled ? 'opacity-60 cursor-not-allowed pointer-events-none' : ''} ${className}`}
     >
-      <i className="ri-refresh-line text-lg"></i> {label}
+      <i className="ri-refresh-line text-lg"></i> <span className="font-medium">{label}</span>
     </SpkButton>
   );
 };
@@ -171,10 +180,12 @@ export const DeleteIconButton: React.FC<IconButtonProps> = ({ onClick, title = "
 export const SaveButton: React.FC<BaseButtonProps & { label?: string }> = ({ onClick, label = "Simpan", className = '', disabled = false }) => {
   return (
     <SpkButton
+      buttontype="button"
+      onClick={onClick}
       onclickfunc={onClick}
       variant="primary"
       disabled={disabled}
-      customClass={`flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all font-semibold bg-[#1B4E3B] text-white border-transparent ${className}`}
+      customClass={`flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all font-semibold bg-[#1B4E3B] text-white border-transparent ${disabled ? 'opacity-60 cursor-not-allowed pointer-events-none' : ''} ${className}`}
     >
       <i className="ri-save-line text-lg"></i> <span className="font-medium">{label}</span>
     </SpkButton>
@@ -184,10 +195,12 @@ export const SaveButton: React.FC<BaseButtonProps & { label?: string }> = ({ onC
 export const CancelButton: React.FC<BaseButtonProps & { label?: string }> = ({ onClick, label = "Batal", className = '', disabled = false }) => {
   return (
     <SpkButton
+      buttontype="button"
+      onClick={onClick}
       onclickfunc={onClick}
       variant="outline-primary"
       disabled={disabled}
-      customClass={`flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all font-semibold bg-white text-[#1B4E3B] border border-[#1B4E3B] ${className}`}
+      customClass={`flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all font-semibold bg-white text-[#1B4E3B] border border-[#1B4E3B] ${disabled ? 'opacity-60 cursor-not-allowed pointer-events-none' : ''} ${className}`}
     >
       <i className="ri-close-line text-lg"></i> <span className="font-medium">{label}</span>
     </SpkButton>

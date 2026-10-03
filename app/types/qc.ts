@@ -13,12 +13,25 @@ export interface ReferenceStandard {
   status: string;
 }
 
+export interface TestMethodDocument {
+  id?: string;
+  testMethodId?: string;
+  namaFile: string;
+  fileUrl: string;
+  tipeFile?: string;
+  ukuran?: string;
+  createdAt?: string | Date;
+  updatedAt?: string | Date;
+}
+
 export interface TestMethod {
   id: string;
   kode: string;
   nama: string;
   jenisUji?: string;
   komoditas?: string;
+  varietas?: string;
+  tipe?: string;
   deskripsi?: string;
   status: string;
   standarId?: string;
@@ -28,6 +41,9 @@ export interface TestMethod {
   catatan?: string;
   standar?: ReferenceStandard;
   testParameters?: TestParameter[];
+  dokumen?: TestMethodDocument[];
+  createdAt?: string | Date;
+  updatedAt?: string | Date;
 }
 
 export interface TestParameter {
@@ -37,6 +53,7 @@ export interface TestParameter {
   kategori?: string;
   satuan?: string;
   batasAcuan?: string;
+  definisi?: string;
   keterangan?: string;
   metodeId?: string;
   standarId?: string;

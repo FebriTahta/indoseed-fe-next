@@ -6,7 +6,6 @@ import DataTable from "@/app/(components)/(content-layout)/shared/DataTable";
 import dynamic from "next/dynamic";
 const Select = dynamic(() => import("react-select"), { ssr: false });
 import { AddButton, ViewIconButton, EditIconButton, ExportButton } from "@/app/(components)/(content-layout)/shared/ActionButtons";
-import PermintaanForm from "./PermintaanForm";
 
 const mockData = [
   {
@@ -81,7 +80,6 @@ const PermintaanList = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
-  const [isModalOpen, setIsModalOpen] = useState(false);
 
   const headers = [
     "No.",
@@ -140,7 +138,7 @@ const PermintaanList = () => {
       <td className="p-4">{renderStatusBadge(item.status)}</td>
       <td className="p-4">
         <div className="flex gap-2 justify-center">
-          <ViewIconButton title="Lihat" />
+          <ViewIconButton title="Lihat" onClick={() => router.push(`/qc/permintaan-pengujian/edit/${item.id}`)} />
           <EditIconButton onClick={() => router.push(`/qc/permintaan-pengujian/edit/${item.id}`)} />
         </div>
       </td>
@@ -262,7 +260,7 @@ const PermintaanList = () => {
             </button>
           </div>
           <div className="flex gap-2">
-            <AddButton label="Buat Permintaan" onClick={() => setIsModalOpen(true)} />
+            <AddButton label="Buat Permintaan" onClick={() => router.push('/qc/permintaan-pengujian/create')} />
             <ExportButton />
           </div>
         </div>
@@ -282,43 +280,6 @@ const PermintaanList = () => {
           bodyTextSize="10px"
         />
       </div>
-
-      {/* Modal Buat Permintaan */}
-      {isModalOpen && (
-        <div className="fixed inset-0 z-[9999] overflow-y-auto">
-          {/* Backdrop */}
-          <div
-            className="fixed inset-0 bg-black/50 backdrop-blur-sm transition-opacity"
-            onClick={() => setIsModalOpen(false)}
-          ></div>
-
-          {/* Center Container */}
-          <div className="flex min-h-full items-center justify-center p-4">
-            <div className="relative w-full max-w-[75vw] animate-slide-down">
-              {/* Modal Header */}
-              <div className="flex items-center justify-between p-4 border-b border-defaultborder bg-emerald-600 text-white rounded-t-xl">
-                <h5 className="text-white font-bold mb-0 flex items-center gap-2">
-                  <i className="ri-test-tube-line"></i> Buat Permintaan Pengujian
-                </h5>
-                <button
-                  type="button"
-                  onClick={() => setIsModalOpen(false)}
-                  className="text-white/80 hover:text-white transition-colors"
-                >
-                  <i className="ri-close-line text-2xl"></i>
-                </button>
-              </div>
-
-              {/* Form Content */}
-              <div className="bg-white">
-                <div className="p-0 border-0 shadow-none mb-0 bg-white">
-                  <PermintaanForm onCancel={() => setIsModalOpen(false)} />
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 };

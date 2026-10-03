@@ -399,17 +399,50 @@ const Sidebar = () => {
 
 	const Baselocation = usePathname();
 
-	useEffect(() => {
-		const normalizePath = (path) => {
-			return path && path.endsWith('/') ? path.slice(0, -1) : path;
+	const normalizePath = (path) => {
+		return path && path.endsWith('/') ? path.slice(0, -1) : path;
+	};
+
+	const findBestMatchingPath = (menu, currentPath) => {
+		const normalizedCurrent = normalizePath(currentPath);
+		if (!normalizedCurrent) return '';
+
+		const getAllPaths = (items) => {
+			let paths = [];
+			items?.forEach((item) => {
+				const p = normalizePath(item?.path);
+				if (p && p !== '#' && p !== '/') {
+					paths.push(p);
+				}
+				if (item?.children) {
+					paths = paths.concat(getAllPaths(item.children));
+				}
+			});
+			return paths;
 		};
 
+		const allPaths = getAllPaths(menu);
+		let targetPath = allPaths.find((p) => p === normalizedCurrent);
+		if (!targetPath) {
+			const candidatePaths = allPaths.filter((p) => normalizedCurrent.startsWith(p + '/'));
+			if (candidatePaths.length > 0) {
+				targetPath = candidatePaths.reduce((longest, current) =>
+					current.length > longest.length ? current : longest
+				, candidatePaths[0]);
+			}
+		}
+
+		return targetPath || normalizedCurrent;
+	};
+
+	useEffect(() => {
 		const pathName = normalizePath(Baselocation);
+		const matchPath = findBestMatchingPath(openMenu, pathName);
 
 		const updateMenu = (menu) => {
 			return menu?.map((menuItem) => {
 				const menuItemPath = normalizePath(menuItem?.path);
-				if (menuItemPath === pathName) {
+				if (menuItemPath === matchPath) {
 					menuItem.active = true;
 					menuItem.selected = true;
 				} else if (menuItem.children) {
@@ -658,12 +691,15 @@ const Sidebar = () => {
 	function setMenuUsingUrl(currentPath) {
 		hasParent = false;
 		hasParentLevel = 1;
+		const matchPath = findBestMatchingPath(openMenu, currentPath);
+
 		// Check current url and trigger the setSidemenu method to active the menu.
 		const setSubmenuRecursively = (items) => {
 
 			items?.forEach((item) => {
-				if (item.path == '') { }
-				else if (item.path === currentPath) {
+				const itemPath = normalizePath(item.path);
+				if (!itemPath) { }
+				else if (itemPath === matchPath) {
 					setSubmenu(null, item);
 				}
 				setSubmenuRecursively(item.children);
