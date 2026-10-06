@@ -15,9 +15,11 @@ import SpkButton from "@/shared/@spk-reusable-components/uielements/spk-button";
 import { toast } from "react-toastify";
 import { qcService } from "@/app/services/qcService";
 import { batchProduksiService } from "@/app/services/batchProduksiService";
+import { permintaanPengujianService } from "@/app/services/permintaanPengujianService";
 import { TestParameter, TestMethod } from "@/app/types/qc";
 import ManageParameterUjiModal, {
   FormParameterItem,
+  isMethodMatchingCommodityOrVariety,
 } from "./ManageParameterUjiModal";
 
 const defaultMockBatches = [
@@ -250,6 +252,14 @@ const PermintaanForm = ({
   const tabs = ["Parameter Uji", "Catatan & Dokumen", "Riwayat"];
   const [activeTab, setActiveTab] = useState<string>("Parameter Uji");
 
+  // Notes & Attachment State
+  const [catatan, setCatatan] = useState<string>(existingData?.catatan || "");
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [existingFileUrl, setExistingFileUrl] = useState<string | null>(null);
+  const [existingFileName, setExistingFileName] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
+  const fileInputRef = React.useRef<HTMLInputElement | null>(null);
+
   // Prevent SSR hydration mismatch for dynamic client Select components
   const [isMounted, setIsMounted] = useState(false);
   useEffect(() => {
@@ -335,7 +345,91 @@ const PermintaanForm = ({
   }, []);
 
   useEffect(() => {
-    if (existingData) {
+    // If create mode, fetch sequential auto-number from API
+    if (mode === "create" && !initialData) {
+      permintaanPengujianService
+        .getNextNumber()
+        .then((res) => {
+          if (res?.data?.noPermintaan) {
+            setNoPermintaan(res.data.noPermintaan);
+          }
+        })
+        .catch((e) => console.error("Error getting next number:", e));
+    }
+
+    // If edit mode with id, fetch real data from API
+    if (mode === "edit" && id) {
+      permintaanPengujianService
+        .getPermintaanById(id)
+        .then((res) => {
+          if (res && res.data) {
+            const d = res.data;
+            if (d.noPermintaan) setNoPermintaan(d.noPermintaan);
+            if (d.tanggal) {
+              const t =
+                typeof d.tanggal === "string"
+                  ? d.tanggal.split("T")[0]
+                  : new Date(d.tanggal).toISOString().split("T")[0];
+              setTanggal(t);
+            }
+            if (d.pemohon) setPemohon(d.pemohon);
+            if (d.prioritas) setPrioritas(d.prioritas);
+            if (d.jumlahSampel !== undefined)
+              setJumlahSampel(String(d.jumlahSampel));
+            if (d.satuanSampel) setSatuanSampel(d.satuanSampel);
+            if (d.metodeSampling) setMetodeSampling(d.metodeSampling);
+            if (d.pengambilSampel) setPengambilSampel(d.pengambilSampel);
+            if (d.catatan) setCatatan(d.catatan);
+            if (d.fileLampiranUrl) setExistingFileUrl(d.fileLampiranUrl);
+            if (d.fileLampiranNama) setExistingFileName(d.fileLampiranNama);
+            if (d.parameters && Array.isArray(d.parameters)) {
+              const formatted: FormParameterItem[] = d.parameters.map((p: any) => ({
+                id: p.id,
+                parameterId: p.parameterId,
+                kode: p.kode,
+                parameter: p.nama || p.parameter,
+                nama: p.nama || p.parameter,
+                kategori: p.kategori,
+                metodeId: p.metodeId,
+                metode:
+                  p.metode ||
+                  `${p.metodeKode || ""} ${p.metodeNama || ""}`.trim(),
+                metodeKode: p.metodeKode,
+                metodeNama: p.metodeNama,
+                standar: p.standar || "",
+                satuan: p.satuan || "%",
+                checked: p.checked !== undefined ? p.checked : true,
+                definisi: p.definisi,
+                keterangan: p.keterangan,
+                isCustom: p.isCustom,
+              }));
+              setParameters(formatted);
+            }
+            if (d.kodeBatch) {
+              setSelectedBatch({
+                value: d.kodeBatch,
+                label: `${d.kodeBatch} — ${d.komoditas || "Benih"} (${d.varietas || "-"})`,
+                data: {
+                  id: d.batchProduksiId,
+                  komoditas: d.komoditas || "Benih",
+                  varietas: d.varietas || "-",
+                  tipe: d.tipe || "QC / Benih",
+                  petani: d.petani || "Mitra Utama",
+                  lahan: d.lahan || "-",
+                  panen: d.panen || "-",
+                },
+              });
+            }
+          }
+        })
+        .catch((err) => {
+          console.warn("Could not load detail from API, using fallback:", err);
+        });
+    }
+  }, [mode, id, initialData]);
+
+  useEffect(() => {
+    if (existingData && mode !== "edit") {
       if (existingData.noPermintaan) setNoPermintaan(existingData.noPermintaan);
       if (existingData.tanggal) setTanggal(existingData.tanggal);
       if (existingData.pemohon) setPemohon(existingData.pemohon);
@@ -430,19 +524,23 @@ const PermintaanForm = ({
     setCustomStandardToAdd("");
   };
 
-  // Available parameters for dropdown (exclude ones already in table)
+  // Available parameters for dropdown (exclude ones already in table and match commodity/variety)
   const availableParamsForDropdown = useMemo(() => {
     const currentKeys = new Set(
       parameters.map((p) => p.parameterId || p.kode)
     );
+    const k = selectedBatch?.data?.komoditas;
+    const v = selectedBatch?.data?.varietas;
+
     return dbParameters
       .filter((p) => !currentKeys.has(p.id) && !currentKeys.has(p.kode))
+      .filter((p) => isMethodMatchingCommodityOrVariety(p.metode, k, v))
       .map((p) => ({
         value: p.id,
         label: `[${p.kode}] ${p.nama} — ${p.kategori || "QC"}`,
         param: p,
       }));
-  }, [dbParameters, parameters]);
+  }, [dbParameters, parameters, selectedBatch]);
 
   // Available methods for dropdown
   const methodOptions = useMemo(() => {
@@ -480,7 +578,7 @@ const PermintaanForm = ({
 
   const activeParametersCount = parameters.filter((p) => p.checked).length;
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!selectedBatch) {
       toast.error("Harap pilih batch produksi terlebih dahulu");
       return;
@@ -491,16 +589,88 @@ const PermintaanForm = ({
       return;
     }
 
-    toast.success(
-      mode === "edit"
-        ? `Permintaan pengujian ${noPermintaan} berhasil diperbarui dengan ${activeParametersCount} parameter uji.`
-        : `Permintaan pengujian ${noPermintaan} berhasil dibuat dengan ${activeParametersCount} parameter uji.`
-    );
+    setIsSubmitting(true);
+    try {
+      const payload: any = {
+        noPermintaan,
+        tanggal,
+        kodeBatch: selectedBatch.value,
+        batchProduksiId: selectedBatch.data?.id || null,
+        komoditas: selectedBatch.data?.komoditas || "",
+        varietas: selectedBatch.data?.varietas || "",
+        tipe: selectedBatch.data?.tipe || "QC / Benih",
+        petani: selectedBatch.data?.petani || "",
+        lahan: selectedBatch.data?.lahan || "",
+        panen: selectedBatch.data?.panen || "",
+        jumlahSampel: Number(jumlahSampel) || 0,
+        satuanSampel,
+        metodeSampling,
+        pengambilSampel,
+        pemohon,
+        prioritas,
+        catatan,
+        parameters: parameters
+          .filter((p) => p.checked)
+          .map((p) => ({
+            parameterId: p.parameterId || null,
+            kode: p.kode,
+            nama: p.parameter || p.nama,
+            kategori: p.kategori,
+            metodeId: p.metodeId || null,
+            metode: p.metode,
+            metodeKode: p.metodeKode,
+            metodeNama: p.metodeNama,
+            standar: p.standar,
+            satuan: p.satuan,
+            checked: true,
+            definisi: p.definisi,
+            keterangan: p.keterangan,
+            isCustom: p.isCustom,
+          })),
+      };
 
-    if (onCancel) {
-      onCancel();
-    } else {
-      router.push("/qc/permintaan-pengujian");
+      if (selectedFile) {
+        const formData = new FormData();
+        Object.keys(payload).forEach((k) => {
+          if (k === "parameters") {
+            formData.append(k, JSON.stringify(payload[k]));
+          } else if (payload[k] !== undefined && payload[k] !== null) {
+            formData.append(k, payload[k]);
+          }
+        });
+        formData.append("file", selectedFile);
+
+        if (mode === "edit" && id) {
+          await permintaanPengujianService.updatePermintaan(id, formData);
+        } else {
+          await permintaanPengujianService.createPermintaan(formData);
+        }
+      } else {
+        if (mode === "edit" && id) {
+          await permintaanPengujianService.updatePermintaan(id, payload);
+        } else {
+          await permintaanPengujianService.createPermintaan(payload);
+        }
+      }
+
+      toast.success(
+        mode === "edit"
+          ? `Permintaan pengujian ${noPermintaan} berhasil diperbarui.`
+          : `Permintaan pengujian ${noPermintaan} berhasil dibuat.`
+      );
+
+      if (onCancel) {
+        onCancel();
+      } else {
+        router.push("/qc/permintaan-pengujian");
+      }
+    } catch (err: any) {
+      console.error("Error saving permintaan:", err);
+      toast.error(
+        err.response?.data?.message || "Gagal menyimpan permintaan pengujian"
+      );
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -639,6 +809,7 @@ const PermintaanForm = ({
             <SaveButton
               label={mode === "edit" ? "Simpan Perubahan" : "Submit Permintaan"}
               onClick={handleSave}
+              disabled={isSubmitting}
             />
           </div>
         </div>
@@ -1198,6 +1369,8 @@ const PermintaanForm = ({
                   </h3>
                   <textarea
                     rows={4}
+                    value={catatan}
+                    onChange={(e) => setCatatan(e.target.value)}
                     className="w-full border border-gray-200 rounded-lg p-3 text-sm focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-colors bg-gray-50 focus:bg-white"
                     placeholder="Masukkan instruksi khusus atau catatan tambahan untuk analis lab..."
                   ></textarea>
@@ -1209,23 +1382,91 @@ const PermintaanForm = ({
                     <i className="ri-attachment-line text-emerald-600 text-lg"></i>{" "}
                     Lampiran Dokumen
                   </h3>
-                  <div className="border-2 border-dashed border-gray-300 rounded-xl p-8 flex flex-col items-center justify-center text-center hover:bg-gray-50 transition-colors cursor-pointer group">
-                    <div className="w-16 h-16 bg-emerald-50 rounded-full flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
-                      <i className="ri-upload-cloud-2-line text-3xl text-emerald-600"></i>
+
+                  <input
+                    type="file"
+                    ref={fileInputRef}
+                    onChange={(e) => {
+                      if (e.target.files && e.target.files[0]) {
+                        setSelectedFile(e.target.files[0]);
+                      }
+                    }}
+                    className="hidden"
+                  />
+
+                  {selectedFile ? (
+                    <div className="border border-emerald-200 bg-emerald-50 rounded-xl p-4 flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-lg bg-emerald-100 flex items-center justify-center text-emerald-700">
+                          <i className="ri-file-text-line text-xl"></i>
+                        </div>
+                        <div>
+                          <p className="text-sm font-semibold text-gray-800">
+                            {selectedFile.name}
+                          </p>
+                          <p className="text-xs text-gray-500">
+                            {(selectedFile.size / 1024).toFixed(1)} KB — Siap diunggah
+                          </p>
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setSelectedFile(null)}
+                        className="text-red-500 hover:text-red-700 text-sm font-medium"
+                      >
+                        Batal
+                      </button>
                     </div>
-                    <p className="text-sm font-medium text-gray-800 mb-1">
-                      Klik untuk upload atau drag & drop file di sini
-                    </p>
-                    <p className="text-xs text-gray-500 mb-4">
-                      Format yang didukung: PDF, DOCX, JPG, PNG (Maksimal 10 MB)
-                    </p>
-                    <button
-                      type="button"
-                      className="px-4 py-2 bg-white border border-gray-200 text-gray-700 rounded-lg text-sm font-medium shadow-sm hover:bg-gray-50 transition-colors"
+                  ) : existingFileUrl ? (
+                    <div className="border border-gray-200 bg-gray-50 rounded-xl p-4 flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-lg bg-gray-200 flex items-center justify-center text-gray-700">
+                          <i className="ri-attachment-line text-xl"></i>
+                        </div>
+                        <div>
+                          <p className="text-sm font-semibold text-gray-800">
+                            {existingFileName || "Lampiran Tersimpan"}
+                          </p>
+                          <a
+                            href={existingFileUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-xs text-emerald-600 hover:underline inline-flex items-center gap-1"
+                          >
+                            <i className="ri-external-link-line"></i> Lihat File
+                          </a>
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => fileInputRef.current?.click()}
+                        className="px-3 py-1.5 text-xs bg-white border border-gray-200 text-gray-700 rounded-lg hover:bg-gray-100"
+                      >
+                        Ganti File
+                      </button>
+                    </div>
+                  ) : (
+                    <div
+                      onClick={() => fileInputRef.current?.click()}
+                      className="border-2 border-dashed border-gray-300 rounded-xl p-8 flex flex-col items-center justify-center text-center hover:bg-gray-50 transition-colors cursor-pointer group"
                     >
-                      Pilih File
-                    </button>
-                  </div>
+                      <div className="w-16 h-16 bg-emerald-50 rounded-full flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
+                        <i className="ri-upload-cloud-2-line text-3xl text-emerald-600"></i>
+                      </div>
+                      <p className="text-sm font-medium text-gray-800 mb-1">
+                        Klik untuk upload atau drag & drop file di sini
+                      </p>
+                      <p className="text-xs text-gray-500 mb-4">
+                        Format yang didukung: PDF, DOCX, JPG, PNG (Maksimal 10 MB)
+                      </p>
+                      <button
+                        type="button"
+                        className="px-4 py-2 bg-white border border-gray-200 text-gray-700 rounded-lg text-sm font-medium shadow-sm hover:bg-gray-50 transition-colors"
+                      >
+                        Pilih File
+                      </button>
+                    </div>
+                  )}
                 </div>
               </div>
             )}
@@ -1256,6 +1497,8 @@ const PermintaanForm = ({
         onApply={(updated) => setParameters(updated)}
         dbParameters={dbParameters}
         onRefreshDb={fetchDbParameters}
+        komoditas={selectedBatch?.data?.komoditas}
+        varietas={selectedBatch?.data?.varietas}
       />
     </React.Fragment>
   );

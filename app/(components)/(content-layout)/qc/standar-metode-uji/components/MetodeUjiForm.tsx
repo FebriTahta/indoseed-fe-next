@@ -21,9 +21,58 @@ interface ParameterItem {
   id: string; // temp id for UI mapping
   parameter: string;
   satuan: string;
+  operator: string; // '<=', '>=', '<', '>', '=', 'rentang'
+  nilai: string;
   batasMin: string;
   batasMax: string;
 }
+
+const parseBatasAcuan = (batasAcuan?: string) => {
+  if (!batasAcuan) {
+    return { operator: '<=', nilai: '', batasMin: '', batasMax: '' };
+  }
+  const str = batasAcuan.trim();
+  if (str.includes('-')) {
+    const parts = str.split('-');
+    const min = parts[0]?.trim() || '';
+    const max = parts[1]?.trim() || '';
+    return { operator: 'rentang', nilai: '', batasMin: min, batasMax: max };
+  }
+  if (str.startsWith('≤') || str.startsWith('<=')) {
+    const val = str.replace(/^[≤<=]+/, '').trim();
+    return { operator: '<=', nilai: val, batasMin: '', batasMax: val };
+  }
+  if (str.startsWith('≥') || str.startsWith('>=')) {
+    const val = str.replace(/^[≥>=]+/, '').trim();
+    return { operator: '>=', nilai: val, batasMin: val, batasMax: '' };
+  }
+  if (str.startsWith('<')) {
+    const val = str.replace(/^<+/, '').trim();
+    return { operator: '<', nilai: val, batasMin: '', batasMax: val };
+  }
+  if (str.startsWith('>')) {
+    const val = str.replace(/^>+/, '').trim();
+    return { operator: '>', nilai: val, batasMin: val, batasMax: '' };
+  }
+  if (str.startsWith('=')) {
+    const val = str.replace(/^=+/, '').trim();
+    return { operator: '=', nilai: val, batasMin: val, batasMax: val };
+  }
+  return { operator: '<=', nilai: str, batasMin: '', batasMax: str };
+};
+
+const getFormattedPatokan = (param: ParameterItem) => {
+  if (param.operator === 'rentang') {
+    if (param.batasMin || param.batasMax) {
+      return `${param.batasMin || '0'} - ${param.batasMax || '0'} ${param.satuan || ''}`.trim();
+    }
+    return '-';
+  }
+  const val = (param.nilai || '').trim();
+  if (!val) return '-';
+  const sym = param.operator === '<=' ? '≤' : param.operator === '>=' ? '≥' : param.operator;
+  return `${sym} ${val} ${param.satuan || ''}`.trim();
+};
 
 export default function MetodeUjiForm({ mode, initialData }: { mode: 'create' | 'edit', initialData?: any }) {
   const router = useRouter();
@@ -108,13 +157,18 @@ export default function MetodeUjiForm({ mode, initialData }: { mode: 'create' | 
       });
       // Extract parameters if any
       if (initialData.testParameters) {
-        const mappedParams = initialData.testParameters.map((p: any) => ({
-          id: p.id || Math.random().toString(),
-          parameter: p.nama || '',
-          satuan: p.satuan || '',
-          batasMin: p.batasAcuan ? p.batasAcuan.split(' - ')[0] || '' : '',
-          batasMax: p.batasAcuan ? p.batasAcuan.split(' - ')[1] || '' : '',
-        }));
+        const mappedParams = initialData.testParameters.map((p: any) => {
+          const parsed = parseBatasAcuan(p.batasAcuan);
+          return {
+            id: p.id || Math.random().toString(),
+            parameter: p.nama || '',
+            satuan: p.satuan || '',
+            operator: parsed.operator,
+            nilai: parsed.nilai,
+            batasMin: parsed.batasMin,
+            batasMax: parsed.batasMax,
+          };
+        });
         setParameters(mappedParams);
       }
       // Extract existing documents if any
@@ -125,7 +179,7 @@ export default function MetodeUjiForm({ mode, initialData }: { mode: 'create' | 
       setSelectedKomoditas(['Semua Komoditas']);
       setSelectedVarietas(['Semua Varietas']);
       // Add one default empty parameter
-      setParameters([{ id: '1', parameter: '', satuan: '', batasMin: '', batasMax: '' }]);
+      setParameters([{ id: '1', parameter: '', satuan: '%', operator: '<=', nilai: '', batasMin: '', batasMax: '' }]);
     }
   }, [mode, initialData]);
 
@@ -268,7 +322,18 @@ export default function MetodeUjiForm({ mode, initialData }: { mode: 'create' | 
   };
 
   const addParameter = () => {
-    setParameters([...parameters, { id: Math.random().toString(), parameter: '', satuan: '', batasMin: '', batasMax: '' }]);
+    setParameters([
+      ...parameters,
+      {
+        id: Math.random().toString(),
+        parameter: '',
+        satuan: '%',
+        operator: '<=',
+        nilai: '',
+        batasMin: '',
+        batasMax: '',
+      }
+    ]);
   };
 
   const updateParameter = (index: number, field: string, value: string) => {
@@ -438,13 +503,29 @@ export default function MetodeUjiForm({ mode, initialData }: { mode: 'create' | 
         catatan: formData.catatan && formData.catatan.trim() !== '' ? formData.catatan.trim() : null,
         testParameters: parameters
           .filter(p => p.parameter && p.parameter.trim() !== '')
-          .map((p, idx) => ({
-            id: p.id && !p.id.startsWith('temp-') && p.id.length > 10 ? p.id : undefined,
-            nama: p.parameter.trim(),
-            satuan: p.satuan || null,
-            batasMin: p.batasMin || null,
-            batasMax: p.batasMax || null,
-          })),
+          .map((p, idx) => {
+            let batasAcuanStr = '';
+            if (p.operator === 'rentang') {
+              const min = p.batasMin?.trim() || '0';
+              const max = p.batasMax?.trim() || '0';
+              batasAcuanStr = `${min} - ${max}`;
+            } else {
+              const val = (p.nilai?.trim() || p.batasMax?.trim() || p.batasMin?.trim() || '').replace(/^[=<>≤≥\s]+/, '');
+              if (val) {
+                const sym = p.operator === '<=' ? '≤' : p.operator === '>=' ? '≥' : p.operator;
+                batasAcuanStr = `${sym} ${val}`;
+              }
+            }
+
+            return {
+              id: p.id && !p.id.startsWith('temp-') && p.id.length > 10 ? p.id : undefined,
+              nama: p.parameter.trim(),
+              satuan: p.satuan?.trim() || null,
+              batasAcuan: batasAcuanStr || null,
+              batasMin: p.operator === 'rentang' ? (p.batasMin?.trim() || null) : null,
+              batasMax: p.operator === 'rentang' ? (p.batasMax?.trim() || null) : (p.nilai?.trim() || null),
+            };
+          }),
         dokumen: dokumenList.map(d => ({
           namaFile: d.namaFile,
           fileUrl: d.fileUrl,
@@ -676,41 +757,166 @@ export default function MetodeUjiForm({ mode, initialData }: { mode: 'create' | 
               <h3 className="box-title font-semibold text-base">Parameter Pengujian</h3>
             </div>
             <div className="box-body pt-4">
-              {parameters.map((param, index) => (
-                <div key={param.id} className="grid grid-cols-1 md:grid-cols-12 gap-4 mb-4 items-end bg-gray-50/50 p-3 rounded-lg border border-gray-100">
-                  <div className="md:col-span-4">
-                    <label className="form-label text-xs font-semibold">Parameter <span className="text-danger">*</span></label>
-                    <select value={param.parameter} onChange={(e) => updateParameter(index, 'parameter', e.target.value)} className="form-select text-sm h-[38px]">
-                      <option value="">Pilih Parameter</option>
-                      <option value="Kadar Air">Kadar Air</option>
-                      <option value="Daya Berkecambah">Daya Berkecambah</option>
-                      <option value="Kemurnian Fisik">Kemurnian Fisik</option>
-                    </select>
+              {parameters.map((param, index) => {
+                const previewPatokan = getFormattedPatokan(param);
+                return (
+                  <div
+                    key={param.id}
+                    className="p-3.5 mb-3 bg-gray-50/70 hover:bg-gray-50 rounded-xl border border-defaultborder transition-colors space-y-3"
+                  >
+                    <div className="grid grid-cols-1 md:grid-cols-12 gap-3 items-end">
+                      {/* Parameter */}
+                      <div className="md:col-span-3">
+                        <label className="form-label text-xs font-semibold text-gray-700 mb-1 block">
+                          Parameter <span className="text-danger">*</span>
+                        </label>
+                        <input
+                          type="text"
+                          list={`param-suggestions-${index}`}
+                          value={param.parameter}
+                          onChange={(e) => updateParameter(index, 'parameter', e.target.value)}
+                          className="form-control text-sm h-[38px]"
+                          placeholder="Pilih / ketik nama parameter"
+                        />
+                        <datalist id={`param-suggestions-${index}`}>
+                          <option value="Kadar Air" />
+                          <option value="Daya Berkecambah" />
+                          <option value="Kemurnian Fisik" />
+                          <option value="Benih Murni" />
+                          <option value="Kotoran Benih" />
+                          <option value="Benih Tanaman Lain" />
+                          <option value="Vigor" />
+                          <option value="Kecambah Normal" />
+                          <option value="Kecambah Abnormal" />
+                          <option value="Benih Mati" />
+                          <option value="Berat 1000 Biji" />
+                          <option value="pH" />
+                          <option value="Kadar Abu" />
+                          <option value="Uji Patogen" />
+                          <option value="Logam Berat (Pb, Cd, Hg)" />
+                        </datalist>
+                      </div>
+
+                      {/* Satuan */}
+                      <div className="md:col-span-2">
+                        <label className="form-label text-xs font-semibold text-gray-700 mb-1 block">
+                          Satuan <span className="text-danger">*</span>
+                        </label>
+                        <select
+                          value={param.satuan}
+                          onChange={(e) => updateParameter(index, 'satuan', e.target.value)}
+                          className="form-select text-sm h-[38px]"
+                        >
+                          <option value="">Pilih Satuan</option>
+                          <option value="%">%</option>
+                          <option value="gr">gr</option>
+                          <option value="gram">gram</option>
+                          <option value="kg">kg</option>
+                          <option value="mg/kg">mg/kg</option>
+                          <option value="butir">butir</option>
+                          <option value="buah">buah</option>
+                          <option value="hari">hari</option>
+                          <option value="-">- (Tanpa Satuan)</option>
+                          {param.satuan && !['%', 'gr', 'gram', 'kg', 'mg/kg', 'butir', 'buah', 'hari', '-'].includes(param.satuan) && (
+                            <option value={param.satuan}>{param.satuan}</option>
+                          )}
+                        </select>
+                      </div>
+
+                      {/* Operator */}
+                      <div className="md:col-span-2">
+                        <label className="form-label text-xs font-semibold text-gray-700 mb-1 block">
+                          Operator <span className="text-danger">*</span>
+                        </label>
+                        <select
+                          value={param.operator}
+                          onChange={(e) => updateParameter(index, 'operator', e.target.value)}
+                          className="form-select text-sm h-[38px] font-medium text-gray-800"
+                        >
+                          <option value="<=">(≤)</option>
+                          <option value=">=">(≥)</option>
+                          <option value="<">(&lt;)</option>
+                          <option value=">">(&gt;)</option>
+                          <option value="=">(=)</option>
+                          <option value="rentang">(Min - Maks)</option>
+                        </select>
+                      </div>
+
+                      {/* Nilai / Batas Acuan */}
+                      <div className="md:col-span-4">
+                        {param.operator === 'rentang' ? (
+                          <div>
+                            <label className="form-label text-xs font-semibold text-gray-700 mb-1 block">
+                              Batas Acuan (Min - Maks) <span className="text-danger">*</span>
+                            </label>
+                            <div className="flex items-center gap-1.5">
+                              <input
+                                type="text"
+                                value={param.batasMin}
+                                onChange={(e) => updateParameter(index, 'batasMin', e.target.value)}
+                                className="form-control text-sm h-[38px]"
+                                placeholder="Min (cth: 6.0)"
+                              />
+                              <span className="text-gray-400 font-semibold text-xs">-</span>
+                              <input
+                                type="text"
+                                value={param.batasMax}
+                                onChange={(e) => updateParameter(index, 'batasMax', e.target.value)}
+                                className="form-control text-sm h-[38px]"
+                                placeholder="Maks (cth: 7.5)"
+                              />
+                            </div>
+                          </div>
+                        ) : (
+                          <div>
+                            <label className="form-label text-xs font-semibold text-gray-700 mb-1 block">
+                              Nilai Acuan <span className="text-danger">*</span>
+                            </label>
+                            <div className="input-group">
+                              <div className="input-group-text font-bold text-sm bg-gray-100 text-gray-700 min-w-[38px] flex items-center justify-center">
+                                {param.operator === '<=' ? '≤' : param.operator === '>=' ? '≥' : param.operator}
+                              </div>
+                              <input
+                                type="text"
+                                value={param.nilai}
+                                onChange={(e) => updateParameter(index, 'nilai', e.target.value)}
+                                className="form-control text-sm h-[38px]"
+                                placeholder="Nilai (cth: 8.0)"
+                              />
+                            </div>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Tombol Hapus */}
+                      <div className="md:col-span-1 flex justify-center pb-0.5">
+                        <button
+                          type="button"
+                          onClick={() => removeParameter(index)}
+                          className="btn btn-icon btn-sm btn-danger-light rounded-full w-8 h-8 flex items-center justify-center hover:bg-rose-100 hover:text-rose-600 transition-colors"
+                          title="Hapus parameter ini"
+                        >
+                          <i className="ri-delete-bin-line text-sm"></i>
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Preview Patokan Bar */}
+                    <div className="flex items-center justify-between text-xs pt-1 px-1 border-t border-gray-200/60">
+                      <div className="flex items-center gap-2">
+                        <span className="text-gray-500 font-medium text-[11px]">Hasil Patokan Standar:</span>
+                        <span className="inline-flex items-center gap-1 font-semibold text-emerald-800 bg-emerald-50 border border-emerald-200/80 px-2 py-0.5 rounded text-xs">
+                          <i className="ri-checkbox-circle-line text-emerald-600 text-[11px]"></i>
+                          {previewPatokan}
+                        </span>
+                      </div>
+                      <span className="text-[11px] text-gray-400">
+                        {param.operator === 'rentang' ? 'Format rentang toleransi' : `Operator ${param.operator}`}
+                      </span>
+                    </div>
                   </div>
-                  <div className="md:col-span-3">
-                    <label className="form-label text-xs font-semibold">Satuan <span className="text-danger">*</span></label>
-                    <select value={param.satuan} onChange={(e) => updateParameter(index, 'satuan', e.target.value)} className="form-select text-sm h-[38px]">
-                      <option value="">Pilih Satuan</option>
-                      <option value="%">%</option>
-                      <option value="kg">kg</option>
-                      <option value="gr">gr</option>
-                    </select>
-                  </div>
-                  <div className="md:col-span-2">
-                    <label className="form-label text-xs font-semibold">Batas Minimum</label>
-                    <input type="text" value={param.batasMin} onChange={(e) => updateParameter(index, 'batasMin', e.target.value)} className="form-control text-sm h-[38px]" placeholder="Contoh: 1,0" />
-                  </div>
-                  <div className="md:col-span-2">
-                    <label className="form-label text-xs font-semibold">Batas Maksimum</label>
-                    <input type="text" value={param.batasMax} onChange={(e) => updateParameter(index, 'batasMax', e.target.value)} className="form-control text-sm h-[38px]" placeholder="Contoh: 10,0" />
-                  </div>
-                  <div className="md:col-span-1 flex justify-center pb-1">
-                    <button type="button" onClick={() => removeParameter(index)} className="btn btn-icon btn-sm btn-danger-light rounded-full w-8 h-8 flex items-center justify-center">
-                      <i className="ri-delete-bin-line"></i>
-                    </button>
-                  </div>
-                </div>
-              ))}
+                );
+              })}
 
               <button type="button" onClick={addParameter} className="btn btn-outline-primary btn-sm flex items-center gap-1 mt-2">
                 <i className="ri-add-line"></i> Tambah Parameter
@@ -789,13 +995,12 @@ export default function MetodeUjiForm({ mode, initialData }: { mode: 'create' | 
                 onDragLeave={handleDragLeave}
                 onDrop={handleDrop}
                 onClick={() => !isUploading && fileInputRef.current?.click()}
-                className={`border-2 border-dashed rounded-lg p-5 text-center transition-all cursor-pointer relative ${
-                  isDragging
-                    ? 'border-primary bg-primary/10 scale-[1.01]'
-                    : isUploading
+                className={`border-2 border-dashed rounded-lg p-5 text-center transition-all cursor-pointer relative ${isDragging
+                  ? 'border-primary bg-primary/10 scale-[1.01]'
+                  : isUploading
                     ? 'border-gray-200 bg-gray-50 cursor-wait'
                     : 'border-gray-300 hover:border-primary/60 hover:bg-gray-50/80'
-                }`}
+                  }`}
               >
                 <input
                   ref={fileInputRef}

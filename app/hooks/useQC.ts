@@ -48,10 +48,21 @@ export const useQC = () => {
     }
   };
 
-  const fetchMethods = async () => {
+  const fetchMethods = async (params?: {
+    search?: string;
+    jenisUji?: string;
+    komoditas?: string;
+    status?: string;
+    sortBy?: string;
+    sortOrder?: 'asc' | 'desc';
+  }) => {
     try {
       setLoading(true);
-      const res = await qcService.getMethods();
+      const res = await qcService.getMethods({
+        sortBy: 'updatedAt',
+        sortOrder: 'desc',
+        ...params
+      });
       setMethods(res.data || []);
     } catch (err: any) {
       toast.error(err.response?.data?.message || 'Gagal mengambil data metode');

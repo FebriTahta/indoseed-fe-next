@@ -3,7 +3,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import Pageheader from '@/shared/layouts-components/page-header/pageheader';
 import Seo from '@/shared/layouts-components/seo/seo';
-import { ToastContainer } from 'react-toastify';
+import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
 // Reusable components
@@ -40,15 +40,7 @@ export default function StandarMetodeUjiPage() {
     setActiveTab('method');
   }, [setActiveTab]);
 
-  // Auto-select MT-001 or first item if nothing selected
-  useEffect(() => {
-    if (!selectedItem && methods.length > 0) {
-      const defaultItem = methods.find(m => m.kode === 'MT-001') || methods[0];
-      setSelectedItem(defaultItem);
-    }
-  }, [methods, selectedItem, setSelectedItem]);
-
-  // Filter Inputs State (otomatis filter real-time)
+  // Filter Inputs State
   const [searchInput, setSearchInput] = useState<string>('');
   const [jenisUjiInput, setJenisUjiInput] = useState<string>('');
   const [komoditasInput, setKomoditasInput] = useState<string>('');
@@ -56,6 +48,22 @@ export default function StandarMetodeUjiPage() {
 
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(12);
+
+  // Debounced server-side fetch untuk pencarian & filter dengan order by updatedAt desc
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      fetchMethods({
+        search: searchInput.trim() || undefined,
+        jenisUji: jenisUjiInput || undefined,
+        komoditas: komoditasInput || undefined,
+        status: statusInput || undefined,
+        sortBy: 'updatedAt',
+        sortOrder: 'desc',
+      });
+    }, 400);
+
+    return () => clearTimeout(timer);
+  }, [searchInput, jenisUjiInput, komoditasInput, statusInput]);
 
   // Otomatis reset pagination ke halaman 1 saat filter berubah
   useEffect(() => {
@@ -70,32 +78,38 @@ export default function StandarMetodeUjiPage() {
     setCurrentPage(1);
   };
 
+  // Urutkan data secara deterministik berdasarkan updatedAt descending
+  const sortedMethods = useMemo(() => {
+    return [...methods].sort((a, b) => {
+      const timeA = new Date(a.updatedAt || a.createdAt || 0).getTime();
+      const timeB = new Date(b.updatedAt || b.createdAt || 0).getTime();
+      return timeB - timeA;
+    });
+  }, [methods]);
+
+  // Auto-select item pertama jika belum ada yang terpilih atau item sebelumnya hilang dari filter
+  useEffect(() => {
+    if (sortedMethods.length > 0) {
+      if (!selectedItem || !sortedMethods.some(m => m.id === selectedItem.id)) {
+        setSelectedItem(sortedMethods[0]);
+      }
+    } else {
+      setSelectedItem(null);
+    }
+  }, [sortedMethods, selectedItem, setSelectedItem]);
+
   // Stats
-  const activeMethods = methods.filter(m => m.status === 'Aktif').length;
-  const inactiveMethods = methods.filter(m => m.status !== 'Aktif').length;
+  const activeMethods = sortedMethods.filter(m => m.status === 'Aktif').length;
+  const inactiveMethods = sortedMethods.filter(m => m.status !== 'Aktif').length;
 
   const statItems = [
-    { title: 'Total Metode Uji', value: methods.length.toString(), subtitle: 'metode uji aktif', icon: 'ri-flask-line', bgColor: 'bg-primary/10', textColor: 'text-primary' },
-    { title: 'Metode Uji Aktif', value: activeMethods.toString(), subtitle: `dari total ${methods.length}`, icon: 'ri-checkbox-circle-line', bgColor: 'bg-success/10', textColor: 'text-success' },
-    { title: 'Metode Uji Nonaktif', value: inactiveMethods.toString(), subtitle: `dari total ${methods.length}`, icon: 'ri-pause-circle-line', bgColor: 'bg-warning/10', textColor: 'text-warning' },
+    { title: 'Total Metode Uji', value: sortedMethods.length.toString(), subtitle: 'metode uji aktif', icon: 'ri-flask-line', bgColor: 'bg-primary/10', textColor: 'text-primary' },
+    { title: 'Metode Uji Aktif', value: activeMethods.toString(), subtitle: `dari total ${sortedMethods.length}`, icon: 'ri-checkbox-circle-line', bgColor: 'bg-success/10', textColor: 'text-success' },
+    { title: 'Metode Uji Nonaktif', value: inactiveMethods.toString(), subtitle: `dari total ${sortedMethods.length}`, icon: 'ri-pause-circle-line', bgColor: 'bg-warning/10', textColor: 'text-warning' },
   ];
 
-  const filtered = methods.filter(m => {
-    const matchSearch =
-      !searchInput ||
-      m.nama.toLowerCase().includes(searchInput.toLowerCase()) ||
-      m.kode.toLowerCase().includes(searchInput.toLowerCase()) ||
-      (m.standar?.kode || '').toLowerCase().includes(searchInput.toLowerCase());
-    const matchJenis = jenisUjiInput ? m.jenisUji === jenisUjiInput : true;
-    const matchKomoditas = komoditasInput
-      ? !m.komoditas || m.komoditas === 'Semua Komoditas' || m.komoditas.toLowerCase().includes(komoditasInput.toLowerCase())
-      : true;
-    const matchStatus = statusInput ? m.status === statusInput : true;
-    return matchSearch && matchJenis && matchKomoditas && matchStatus;
-  });
-
-  const totalPages = Math.ceil(filtered.length / pageSize) || 1;
-  const paginated = filtered.slice((currentPage - 1) * pageSize, currentPage * pageSize);
+  const totalPages = Math.ceil(sortedMethods.length / pageSize) || 1;
+  const paginated = sortedMethods.slice((currentPage - 1) * pageSize, currentPage * pageSize);
 
   // Formatter tanggal yang deterministik
   const formatDateTime = (dateStr?: string | Date) => {
@@ -185,31 +199,92 @@ export default function StandarMetodeUjiPage() {
     });
   }, [methods]);
 
-  // Parameter pengujian yang serasi dengan desain gambar
+  // Parameter pengujian yang serasi dengan desain gambar dan patokan operator
   const paramsToRender = useMemo(() => {
     if (selectedItem?.testParameters && selectedItem.testParameters.length > 0) {
-      return selectedItem.testParameters.map((p: any) => {
+      return selectedItem.testParameters.map((p: any, pIdx: number) => {
         let min = '-';
         let max = '-';
+        let operatorValue = '<=';
+        let operatorSymbol = '≤';
+        let operatorLabel = 'lebih kecil daripada samadengan (≤)';
+        let patokan = '-';
+        let rawVal = '';
+
         if (p.batasAcuan) {
           const str = p.batasAcuan.trim();
           if (str.includes(' - ')) {
             const parts = str.split(' - ');
             min = parts[0]?.trim() || '-';
             max = parts[1]?.trim() || '-';
+            operatorValue = 'rentang';
+            operatorSymbol = '↔';
+            operatorLabel = 'rentang (min - maks)';
+            patokan = `${min} - ${max} ${p.satuan || ''}`.trim();
           } else if (str.startsWith('≤') || str.startsWith('<=')) {
+            const val = str.replace(/^[≤<=]+/, '').trim();
+            rawVal = val;
             min = '-';
-            max = str.replace('<=', '≤');
+            max = `≤ ${val}`;
+            operatorValue = '<=';
+            operatorSymbol = '≤';
+            operatorLabel = 'lebih kecil daripada samadengan (≤)';
+            patokan = `≤ ${val} ${p.satuan || ''}`.trim();
           } else if (str.startsWith('≥') || str.startsWith('>=')) {
-            min = str.replace('>=', '≥');
+            const val = str.replace(/^[≥>=]+/, '').trim();
+            rawVal = val;
+            min = `≥ ${val}`;
             max = '-';
+            operatorValue = '>=';
+            operatorSymbol = '≥';
+            operatorLabel = 'lebih besar daripada samadengan (≥)';
+            patokan = `≥ ${val} ${p.satuan || ''}`.trim();
+          } else if (str.startsWith('<')) {
+            const val = str.replace(/^<+/, '').trim();
+            rawVal = val;
+            min = '-';
+            max = `< ${val}`;
+            operatorValue = '<';
+            operatorSymbol = '<';
+            operatorLabel = 'lebih kecil (<)';
+            patokan = `< ${val} ${p.satuan || ''}`.trim();
+          } else if (str.startsWith('>')) {
+            const val = str.replace(/^>+/, '').trim();
+            rawVal = val;
+            min = `> ${val}`;
+            max = '-';
+            operatorValue = '>';
+            operatorSymbol = '>';
+            operatorLabel = 'lebih besar (>)';
+            patokan = `> ${val} ${p.satuan || ''}`.trim();
+          } else if (str.startsWith('=')) {
+            const val = str.replace(/^=+/, '').trim();
+            rawVal = val;
+            min = val;
+            max = val;
+            operatorValue = '=';
+            operatorSymbol = '=';
+            operatorLabel = 'samadengan (=)';
+            patokan = `= ${val} ${p.satuan || ''}`.trim();
           } else {
+            rawVal = str;
             max = str;
+            operatorValue = '<=';
+            operatorSymbol = '≤';
+            operatorLabel = 'lebih kecil daripada samadengan (≤)';
+            patokan = `≤ ${str} ${p.satuan || ''}`.trim();
           }
         }
         return {
+          id: p.id,
+          index: pIdx,
           nama: p.nama,
           satuan: p.satuan || '-',
+          operatorValue,
+          operatorSymbol,
+          operatorLabel,
+          patokan,
+          rawVal,
           min,
           max,
         };
@@ -218,13 +293,77 @@ export default function StandarMetodeUjiPage() {
 
     return [
       {
+        id: 'default-1',
+        index: 0,
         nama: 'Kadar Air',
         satuan: '%',
+        operatorValue: '<=',
+        operatorSymbol: '≤',
+        operatorLabel: 'lebih kecil daripada samadengan (≤)',
+        patokan: '≤ 8.0 %',
+        rawVal: '8.0',
         min: '-',
         max: '≤ 8.0',
       },
     ];
   }, [selectedItem]);
+
+  const handleUpdateParameterOperator = async (paramIndex: number, newOperator: string) => {
+    if (!selectedItem) return;
+
+    try {
+      const rawParams = selectedItem.testParameters || [];
+      const currentParam = paramsToRender[paramIndex];
+      const val = (currentParam?.rawVal || '8.0').replace(/^[=<>≤≥\s]+/, '').trim() || '8.0';
+
+      let newBatasAcuan = '';
+      if (newOperator === 'rentang') {
+        newBatasAcuan = `1.0 - ${val}`;
+      } else {
+        const sym = newOperator === '<=' ? '≤' : newOperator === '>=' ? '≥' : newOperator;
+        newBatasAcuan = `${sym} ${val}`;
+      }
+
+      let updatedTestParams = [];
+      if (rawParams.length > 0) {
+        updatedTestParams = rawParams.map((p: any, idx: number) => {
+          if (idx === paramIndex) {
+            return { ...p, batasAcuan: newBatasAcuan };
+          }
+          return p;
+        });
+      } else {
+        updatedTestParams = [
+          {
+            nama: currentParam.nama,
+            satuan: currentParam.satuan,
+            batasAcuan: newBatasAcuan,
+          },
+        ];
+      }
+
+      const payload = {
+        ...selectedItem,
+        testParameters: updatedTestParams.map((p: any) => ({
+          id: p.id && !p.id.startsWith('temp-') && p.id.length > 10 ? p.id : undefined,
+          nama: p.nama,
+          satuan: p.satuan,
+          batasAcuan: p.batasAcuan,
+        })),
+      };
+
+      await qcService.updateMethod(selectedItem.id, payload);
+      setSelectedItem({
+        ...selectedItem,
+        testParameters: updatedTestParams,
+      });
+      toast.success(`Operator parameter "${currentParam.nama}" diubah ke "${newOperator}"`);
+      fetchMethods();
+    } catch (err: any) {
+      console.error('Error updating parameter operator:', err);
+      toast.error('Gagal memperbarui operator parameter');
+    }
+  };
 
   // Daftar alat yang digunakan sesuai gambar desain
   const alatList = useMemo(() => {
@@ -299,7 +438,11 @@ export default function StandarMetodeUjiPage() {
                       value={searchInput}
                       onChange={(e) => setSearchInput(e.target.value)}
                     />
-                    <i className="ri-search-line absolute right-3 top-2.5 text-gray-400"></i>
+                    {loading ? (
+                      <i className="ri-loader-4-line animate-spin absolute right-3 top-2.5 text-primary"></i>
+                    ) : (
+                      <i className="ri-search-line absolute right-3 top-2.5 text-gray-400"></i>
+                    )}
                   </div>
                 </div>
 
@@ -366,7 +509,7 @@ export default function StandarMetodeUjiPage() {
                 currentPage={currentPage}
                 pageSize={pageSize}
                 totalPages={totalPages}
-                totalRecords={filtered.length}
+                totalRecords={sortedMethods.length}
                 headerTextSize="12px"
                 bodyTextSize="10px"
                 onPageChange={setCurrentPage}
@@ -554,28 +697,54 @@ export default function StandarMetodeUjiPage() {
                 </div>
 
                 <div className="pt-2">
-                  <div className="flex items-center gap-2 mb-2">
-                    <i className="ri-file-list-line text-emerald-600 text-sm"></i>
-                    <h4 className="text-xs font-bold text-gray-800">Parameter Pengujian</h4>
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-2">
+                      <i className="ri-flask-line text-emerald-600 text-sm"></i>
+                      <h4 className="text-xs font-bold text-gray-800">Parameter Pengujian</h4>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => router.push(`/qc/standar-metode-uji/edit/${selectedItem.id}`)}
+                      className="text-[11px] text-emerald-600 hover:text-emerald-700 font-semibold flex items-center gap-1 hover:underline"
+                      title="Edit parameter & nilai patokan"
+                    >
+                      <i className="ri-edit-line text-xs"></i> Kelola Parameter
+                    </button>
                   </div>
                   <div className="table-responsive">
                     <table className="table whitespace-nowrap table-bordered min-w-full text-xs">
                       <thead className="bg-gray-50/70 border-b border-defaultborder">
                         <tr className="border-b border-defaultborder bg-gray-50/70 text-gray-700 font-semibold text-xs">
                           <th scope="col" className="text-left py-2 px-3 text-xs font-semibold text-gray-700">Parameter</th>
-                          <th scope="col" className="text-left py-2 px-3 text-xs font-semibold text-gray-700">Satuan</th>
-                          <th scope="col" className="text-left py-2 px-3 text-xs font-semibold text-gray-700">Batas Minimum</th>
-                          <th scope="col" className="text-left py-2 px-3 text-xs font-semibold text-gray-700">Batas Maksimum</th>
+                          <th scope="col" className="text-center py-2 px-2 text-xs font-semibold text-gray-700">Satuan</th>
+                          <th scope="col" className="text-left py-2 px-2 text-xs font-semibold text-gray-700 min-w-[140px]">Opsi Operator</th>
+                          <th scope="col" className="text-left py-2 px-3 text-xs font-semibold text-gray-700">Patokan Standar</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-defaultborder text-xs text-gray-700">
                         {paramsToRender.length > 0 ? (
                           paramsToRender.map((p, i) => (
-                            <tr key={i} className="border-b border-defaultborder">
-                              <td className="py-2 px-3 text-xs text-gray-800">{p.nama}</td>
-                              <td className="py-2 px-3 text-xs text-gray-700">{p.satuan}</td>
-                              <td className="py-2 px-3 text-xs text-gray-700">{p.min}</td>
-                              <td className="py-2 px-3 text-xs text-gray-700">{p.max}</td>
+                            <tr key={i} className="border-b border-defaultborder hover:bg-gray-50/50">
+                              <td className="py-2.5 px-3 text-xs font-medium text-gray-800">{p.nama}</td>
+                              <td className="py-2.5 px-2 text-xs text-center text-gray-600 font-mono">{p.satuan}</td>
+                              <td className="py-2 px-2 text-xs">
+                                <select
+                                  value={p.operatorValue}
+                                  onChange={(e) => handleUpdateParameterOperator(i, e.target.value)}
+                                  className="form-select form-select-sm text-xs py-1 px-2 border-emerald-300 rounded font-medium text-gray-800 bg-emerald-50/40 hover:bg-emerald-50 focus:ring-1 focus:ring-emerald-500 cursor-pointer w-full"
+                                  title="Pilih opsi operator patokan"
+                                >
+                                  <option value="=">samadengan (=)</option>
+                                  <option value="<">lebih kecil (&lt;)</option>
+                                  <option value=">">lebih besar (&gt;)</option>
+                                  <option value="<=">lebih kecil daripada samadengan (≤)</option>
+                                  <option value=">=">lebih besar daripada samadengan (≥)</option>
+                                  <option value="rentang">rentang (min - maks)</option>
+                                </select>
+                              </td>
+                              <td className="py-2.5 px-3 text-xs font-semibold text-gray-800">
+                                {p.patokan}
+                              </td>
                             </tr>
                           ))
                         ) : (
