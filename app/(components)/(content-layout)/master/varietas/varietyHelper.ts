@@ -70,17 +70,9 @@ export const parseVarietyData = (variety: Variety): Variety => {
   // Fallback default brands if none stored
   const brands: VarietyBrand[] = meta.brands || [];
 
-  // Default characteristics from variety fields or fallback
-  const defaultCharacteristics: VarietyCharacteristicItem[] = meta.karakteristikList || [
-    { id: '1', parameter: 'Umur Panen', nilai: variety.umurTanam || '70', satuan: 'HST', keterangan: '-' },
-    { id: '2', parameter: 'Potensi Hasil', nilai: variety.potensiHasil || '25', satuan: 'Ton/Ha', keterangan: '-' },
-    { id: '3', parameter: 'Bobot Buah', nilai: '1,5', satuan: 'Kg', keterangan: '-' },
-    { id: '4', parameter: 'Tingkat Kemanisan (Brix)', nilai: '14', satuan: '°Brix', keterangan: '-' },
-    { id: '5', parameter: 'Bentuk Buah', nilai: variety.bentukBiji || 'Bulat', satuan: '-', keterangan: '-' },
-    { id: '6', parameter: 'Warna Kulit', nilai: variety.warnaGabah || 'Hijau', satuan: '-', keterangan: '-' },
-    { id: '7', parameter: 'Warna Daging', nilai: 'Orange', satuan: '-', keterangan: '-' },
-    { id: '8', parameter: 'Diameter Buah', nilai: '15 - 18', satuan: 'cm', keterangan: '-' },
-  ];
+  // Default characteristics from metadata or empty array
+  const defaultCharacteristics: VarietyCharacteristicItem[] =
+    meta.karakteristikList !== undefined ? meta.karakteristikList : [];
 
   const defaultProduksi: VarietyProductionParam = meta.produksiParam || {
     umurPanen: variety.umurTanam || '65 - 75',
@@ -113,15 +105,8 @@ export const parseVarietyData = (variety: Variety): Variety => {
     masaBerlakuHasilUji: '12',
     standarAcuan: 'Standar Internal Perusahaan',
     noDokumenReferensi: 'SOP-QC-001',
-    catatanQc: 'Parameter mengikuti standar mutu benih melon perusahaan.',
-    parameters: [
-      { id: '1', parameter: 'Kadar Air', nilaiMinimal: '-', nilaiMaksimal: '8', satuan: '%', keterangan: 'Maksimal' },
-      { id: '2', parameter: 'Daya Kecambah', nilaiMinimal: '85', nilaiMaksimal: '-', satuan: '%', keterangan: 'Minimal' },
-      { id: '3', parameter: 'Kemurnian Benih', nilaiMinimal: '99', nilaiMaksimal: '-', satuan: '%', keterangan: 'Minimal' },
-      { id: '4', parameter: 'Benih Murni', nilaiMinimal: '98', nilaiMaksimal: '-', satuan: '%', keterangan: 'Minimal' },
-      { id: '5', parameter: 'Tanaman Lain', nilaiMinimal: '-', nilaiMaksimal: '0', satuan: '%', keterangan: 'Maksimal' },
-      { id: '6', parameter: 'Kotoran', nilaiMinimal: '-', nilaiMaksimal: '1', satuan: '%', keterangan: 'Maksimal' },
-    ]
+    catatanQc: 'Parameter mengikuti standar mutu benih perusahaan.',
+    parameters: []
   };
 
   const defaultInventory: VarietyInventoryConfig = meta.inventoryConfig || {

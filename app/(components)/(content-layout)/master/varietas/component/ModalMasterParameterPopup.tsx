@@ -14,6 +14,7 @@ interface ModalMasterParameterPopupProps {
   defaultTipeNilai?: 'NUMBER' | 'TEXT' | 'OPTION' | 'RANGE' | 'BOOLEAN';
   lockTipeNilai?: boolean;
   title?: string;
+  zIndex?: string; // Optional z-index class, default 'z-50'
 }
 
 export default function ModalMasterParameterPopup({
@@ -25,6 +26,7 @@ export default function ModalMasterParameterPopup({
   defaultTipeNilai = 'NUMBER',
   lockTipeNilai = false,
   title,
+  zIndex = 'z-50',
 }: ModalMasterParameterPopupProps) {
   const [kode, setKode] = useState('');
   const [nama, setNama] = useState('');
@@ -125,7 +127,7 @@ export default function ModalMasterParameterPopup({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs animate-in fade-in duration-200">
+    <div className={`fixed inset-0 ${zIndex} flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs animate-in fade-in duration-200`}>
       <div className="bg-white rounded-2xl shadow-xl border border-gray-100 w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden animate-in zoom-in-95 duration-200">
         {/* Header */}
         <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between bg-emerald-700 text-white">
@@ -135,7 +137,14 @@ export default function ModalMasterParameterPopup({
             </div>
             <div>
               <h3 className="text-sm font-bold">
-                {title || (defaultNamaModul === 'QC' ? 'Tambah Master Parameter QC' : 'Tambah Master Parameter Varietas')}
+                {title ||
+                  (defaultNamaModul === 'QC'
+                    ? 'Tambah Master Parameter QC'
+                    : defaultNamaModul === 'MONITORING_LAHAN'
+                    ? 'Tambah Master Parameter Monitoring Lahan'
+                    : defaultNamaModul === 'OFF_TYPE'
+                    ? 'Tambah Master Parameter Off-Type'
+                    : 'Tambah Master Parameter Varietas')}
               </h3>
               <p className="text-[11px] text-emerald-100">
                 Data akan otomatis disimpan ke referensi Master Parameter ({defaultNamaModul})
@@ -164,7 +173,15 @@ export default function ModalMasterParameterPopup({
                 required
                 value={kode}
                 onChange={(e) => setKode(e.target.value.toUpperCase())}
-                placeholder={defaultNamaModul === 'QC' ? 'Contoh: PRM-QC-DAYA-SIMPAN' : 'Contoh: PRM-KETEBALAN-DAGING'}
+                placeholder={
+                  defaultNamaModul === 'QC'
+                    ? 'Contoh: PRM-QC-DAYA-SIMPAN'
+                    : defaultNamaModul === 'MONITORING_LAHAN'
+                    ? 'Contoh: PRM-ML-TINGGI-TANAMAN'
+                    : defaultNamaModul === 'OFF_TYPE'
+                    ? 'Contoh: PRM-OT-BENTUK-DAUN'
+                    : 'Contoh: PRM-KETEBALAN-DAGING'
+                }
                 className="w-full px-3.5 py-2.5 bg-white border border-gray-200 rounded-xl text-xs text-gray-800 uppercase focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all placeholder:text-gray-400 font-mono"
               />
             </div>
@@ -179,7 +196,15 @@ export default function ModalMasterParameterPopup({
                 required
                 value={nama}
                 onChange={(e) => setNama(e.target.value)}
-                placeholder={defaultNamaModul === 'QC' ? 'Contoh: Daya Simpan' : 'Contoh: Ketebalan Daging'}
+                placeholder={
+                  defaultNamaModul === 'QC'
+                    ? 'Contoh: Daya Simpan'
+                    : defaultNamaModul === 'MONITORING_LAHAN'
+                    ? 'Contoh: Tinggi Tanaman (cm)'
+                    : defaultNamaModul === 'OFF_TYPE'
+                    ? 'Contoh: Warna Daun Menyimpang'
+                    : 'Contoh: Ketebalan Daging'
+                }
                 className="w-full px-3.5 py-2.5 bg-white border border-gray-200 rounded-xl text-xs text-gray-800 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all placeholder:text-gray-400"
               />
             </div>

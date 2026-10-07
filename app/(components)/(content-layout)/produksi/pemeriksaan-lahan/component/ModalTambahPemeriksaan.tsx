@@ -5,6 +5,8 @@ import { ReferensiJadwalTanamItem } from '@/app/types/pemeriksaanLahan';
 import { pemeriksaanLahanService } from '@/app/services/pemeriksaanLahanService';
 import { parameterService } from '@/app/services/parameterService';
 import { MasterParameter, CombinedVarietyParameter, VarietyParameter } from '@/app/types/parameter';
+import ModalKatalogMasterParameter from '@/app/(components)/(content-layout)/master/varietas/component/ModalKatalogMasterParameter';
+import ModalMasterParameterPopup from '@/app/(components)/(content-layout)/master/varietas/component/ModalMasterParameterPopup';
 
 interface ModalTambahPemeriksaanProps {
   isOpen: boolean;
@@ -84,18 +86,23 @@ export default function ModalTambahPemeriksaan({
   const [tanamanOffType, setTanamanOffType] = useState<number>(8);
   const [catatan, setCatatan] = useState<string>('');
 
-  // Step 2 State - Parameter Hasil Pemeriksaan
+  // Step 2 State - Parameter Hasil Pemeriksaan (Katalog Master MONITORING_LAHAN)
   const [loadingParams, setLoadingParams] = useState<boolean>(false);
   const [hasilPemeriksaanParams, setHasilPemeriksaanParams] = useState<ParameterHasilItem[]>([]);
   const [hasilValues, setHasilValues] = useState<Record<string, string>>({});
+  const [isParamCatalogOpen, setIsParamCatalogOpen] = useState<boolean>(false);
+  const [isParamCreateModalOpen, setIsParamCreateModalOpen] = useState<boolean>(false);
+  const [varietyParamsList, setVarietyParamsList] = useState<CombinedVarietyParameter[]>([]);
 
-  // Step 3 State - Temuan Off Type
+  // Step 3 State - Temuan Off Type (Katalog Master OFF_TYPE)
   const [loadingOffType, setLoadingOffType] = useState<boolean>(false);
   const [temuanOffTypeList, setTemuanOffTypeList] = useState<TemuanOffTypeItemState[]>([]);
   const [selectedOffTypeIds, setSelectedOffTypeIds] = useState<number[]>([]);
   const [filterKarakter, setFilterKarakter] = useState<string>('Semua Karakter');
   const [filterJumlah, setFilterJumlah] = useState<string>('Semua Jumlah');
   const [filterKeterangan, setFilterKeterangan] = useState<string>('Semua Keterangan');
+  const [isOffTypeCatalogOpen, setIsOffTypeCatalogOpen] = useState<boolean>(false);
+  const [isOffTypeCreateModalOpen, setIsOffTypeCreateModalOpen] = useState<boolean>(false);
 
   // Step 4 State - Dokumentasi (default kosong)
   const [photoGallery, setPhotoGallery] = useState<PhotoItem[]>([]);
@@ -123,16 +130,17 @@ export default function ModalTambahPemeriksaan({
       setTanggalPemeriksaan(today.toISOString().split('T')[0]);
       setJamPemeriksaan(today.toTimeString().slice(0, 5));
       setJumlahTanamanDiamati(1000);
-      setTanamanSesuai(992);
-      setTanamanOffType(8);
+      setTanamanSesuai(1000);
+      setTanamanOffType(0);
       setCatatan('');
       setPhotoGallery([]);
       setActivePhotoIdx(0);
       setSupportingDocs([]);
       setSelectedOffTypeIds([]);
-      setTemuanOffTypeList((prev) =>
-        prev.map((t) => ({ ...t, foto: '', fotoFile: undefined }))
-      );
+      // Mekanisme baru: awal list kosong, dipilih dari katalog master parameter
+      setHasilPemeriksaanParams([]);
+      setHasilValues({});
+      setTemuanOffTypeList([]);
     }
   }, [isOpen]);
 
@@ -211,150 +219,157 @@ export default function ModalTambahPemeriksaan({
   const strokeOffsetKemurnian = circumference - (Math.min(kemurnianVal, 100) / 100) * circumference;
 
   // =========================================================================
-  // STEP 2: Fetch Master Parameter (modul: MONITORING_LAHAN) & Standar Varietas
+  // STEP 2: Cache Standar Varietas (modul: MONITORING_LAHAN) untuk Parameter yang Dipilih
   // =========================================================================
   useEffect(() => {
     if (!isOpen) return;
     let isCancelled = false;
 
-    const fetchMonitoringParams = async () => {
+    const fetchVarietyStandards = async () => {
       setLoadingParams(true);
       try {
         const varietyId = selectedJadwal?.varietyId || selectedJadwal?.variety?.id;
-        let combinedList: CombinedVarietyParameter[] = [];
-
         if (varietyId) {
           try {
             const res = await parameterService.getVarietyParameters(varietyId, 'MONITORING_LAHAN');
-            if (res.status === 'success' && Array.isArray(res.data) && res.data.length > 0) {
-              combinedList = res.data;
+            if (res.status === 'success' && Array.isArray(res.data) && !isCancelled) {
+              setVarietyParamsList(res.data);
+              return;
             }
           } catch (e) {
             console.warn('Gagal memuat variety parameters:', e);
           }
         }
-
-        // If no variety parameters found, fallback to all active master parameters for MONITORING_LAHAN
-        if (combinedList.length === 0) {
-          const res = await parameterService.getParameters({ namaModul: 'MONITORING_LAHAN', status: 'Aktif' });
-          if (res.status === 'success' && Array.isArray(res.data) && res.data.length > 0) {
-            combinedList = res.data.map((mp) => ({
-              parameter: mp,
-              varietyParameter: null,
-            }));
-          }
-        }
-
-        // Fallback default parameters if database has no records
-        if (combinedList.length === 0) {
-          combinedList = [
-            {
-              parameter: { id: 'prm-1', kode: 'PRM-TG-TNM', nama: 'Tinggi Tanaman', namaModul: 'MONITORING_LAHAN', tipeNilai: 'NUMBER', satuan: 'cm' },
-              varietyParameter: { parameterId: 'prm-1', operator: '>=', nilaiNumber: 25 },
-            },
-            {
-              parameter: { id: 'prm-2', kode: 'PRM-KND-DN', nama: 'Kondisi Daun', namaModul: 'MONITORING_LAHAN', tipeNilai: 'TEXT' },
-              varietyParameter: { parameterId: 'prm-2', nilaiText: 'Baik' },
-            },
-            {
-              parameter: {
-                id: 'prm-3',
-                kode: 'PRM-KND-TNH',
-                nama: 'Kondisi tanah',
-                namaModul: 'MONITORING_LAHAN',
-                tipeNilai: 'OPTION',
-                options: [
-                  { kode: 'OPT_1', nama: 'Lembab' },
-                  { kode: 'OPT_2', nama: 'Kering' },
-                  { kode: 'OPT_3', nama: 'Normal' },
-                ],
-              },
-              varietyParameter: { parameterId: 'prm-3', option: { id: 'OPT_1', kode: 'OPT_1', nama: 'Lembab' } },
-            },
-            {
-              parameter: { id: 'prm-4', kode: 'PRM-SRG-HM', nama: 'Serangan Hama', namaModul: 'MONITORING_LAHAN', tipeNilai: 'TEXT' },
-              varietyParameter: { parameterId: 'prm-4', nilaiText: 'Ringan' },
-            },
-          ];
-        }
-
         if (!isCancelled) {
-          const items: ParameterHasilItem[] = combinedList.map((item) => {
-            const mp = item.parameter;
-            const vp = item.varietyParameter;
-            let standarText = '-';
-
-            if (vp) {
-              if (mp.tipeNilai === 'NUMBER') {
-                standarText = `${vp.operator || '≥'} ${vp.nilaiNumber ?? (mp.batasLulus ?? 25)} ${mp.satuan || ''}`.trim();
-              } else if (mp.tipeNilai === 'RANGE') {
-                standarText = `${vp.nilaiMin ?? 0} - ${vp.nilaiMax ?? 100} ${mp.satuan || ''}`.trim();
-              } else if (mp.tipeNilai === 'OPTION') {
-                standarText = vp.option?.nama || mp.options?.[0]?.nama || '-';
-              } else if (mp.tipeNilai === 'TEXT') {
-                standarText = vp.nilaiText || 'Baik';
-              } else if (mp.tipeNilai === 'BOOLEAN') {
-                standarText = vp.nilaiText || 'Ya';
-              }
-            } else {
-              if (mp.tipeNilai === 'NUMBER') {
-                standarText = `≥ ${mp.batasLulus ?? 25} ${mp.satuan || ''}`.trim();
-              } else if (mp.tipeNilai === 'OPTION') {
-                standarText = mp.options?.[0]?.nama || 'Lembab';
-              } else if (mp.tipeNilai === 'TEXT') {
-                standarText = 'Baik';
-              } else if (mp.tipeNilai === 'RANGE') {
-                standarText = mp.batasLulus ? `≥ ${mp.batasLulus}` : '-';
-              }
-            }
-
-            return {
-              parameterId: mp.id,
-              kode: mp.kode,
-              nama: mp.nama,
-              tipeNilai: mp.tipeNilai,
-              satuan: mp.satuan,
-              standarText,
-              varietyParameter: vp,
-              parameter: mp,
-              options: mp.options,
-            };
-          });
-
-          setHasilPemeriksaanParams(items);
-
-          // Populate initial values
-          setHasilValues((prev) => {
-            const next = { ...prev };
-            items.forEach((it) => {
-              if (next[it.parameterId] === undefined) {
-                if (it.kode === 'PRM-TG-TNM') next[it.parameterId] = '28';
-                else if (it.kode === 'PRM-KND-DN') next[it.parameterId] = 'Baik';
-                else if (it.kode === 'PRM-KND-TNH') next[it.parameterId] = it.options?.[0]?.nama || 'Lembab';
-                else if (it.kode === 'PRM-SRG-HM') next[it.parameterId] = 'Ringan';
-                else if (it.tipeNilai === 'OPTION') next[it.parameterId] = it.options?.[0]?.nama || '';
-                else if (it.tipeNilai === 'NUMBER') next[it.parameterId] = String(it.varietyParameter?.nilaiNumber || 25);
-                else if (it.tipeNilai === 'TEXT') next[it.parameterId] = it.varietyParameter?.nilaiText || 'Baik';
-                else if (it.tipeNilai === 'BOOLEAN') next[it.parameterId] = 'Ya';
-                else next[it.parameterId] = '';
-              }
-            });
-            return next;
-          });
+          setVarietyParamsList([]);
         }
       } catch (err) {
-        console.error('Error fetching monitoring parameters:', err);
+        console.error('Error fetching variety parameters:', err);
       } finally {
         if (!isCancelled) setLoadingParams(false);
       }
     };
 
-    fetchMonitoringParams();
+    fetchVarietyStandards();
 
     return () => {
       isCancelled = true;
     };
   }, [isOpen, selectedJadwal]);
+
+  // Update existing items in hasilPemeriksaanParams if varietyParamsList updates
+  useEffect(() => {
+    if (hasilPemeriksaanParams.length === 0 || varietyParamsList.length === 0) return;
+    setHasilPemeriksaanParams((prev) =>
+      prev.map((item) => {
+        const combined = varietyParamsList.find(
+          (vp) => vp.parameter?.id === item.parameterId || vp.parameter?.kode === item.kode
+        );
+        if (!combined?.varietyParameter) return item;
+        const vp = combined.varietyParameter;
+        const mp = item.parameter;
+        let standarText = item.standarText;
+        if (mp.tipeNilai === 'NUMBER') {
+          standarText = `${vp.operator || '≥'} ${vp.nilaiNumber ?? (mp.batasLulus ?? 25)} ${mp.satuan || ''}`.trim();
+        } else if (mp.tipeNilai === 'RANGE') {
+          standarText = `${vp.nilaiMin ?? 0} - ${vp.nilaiMax ?? 100} ${mp.satuan || ''}`.trim();
+        } else if (mp.tipeNilai === 'OPTION') {
+          standarText = vp.option?.nama || mp.options?.[0]?.nama || '-';
+        } else if (mp.tipeNilai === 'TEXT') {
+          standarText = vp.nilaiText || 'Baik';
+        } else if (mp.tipeNilai === 'BOOLEAN') {
+          standarText = vp.nilaiText || 'Ya';
+        }
+        return { ...item, varietyParameter: vp, standarText };
+      })
+    );
+  }, [varietyParamsList]);
+
+  // Tambah parameter terpilih dari katalog ke Step 2
+  const handleAddParamsFromCatalog = (selectedParams: MasterParameter[]) => {
+    const newItems: ParameterHasilItem[] = [];
+    const newValues: Record<string, string> = { ...hasilValues };
+
+    selectedParams.forEach((mp) => {
+      if (hasilPemeriksaanParams.some((p) => p.parameterId === mp.id || p.kode === mp.kode)) {
+        return;
+      }
+
+      const combined = varietyParamsList.find(
+        (item) => item.parameter?.id === mp.id || item.parameter?.kode === mp.kode
+      );
+      const vp = combined?.varietyParameter || null;
+
+      let standarText = '-';
+      if (vp) {
+        if (mp.tipeNilai === 'NUMBER') {
+          standarText = `${vp.operator || '≥'} ${vp.nilaiNumber ?? (mp.batasLulus ?? 25)} ${mp.satuan || ''}`.trim();
+        } else if (mp.tipeNilai === 'RANGE') {
+          standarText = `${vp.nilaiMin ?? 0} - ${vp.nilaiMax ?? 100} ${mp.satuan || ''}`.trim();
+        } else if (mp.tipeNilai === 'OPTION') {
+          standarText = vp.option?.nama || mp.options?.[0]?.nama || '-';
+        } else if (mp.tipeNilai === 'TEXT') {
+          standarText = vp.nilaiText || 'Baik';
+        } else if (mp.tipeNilai === 'BOOLEAN') {
+          standarText = vp.nilaiText || 'Ya';
+        }
+      } else {
+        if (mp.tipeNilai === 'NUMBER') {
+          standarText = `≥ ${mp.batasLulus ?? 25} ${mp.satuan || ''}`.trim();
+        } else if (mp.tipeNilai === 'OPTION') {
+          standarText = mp.options?.[0]?.nama || 'Lembab';
+        } else if (mp.tipeNilai === 'TEXT') {
+          standarText = 'Baik';
+        } else if (mp.tipeNilai === 'RANGE') {
+          standarText = mp.batasLulus ? `≥ ${mp.batasLulus}` : '-';
+        }
+      }
+
+      newItems.push({
+        parameterId: mp.id,
+        kode: mp.kode,
+        nama: mp.nama,
+        tipeNilai: mp.tipeNilai as any,
+        satuan: mp.satuan,
+        standarText,
+        varietyParameter: vp,
+        parameter: mp,
+        options: mp.options,
+      });
+
+      if (newValues[mp.id] === undefined) {
+        if (mp.kode === 'PRM-TG-TNM') newValues[mp.id] = '28';
+        else if (mp.kode === 'PRM-KND-DN') newValues[mp.id] = 'Baik';
+        else if (mp.kode === 'PRM-KND-TNH') newValues[mp.id] = mp.options?.[0]?.nama || 'Lembab';
+        else if (mp.kode === 'PRM-SRG-HM') newValues[mp.id] = 'Ringan';
+        else if (mp.tipeNilai === 'OPTION') newValues[mp.id] = mp.options?.[0]?.nama || '';
+        else if (mp.tipeNilai === 'NUMBER') newValues[mp.id] = String(vp?.nilaiNumber || mp.batasLulus || 25);
+        else if (mp.tipeNilai === 'TEXT') newValues[mp.id] = vp?.nilaiText || 'Baik';
+        else if (mp.tipeNilai === 'BOOLEAN') newValues[mp.id] = 'Ya';
+        else newValues[mp.id] = '';
+      }
+    });
+
+    setHasilPemeriksaanParams((prev) => [...prev, ...newItems]);
+    setHasilValues(newValues);
+    setIsParamCatalogOpen(false);
+  };
+
+  // Hapus baris parameter dari Step 2
+  const handleRemoveParamItem = (paramId: string) => {
+    setHasilPemeriksaanParams((prev) => prev.filter((p) => p.parameterId !== paramId));
+    setHasilValues((prev) => {
+      const next = { ...prev };
+      delete next[paramId];
+      return next;
+    });
+  };
+
+  // Callback setelah master parameter Monitoring Lahan baru berhasil dibuat
+  const handleCreateParamSuccess = (newParam: MasterParameter) => {
+    handleAddParamsFromCatalog([newParam]);
+    setIsParamCreateModalOpen(false);
+  };
 
   // Kalkulasi Status Hasil vs Standar untuk baris parameter
   const calculateRowStatus = (
@@ -419,80 +434,73 @@ export default function ModalTambahPemeriksaan({
   };
 
   // =========================================================================
-  // STEP 3: Fetch Master Parameter (modul: OFF_TYPE) & Upload 1 Foto per Row
+  // STEP 3: Temuan Off Type (Pilih dari Katalog Master Modul OFF_TYPE & Upload Foto)
   // =========================================================================
-  useEffect(() => {
-    if (!isOpen) return;
-    let isCancelled = false;
+  const handleAddOffTypeFromCatalog = (selectedParams: MasterParameter[]) => {
+    const newItems: TemuanOffTypeItemState[] = [];
+    const currentMaxNo = temuanOffTypeList.reduce((max, t) => Math.max(max, t.no), 0);
 
-    const fetchOffTypeParams = async () => {
-      setLoadingOffType(true);
-      try {
-        const res = await parameterService.getParameters({ namaModul: 'OFF_TYPE', status: 'Aktif' });
-        let list: MasterParameter[] = [];
-        if (res.status === 'success' && Array.isArray(res.data) && res.data.length > 0) {
-          list = res.data;
-        }
+    const defaultDescriptions: Record<string, string> = {
+      'bentuk daun': 'Daun lebih lebar',
+      'warna batang': 'Warna lebih pucat',
+      'tinggi tanaman': 'Tinggi lebih pendek',
+      'bentuk buah': 'Bentuk tidak seragam',
+      'habitus': 'Tipe percabangan berbeda',
+      'warna gabah': 'Ujung gabah berbulu ungu',
+    };
 
-        if (list.length === 0) {
-          list = [
-            { id: 'ot-1', kode: 'PRM-OT-BDN', nama: 'Bentuk daun', namaModul: 'OFF_TYPE', tipeNilai: 'TEXT' },
-            { id: 'ot-2', kode: 'PRM-OT-WBT', nama: 'Warna batang', namaModul: 'OFF_TYPE', tipeNilai: 'TEXT' },
-            { id: 'ot-3', kode: 'PRM-OT-TTN', nama: 'Tinggi tanaman', namaModul: 'OFF_TYPE', tipeNilai: 'TEXT' },
-            { id: 'ot-4', kode: 'PRM-OT-BBH', nama: 'Bentuk buah', namaModul: 'OFF_TYPE', tipeNilai: 'TEXT' },
-          ];
-        }
-
-        if (!isCancelled) {
-          setTemuanOffTypeList((prev) => {
-            if (prev.length > 0) return prev;
-
-            const defaultDescriptions: Record<string, string> = {
-              'bentuk daun': 'Daun lebih lebar',
-              'warna batang': 'Warna lebih pucat',
-              'tinggi tanaman': 'Tinggi lebih pendek',
-              'bentuk buah': 'Bentuk tidak seragam',
-              'habitus': 'Tipe percabangan berbeda',
-              'warna gabah': 'Ujung gabah berbulu ungu',
-            };
-
-            const defaultJumlah: Record<string, number> = {
-              'bentuk daun': 3,
-              'warna batang': 2,
-              'tinggi tanaman': 2,
-              'bentuk buah': 1,
-            };
-
-            return list.map((param, idx) => {
-              const ket =
-                param.deskripsi ||
-                defaultDescriptions[param.nama.toLowerCase()] ||
-                param.nama;
-              return {
-                id: `ot-row-${param.id || idx}`,
-                no: idx + 1,
-                parameterId: param.id,
-                jenisKarakter: param.nama,
-                jumlah: defaultJumlah[param.nama.toLowerCase()] ?? 0,
-                keterangan: ket,
-                foto: '',
-              };
-            });
-          });
-        }
-      } catch (err) {
-        console.error('Error fetching off-type parameters:', err);
-      } finally {
-        if (!isCancelled) setLoadingOffType(false);
+    selectedParams.forEach((param, idx) => {
+      if (
+        temuanOffTypeList.some(
+          (t) => t.parameterId === param.id || t.jenisKarakter.toLowerCase() === param.nama.toLowerCase()
+        )
+      ) {
+        return;
       }
-    };
 
-    fetchOffTypeParams();
+      const ket =
+        param.deskripsi ||
+        defaultDescriptions[param.nama.toLowerCase()] ||
+        `Karakter ${param.nama.toLowerCase()} menyimpang`;
 
-    return () => {
-      isCancelled = true;
-    };
-  }, [isOpen]);
+      newItems.push({
+        id: `ot-row-${param.id || Date.now()}-${idx}`,
+        no: currentMaxNo + idx + 1,
+        parameterId: param.id,
+        jenisKarakter: param.nama,
+        jumlah: 1, // Default 1 tanaman temuan
+        keterangan: ket,
+        foto: '',
+        fotoFile: undefined,
+      });
+    });
+
+    setTemuanOffTypeList((prev) => [...prev, ...newItems]);
+    setIsOffTypeCatalogOpen(false);
+  };
+
+  const handleRemoveOffTypeRow = (rowNo: number) => {
+    setTemuanOffTypeList((prev) => {
+      const filtered = prev.filter((r) => r.no !== rowNo);
+      return filtered.map((r, i) => ({ ...r, no: i + 1 }));
+    });
+    setSelectedOffTypeIds((prev) => prev.filter((id) => id !== rowNo));
+  };
+
+  const handleRemoveSelectedOffTypes = () => {
+    if (selectedOffTypeIds.length === 0) return;
+    setTemuanOffTypeList((prev) => {
+      const filtered = prev.filter((r) => !selectedOffTypeIds.includes(r.no));
+      return filtered.map((r, i) => ({ ...r, no: i + 1 }));
+    });
+    setSelectedOffTypeIds([]);
+  };
+
+  // Callback setelah master parameter Off-Type baru berhasil dibuat
+  const handleCreateOffTypeSuccess = (newParam: MasterParameter) => {
+    handleAddOffTypeFromCatalog([newParam]);
+    setIsOffTypeCreateModalOpen(false);
+  };
 
   // Handle Upload 1 Foto per Temuan Off Type
   const handleUploadOffTypePhoto = (rowNo: number, e: React.ChangeEvent<HTMLInputElement>) => {
@@ -1182,20 +1190,69 @@ export default function ModalTambahPemeriksaan({
 
                   {/* Detail Hasil Pemeriksaan Table */}
                   <div className="bg-white rounded-xl border border-gray-100 shadow-xs overflow-hidden">
-                    <div className="p-4 border-b border-gray-100 flex items-center justify-between font-bold text-gray-900 text-xs">
+                    <div className="p-4 border-b border-gray-100 flex items-center justify-between flex-wrap gap-2 font-bold text-gray-900 text-xs">
                       <div className="flex items-center gap-2">
                         <i className="ri-table-line text-[#055127] text-sm"></i>
                         <span>Detail Hasil Pemeriksaan Parameter</span>
+                        <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                          {hasilPemeriksaanParams.length} Parameter
+                        </span>
                       </div>
-                      <span className="text-[11px] font-normal text-gray-500">
-                        Input Hasil terhubung dengan tipe nilai master parameter
-                      </span>
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => setIsParamCreateModalOpen(true)}
+                          className="px-3 py-1.5 rounded-lg border border-emerald-300 bg-white hover:bg-emerald-50 text-emerald-700 text-xs font-semibold flex items-center gap-1.5 transition-colors shadow-xs"
+                          title="Tambah master parameter pengamatan baru ke database"
+                        >
+                          <i className="ri-add-circle-line"></i>
+                          <span>+ Parameter Baru</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setIsParamCatalogOpen(true)}
+                          className="px-3 py-1.5 rounded-lg bg-[#055127] hover:bg-[#043e1e] text-white text-xs font-semibold flex items-center gap-1.5 transition-colors shadow-xs"
+                        >
+                          <i className="ri-add-line"></i>
+                          <span>Pilih dari Katalog Parameter</span>
+                        </button>
+                      </div>
                     </div>
 
                     {loadingParams ? (
                       <div className="p-8 text-center text-gray-500 text-xs flex items-center justify-center gap-2">
                         <i className="ri-loader-4-line animate-spin text-base text-emerald-600"></i>
-                        <span>Memuat data parameter dari modul monitoring lahan...</span>
+                        <span>Memuat data standar varietas...</span>
+                      </div>
+                    ) : hasilPemeriksaanParams.length === 0 ? (
+                      <div className="p-8 text-center bg-gray-50/40">
+                        <div className="w-12 h-12 rounded-full bg-emerald-50 text-emerald-600 mx-auto flex items-center justify-center text-xl mb-3">
+                          <i className="ri-list-check-2"></i>
+                        </div>
+                        <h4 className="text-xs font-bold text-gray-800 mb-1">
+                          Belum Ada Parameter Pemeriksaan
+                        </h4>
+                        <p className="text-[11px] text-gray-500 max-w-sm mx-auto mb-3">
+                          Daftar parameter awal kosong. Silakan buka katalog master parameter untuk memilih parameter monitoring lapangan yang akan dinilai.
+                        </p>
+                        <div className="flex items-center justify-center gap-2 flex-wrap">
+                          <button
+                            type="button"
+                            onClick={() => setIsParamCreateModalOpen(true)}
+                            className="px-3.5 py-1.5 rounded-lg border border-emerald-300 bg-white hover:bg-emerald-50 text-emerald-700 text-xs font-semibold inline-flex items-center gap-1.5 transition-colors shadow-xs"
+                          >
+                            <i className="ri-add-circle-line"></i>
+                            <span>+ Buat Parameter Baru</span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setIsParamCatalogOpen(true)}
+                            className="px-3.5 py-1.5 rounded-lg bg-[#055127] hover:bg-[#043e1e] text-white text-xs font-semibold inline-flex items-center gap-1.5 transition-colors shadow-xs"
+                          >
+                            <i className="ri-add-line"></i>
+                            <span>Buka Katalog Parameter Lapangan</span>
+                          </button>
+                        </div>
                       </div>
                     ) : (
                       <table className="w-full text-left text-xs border-collapse">
@@ -1206,6 +1263,7 @@ export default function ModalTambahPemeriksaan({
                             <th className="py-2.5 px-3 w-1/3">Hasil (Input)</th>
                             <th className="py-2.5 px-3">Standar Varietas</th>
                             <th className="py-2.5 px-3 text-center w-28">Status</th>
+                            <th className="py-2.5 px-3 text-center w-16">Aksi</th>
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-100">
@@ -1356,6 +1414,16 @@ export default function ModalTambahPemeriksaan({
                                     </span>
                                   )}
                                 </td>
+                                <td className="py-2.5 px-3 text-center">
+                                  <button
+                                    type="button"
+                                    onClick={() => handleRemoveParamItem(item.parameterId)}
+                                    title="Hapus parameter"
+                                    className="w-7 h-7 rounded text-rose-500 hover:bg-rose-50 hover:text-rose-700 inline-flex items-center justify-center transition-colors"
+                                  >
+                                    <i className="ri-delete-bin-line text-sm"></i>
+                                  </button>
+                                </td>
                               </tr>
                             );
                           })}
@@ -1382,16 +1450,45 @@ export default function ModalTambahPemeriksaan({
                   ------------------------------------------------------------- */}
               {currentStep === 3 && (
                 <div className="space-y-4 animate-fadeIn">
-                  {/* Filter Row */}
+                  {/* Filter Row & Header Actions */}
                   <div className="bg-white rounded-xl p-4 border border-gray-100 shadow-xs space-y-3">
-                    <div className="flex items-center justify-between">
+                    <div className="flex items-center justify-between flex-wrap gap-2">
                       <div className="flex items-center gap-2 text-gray-800 font-bold text-xs">
                         <i className="ri-filter-3-line text-[#055127] text-sm"></i>
                         <span>Daftar Temuan Off Type</span>
+                        <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                          {temuanOffTypeList.length} Karakter
+                        </span>
                       </div>
-                      <span className="text-[10px] text-gray-400">
-                        Referensi Modul: <strong className="text-emerald-700">Off Type</strong>
-                      </span>
+                      <div className="flex items-center gap-2">
+                        {selectedOffTypeIds.length > 0 && (
+                          <button
+                            type="button"
+                            onClick={handleRemoveSelectedOffTypes}
+                            className="px-2.5 py-1.5 rounded-lg border border-rose-200 text-rose-600 hover:bg-rose-50 text-xs font-semibold flex items-center gap-1 transition-colors"
+                          >
+                            <i className="ri-delete-bin-line"></i>
+                            <span>Hapus ({selectedOffTypeIds.length})</span>
+                          </button>
+                        )}
+                        <button
+                          type="button"
+                          onClick={() => setIsOffTypeCreateModalOpen(true)}
+                          className="px-3 py-1.5 rounded-lg border border-emerald-300 bg-white hover:bg-emerald-50 text-emerald-700 text-xs font-semibold flex items-center gap-1.5 transition-colors shadow-xs"
+                          title="Tambah master parameter off-type baru ke database"
+                        >
+                          <i className="ri-add-circle-line"></i>
+                          <span>+ Karakter Off-Type Baru</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setIsOffTypeCatalogOpen(true)}
+                          className="px-3 py-1.5 rounded-lg bg-[#055127] hover:bg-[#043e1e] text-white text-xs font-semibold flex items-center gap-1.5 transition-colors shadow-xs"
+                        >
+                          <i className="ri-add-line"></i>
+                          <span>Pilih dari Katalog Off-Type</span>
+                        </button>
+                      </div>
                     </div>
 
                     <div className="grid grid-cols-1 sm:grid-cols-4 gap-2.5 items-center">
@@ -1458,6 +1555,36 @@ export default function ModalTambahPemeriksaan({
                         <i className="ri-loader-4-line animate-spin text-base text-emerald-600"></i>
                         <span>Memuat parameter modul off type...</span>
                       </div>
+                    ) : temuanOffTypeList.length === 0 ? (
+                      <div className="p-8 text-center bg-gray-50/40">
+                        <div className="w-12 h-12 rounded-full bg-emerald-50 text-emerald-600 mx-auto flex items-center justify-center text-xl mb-3">
+                          <i className="ri-checkbox-circle-line"></i>
+                        </div>
+                        <h4 className="text-xs font-bold text-gray-800 mb-1">
+                          Tidak Ada Temuan Off-Type (Lahan Murni)
+                        </h4>
+                        <p className="text-[11px] text-gray-500 max-w-sm mx-auto mb-3">
+                          Daftar temuan awal kosong (0 tanaman). Jika ditemukan penyimpangan tanaman di lapangan, silakan tambahkan karakter temuan dari katalog master parameter.
+                        </p>
+                        <div className="flex items-center justify-center gap-2 flex-wrap">
+                          <button
+                            type="button"
+                            onClick={() => setIsOffTypeCreateModalOpen(true)}
+                            className="px-3.5 py-1.5 rounded-lg border border-emerald-300 bg-white hover:bg-emerald-50 text-emerald-700 text-xs font-semibold inline-flex items-center gap-1.5 transition-colors shadow-xs"
+                          >
+                            <i className="ri-add-circle-line"></i>
+                            <span>+ Buat Karakter Off-Type Baru</span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setIsOffTypeCatalogOpen(true)}
+                            className="px-3.5 py-1.5 rounded-lg bg-[#055127] hover:bg-[#043e1e] text-white text-xs font-semibold inline-flex items-center gap-1.5 transition-colors shadow-xs"
+                          >
+                            <i className="ri-add-line"></i>
+                            <span>Buka Katalog Temuan Off-Type</span>
+                          </button>
+                        </div>
+                      </div>
                     ) : (
                       <table className="w-full text-left text-xs border-collapse">
                         <thead className="bg-gray-50/70 border-b border-gray-100 text-gray-500 text-[11px] font-semibold">
@@ -1484,7 +1611,7 @@ export default function ModalTambahPemeriksaan({
                             <th className="py-2.5 px-3 w-28 text-center">Jumlah (Tanaman)</th>
                             <th className="py-2.5 px-3">Keterangan Temuan</th>
                             <th className="py-2.5 px-3 text-center w-28">Foto (Maks 1)</th>
-                            <th className="py-2.5 px-3 text-center w-16">Aksi</th>
+                            <th className="py-2.5 px-3 text-center w-20">Aksi</th>
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-100">
@@ -1518,9 +1645,13 @@ export default function ModalTambahPemeriksaan({
                                 />
                               </td>
                               <td className="py-2.5 px-3">
-                                <span className="text-gray-800 text-xs font-medium">
-                                  {item.keterangan || '-'}
-                                </span>
+                                <input
+                                  type="text"
+                                  value={item.keterangan || ''}
+                                  onChange={(e) => handleRowKeteranganChange(item.no, e.target.value)}
+                                  placeholder="Tulis keterangan temuan..."
+                                  className="w-full px-2.5 py-1 text-xs text-gray-800 bg-transparent border border-transparent hover:border-gray-200 focus:border-emerald-600 focus:bg-white rounded-md transition-colors"
+                                />
                               </td>
                               <td className="py-2.5 px-3 text-center">
                                 {item.foto ? (
@@ -1562,25 +1693,35 @@ export default function ModalTambahPemeriksaan({
                                 )}
                               </td>
                               <td className="py-2.5 px-3 text-center">
-                                <button
-                                  type="button"
-                                  disabled={!item.foto}
-                                  onClick={() =>
-                                    setViewingPhotoModal({
-                                      isOpen: true,
-                                      url: item.foto,
-                                      title: `Temuan Off Type - ${item.jenisKarakter}`,
-                                    })
-                                  }
-                                  title={item.foto ? 'Lihat Foto' : 'Belum ada foto'}
-                                  className={`w-7 h-7 rounded-lg inline-flex items-center justify-center transition-colors ${
-                                    item.foto
-                                      ? 'text-emerald-700 hover:bg-emerald-50 cursor-pointer'
-                                      : 'text-gray-300 cursor-not-allowed'
-                                  }`}
-                                >
-                                  <i className="ri-eye-line text-sm"></i>
-                                </button>
+                                <div className="flex items-center justify-center gap-1">
+                                  <button
+                                    type="button"
+                                    disabled={!item.foto}
+                                    onClick={() =>
+                                      setViewingPhotoModal({
+                                        isOpen: true,
+                                        url: item.foto,
+                                        title: `Temuan Off Type - ${item.jenisKarakter}`,
+                                      })
+                                    }
+                                    title={item.foto ? 'Lihat Foto' : 'Belum ada foto'}
+                                    className={`w-7 h-7 rounded-lg inline-flex items-center justify-center transition-colors ${
+                                      item.foto
+                                        ? 'text-emerald-700 hover:bg-emerald-50 cursor-pointer'
+                                        : 'text-gray-300 cursor-not-allowed'
+                                    }`}
+                                  >
+                                    <i className="ri-eye-line text-sm"></i>
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleRemoveOffTypeRow(item.no)}
+                                    title="Hapus baris temuan"
+                                    className="w-7 h-7 rounded text-rose-500 hover:bg-rose-50 hover:text-rose-700 inline-flex items-center justify-center transition-colors"
+                                  >
+                                    <i className="ri-delete-bin-line text-sm"></i>
+                                  </button>
+                                </div>
                               </td>
                             </tr>
                           ))}
@@ -1599,7 +1740,10 @@ export default function ModalTambahPemeriksaan({
                       {totalTemuanOffTypeCount !== tanamanOffType && (
                         <button
                           type="button"
-                          onClick={() => setTanamanOffType(totalTemuanOffTypeCount)}
+                          onClick={() => {
+                            setTanamanOffType(totalTemuanOffTypeCount);
+                            setTanamanSesuai(Math.max(0, jumlahTanamanDiamati - totalTemuanOffTypeCount));
+                          }}
                           className="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded text-[11px] font-semibold transition-colors"
                         >
                           Sinkronkan ke Step 1
@@ -2148,41 +2292,49 @@ export default function ModalTambahPemeriksaan({
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-gray-100">
-                        {hasilPemeriksaanParams.map((item, index) => {
-                          const val = hasilValues[item.parameterId] ?? '-';
-                          const calc = calculateRowStatus(item, val);
-                          return (
-                            <tr key={item.parameterId} className="hover:bg-gray-50/50">
-                              <td className="py-2 px-3 text-center text-gray-400 font-medium">
-                                {index + 1}
-                              </td>
-                              <td className="py-2 px-3 font-semibold text-gray-800">{item.nama}</td>
-                              <td className="py-2 px-3 font-bold text-gray-900">
-                                {val} {item.satuan && !val.includes(item.satuan) ? item.satuan : ''}
-                              </td>
-                              <td className="py-2 px-3 text-gray-600 font-mono text-[11px]">
-                                {item.standarText}
-                              </td>
-                              <td className="py-2 px-3 text-center">
-                                {calc.status === 'Sesuai' ? (
-                                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                                    <i className="ri-check-line text-xs"></i>
-                                    Sesuai
-                                  </span>
-                                ) : calc.status === 'Tidak Sesuai' ? (
-                                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-rose-50 text-rose-700 border border-rose-200">
-                                    <i className="ri-close-line text-xs"></i>
-                                    Tidak Sesuai
-                                  </span>
-                                ) : (
-                                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-gray-100 text-gray-500">
-                                    -
-                                  </span>
-                                )}
-                              </td>
-                            </tr>
-                          );
-                        })}
+                        {hasilPemeriksaanParams.length === 0 ? (
+                          <tr>
+                            <td colSpan={5} className="py-4 text-center text-gray-400">
+                              Tidak ada parameter lapangan yang dipilih
+                            </td>
+                          </tr>
+                        ) : (
+                          hasilPemeriksaanParams.map((item, index) => {
+                            const val = hasilValues[item.parameterId] ?? '-';
+                            const calc = calculateRowStatus(item, val);
+                            return (
+                              <tr key={item.parameterId} className="hover:bg-gray-50/50">
+                                <td className="py-2 px-3 text-center text-gray-400 font-medium">
+                                  {index + 1}
+                                </td>
+                                <td className="py-2 px-3 font-semibold text-gray-800">{item.nama}</td>
+                                <td className="py-2 px-3 font-bold text-gray-900">
+                                  {val} {item.satuan && !val.includes(item.satuan) ? item.satuan : ''}
+                                </td>
+                                <td className="py-2 px-3 text-gray-600 font-mono text-[11px]">
+                                  {item.standarText}
+                                </td>
+                                <td className="py-2 px-3 text-center">
+                                  {calc.status === 'Sesuai' ? (
+                                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                                      <i className="ri-check-line text-xs"></i>
+                                      Sesuai
+                                    </span>
+                                  ) : calc.status === 'Tidak Sesuai' ? (
+                                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-rose-50 text-rose-700 border border-rose-200">
+                                      <i className="ri-close-line text-xs"></i>
+                                      Tidak Sesuai
+                                    </span>
+                                  ) : (
+                                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-gray-100 text-gray-500">
+                                      -
+                                    </span>
+                                  )}
+                                </td>
+                              </tr>
+                            );
+                          })
+                        )}
                       </tbody>
                     </table>
                   </div>
@@ -2332,6 +2484,62 @@ export default function ModalTambahPemeriksaan({
           </div>
         </div>
       )}
+
+      {/* Modal Katalog Parameter untuk Step 2 (MONITORING_LAHAN) */}
+      <ModalKatalogMasterParameter
+        isOpen={isParamCatalogOpen}
+        onClose={() => setIsParamCatalogOpen(false)}
+        namaModul="MONITORING_LAHAN"
+        title="Katalog Parameter Monitoring Lahan"
+        subtitle="Pilih parameter pengamatan lapangan yang ingin diperiksa pada lahan ini."
+        alreadySelectedIds={hasilPemeriksaanParams.map((p) => p.parameterId)}
+        onAddParameters={handleAddParamsFromCatalog}
+        onOpenCreateNew={() => {
+          setIsParamCatalogOpen(false);
+          setIsParamCreateModalOpen(true);
+        }}
+        zIndex="z-[10000]"
+      />
+
+      {/* Modal Katalog Master Parameter untuk Step 3 (OFF_TYPE) */}
+      <ModalKatalogMasterParameter
+        isOpen={isOffTypeCatalogOpen}
+        onClose={() => setIsOffTypeCatalogOpen(false)}
+        namaModul="OFF_TYPE"
+        title="Katalog Temuan Off-Type"
+        subtitle="Pilih karakter penyimpangan (off-type) yang diamati di lapangan."
+        alreadySelectedIds={temuanOffTypeList.map((t) => t.parameterId || t.jenisKarakter)}
+        onAddParameters={handleAddOffTypeFromCatalog}
+        onOpenCreateNew={() => {
+          setIsOffTypeCatalogOpen(false);
+          setIsOffTypeCreateModalOpen(true);
+        }}
+        zIndex="z-[10000]"
+      />
+
+      {/* Modal Buat Master Parameter Baru untuk Monitoring Lahan (Step 2) */}
+      <ModalMasterParameterPopup
+        isOpen={isParamCreateModalOpen}
+        onClose={() => setIsParamCreateModalOpen(false)}
+        defaultNamaModul="MONITORING_LAHAN"
+        lockNamaModul={true}
+        defaultTipeNilai="NUMBER"
+        title="Tambah Master Parameter Monitoring Lahan"
+        onSuccess={handleCreateParamSuccess}
+        zIndex="z-[10001]"
+      />
+
+      {/* Modal Buat Master Parameter Baru untuk Temuan Off-Type (Step 3) */}
+      <ModalMasterParameterPopup
+        isOpen={isOffTypeCreateModalOpen}
+        onClose={() => setIsOffTypeCreateModalOpen(false)}
+        defaultNamaModul="OFF_TYPE"
+        lockNamaModul={true}
+        defaultTipeNilai="TEXT"
+        title="Tambah Master Parameter Karakter Off-Type"
+        onSuccess={handleCreateOffTypeSuccess}
+        zIndex="z-[10001]"
+      />
     </>
   );
 }

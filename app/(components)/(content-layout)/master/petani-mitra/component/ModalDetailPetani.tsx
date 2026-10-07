@@ -79,7 +79,7 @@ export default function ModalDetailPetani({
         luas: Number(g.luas || 0),
         komoditas: g.commodity?.namaKomoditas || g.komoditasUtama || g.komoditas || '',
         commodityId: g.commodityId || '',
-        varietas: g.varietas || '',
+        varietas: g.variety?.kodeVarietas || g.varietas || '',
         varietyId: g.varietyId || '',
         latitude: lat,
         longitude: lng,

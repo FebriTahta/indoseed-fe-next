@@ -66,7 +66,7 @@ export default function ModalTambahLahan({
   const [jenisLahan, setJenisLahan] = useState<'Greenhouse' | 'Lahan Terbuka'>('Lahan Terbuka');
   const [luas, setLuas] = useState<number | ''>('');
   const [selectedCommodityId, setSelectedCommodityId] = useState('');
-  const [selectedVarietyId, setSelectedVarietyId] = useState('');
+  const [selectedVarietyCode, setSelectedVarietyCode] = useState('');
   const [status, setStatus] = useState<'Aktif' | 'Non Aktif'>('Aktif');
   const [detailLokasi, setDetailLokasi] = useState('');
 
@@ -99,7 +99,12 @@ export default function ModalTambahLahan({
       setJenisLahan((initialData.jenisLahan as any) || 'Lahan Terbuka');
       setLuas(initialData.luas || '');
       setSelectedCommodityId(initialData.commodityId || '');
-      setSelectedVarietyId(initialData.varietyId || '');
+      const foundVar = varieties.find(
+        (v) =>
+          (initialData.varietas && (v.kodeVarietas === initialData.varietas || v.namaVarietas === initialData.varietas)) ||
+          (initialData.varietyId && (v.id === initialData.varietyId || v.kodeVarietas === initialData.varietyId))
+      );
+      setSelectedVarietyCode(foundVar?.kodeVarietas || initialData.varietas || initialData.varietyId || '');
       setStatus(initialData.status || 'Aktif');
       setDetailLokasi(initialData.detailLokasi || '');
       setLatitude(initialData.latitude || -7.635200);
@@ -120,7 +125,7 @@ export default function ModalTambahLahan({
       setJenisLahan('Lahan Terbuka');
       setLuas('');
       setSelectedCommodityId('');
-      setSelectedVarietyId('');
+      setSelectedVarietyCode('');
       setStatus('Aktif');
       setDetailLokasi('');
       setLatitude(-7.635200);
@@ -252,7 +257,9 @@ export default function ModalTambahLahan({
     }
 
     const selectedComm = commodities.find((c) => c.id === selectedCommodityId);
-    const selectedVar = varieties.find((v) => v.id === selectedVarietyId);
+    const selectedVar = varieties.find(
+      (v) => v.kodeVarietas === selectedVarietyCode || v.id === selectedVarietyCode
+    );
 
     const lahanData: LahanItem = {
       id: initialData?.id || undefined,
@@ -262,8 +269,8 @@ export default function ModalTambahLahan({
       luas: Number(luas),
       komoditas: selectedComm ? (selectedComm.namaKomoditas || (selectedComm as any).nama) : undefined,
       commodityId: selectedCommodityId || undefined,
-      varietas: selectedVar ? (selectedVar.namaVarietas || (selectedVar as any).nama) : undefined,
-      varietyId: selectedVarietyId || undefined,
+      varietas: selectedVar ? (selectedVar.kodeVarietas || selectedVar.namaVarietas) : (selectedVarietyCode || undefined),
+      varietyId: selectedVar ? selectedVar.id : undefined,
       latitude: Number(latitude),
       longitude: Number(longitude),
       status,
@@ -462,7 +469,7 @@ export default function ModalTambahLahan({
                     value={selectedCommodityId}
                     onChange={(e) => {
                       setSelectedCommodityId(e.target.value);
-                      setSelectedVarietyId('');
+                      setSelectedVarietyCode('');
                     }}
                     className="w-full border border-gray-200 rounded-lg p-2.5 text-xs text-gray-800 bg-white focus:outline-none focus:border-emerald-500 transition cursor-pointer"
                   >
@@ -484,17 +491,16 @@ export default function ModalTambahLahan({
                     Varietas
                   </label>
                   <select
-                    value={selectedVarietyId}
-                    onChange={(e) => setSelectedVarietyId(e.target.value)}
-                    className="w-full border border-gray-200 rounded-lg p-2.5 text-xs text-gray-800 bg-white focus:outline-none focus:border-emerald-500 transition cursor-pointer"
+                    value={selectedVarietyCode}
+                    onChange={(e) => setSelectedVarietyCode(e.target.value)}
+                    className="w-full border border-gray-200 rounded-lg p-2.5 text-xs text-gray-800 bg-white focus:outline-none focus:border-emerald-500 transition cursor-pointer font-mono"
                   >
-                    <option value="">Pilih varietas</option>
+                    <option value="">Pilih varietas (kode benih)</option>
                     {filteredVarieties.map((v: any) => {
-                      const name = v.namaVarietas || v.nama || v.label || '';
-                      const id = v.id || v.value || name;
+                      const kodeBenih = v.kodeVarietas || v.namaVarietas || v.id;
                       return (
-                        <option key={id} value={id}>
-                          {name}
+                        <option key={v.id || kodeBenih} value={kodeBenih}>
+                          {kodeBenih}
                         </option>
                       );
                     })}

@@ -19,6 +19,7 @@ export interface VarietyCharacteristicItem {
   satuan: string;
   keterangan?: string;
   isUsed?: boolean;
+  status?: string;
   options?: MasterParameterOption[];
 }
 

@@ -46,10 +46,19 @@ export const parameterService = {
   },
 
   // Variety Parameter API
-  getVarietyParameters: async (varietyId: string, namaModul?: string) => {
+  getVarietyParameters: async (
+    varietyId: string,
+    paramsOrModul?: string | { namaModul?: string; assignedOnly?: boolean }
+  ) => {
+    let params: any = {};
+    if (typeof paramsOrModul === 'string') {
+      params = { namaModul: paramsOrModul };
+    } else if (paramsOrModul) {
+      params = paramsOrModul;
+    }
     const response = await api.get<ApiResponse<CombinedVarietyParameter[]>>(
       `/master/variety-parameter/${varietyId}`,
-      { params: { namaModul } }
+      { params }
     );
     return response.data;
   },

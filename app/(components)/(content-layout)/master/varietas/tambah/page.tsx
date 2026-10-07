@@ -26,6 +26,7 @@ import ModalTambahKemasan from '../component/ModalTambahKemasan';
 import ModalTambahDokumen from '../component/ModalTambahDokumen';
 import ModalMasterParameterPopup from '../component/ModalMasterParameterPopup';
 import ModalEditNilaiKarakteristik from '../component/ModalEditNilaiKarakteristik';
+import ModalKatalogMasterParameter from '../component/ModalKatalogMasterParameter';
 import parameterService from '@/app/services/parameterService';
 import { MasterParameter } from '@/app/types/parameter';
 import { parseVarietyData, serializeVarietyMetadata } from '../varietyHelper';
@@ -36,10 +37,21 @@ function TambahVarietasForm() {
   const editId = searchParams.get('id');
   const isEditMode = Boolean(editId);
 
+  const tabParam = searchParams.get('tab');
+  const validTabs = ['info', 'brands', 'karakteristik', 'produksi', 'qc', 'inventory', 'dokumen'];
+  const initialTab = (tabParam && validTabs.includes(tabParam) ? tabParam : 'info') as any;
+
   // Active Tab State
   const [activeTab, setActiveTab] = useState<
     'info' | 'brands' | 'karakteristik' | 'produksi' | 'qc' | 'inventory' | 'dokumen'
-  >('info');
+  >(initialTab);
+
+  useEffect(() => {
+    const tab = searchParams.get('tab');
+    if (tab && validTabs.includes(tab)) {
+      setActiveTab(tab as any);
+    }
+  }, [searchParams]);
 
   // Loading States
   const [isLoadingMaster, setIsLoadingMaster] = useState(true);
@@ -72,6 +84,7 @@ function TambahVarietasForm() {
   const [isCharModalOpen, setIsCharModalOpen] = useState(false);
   const [editingChar, setEditingChar] = useState<VarietyCharacteristicItem | null>(null);
   const [isCharMasterModalOpen, setIsCharMasterModalOpen] = useState(false);
+  const [isCharCatalogOpen, setIsCharCatalogOpen] = useState(false);
   const [isCharEditModalOpen, setIsCharEditModalOpen] = useState(false);
   const [selectedCharItem, setSelectedCharItem] = useState<VarietyCharacteristicItem | null>(null);
 
@@ -112,6 +125,7 @@ function TambahVarietasForm() {
   const [isQcModalOpen, setIsQcModalOpen] = useState(false);
   const [editingQcParam, setEditingQcParam] = useState<VarietyQCParamItem | null>(null);
   const [isQcMasterModalOpen, setIsQcMasterModalOpen] = useState(false);
+  const [isQcCatalogOpen, setIsQcCatalogOpen] = useState(false);
 
   // ===================== Form State - Tab 6: Inventory (Image 2) =====================
   const [invKelolaStok, setInvKelolaStok] = useState<'Ya' | 'Tidak'>('Ya');
@@ -174,10 +188,8 @@ function TambahVarietasForm() {
     const initData = async () => {
       try {
         setIsLoadingMaster(true);
-        const [commRes, varParamRes, qcParamRes] = await Promise.all([
+        const [commRes] = await Promise.all([
           commodityService.getCommodities({ pageSize: 1000, status: 'Aktif' }),
-          parameterService.getParameters({ namaModul: 'VARIETAS', status: 'Aktif', pageSize: 100 }),
-          parameterService.getParameters({ namaModul: 'QC', status: 'Aktif', pageSize: 100 }),
         ]);
 
         if (commRes.status === 'success' && commRes.data) {
@@ -189,38 +201,9 @@ function TambahVarietasForm() {
         }
 
         if (!isEditMode) {
-          if (varParamRes.status === 'success' && varParamRes.data && varParamRes.data.length > 0) {
-            setKarakteristikList(
-              varParamRes.data.map((mp: MasterParameter, idx: number) => ({
-                id: mp.id || String(idx + 1),
-                parameterId: mp.id,
-                kode: mp.kode,
-                parameter: mp.nama,
-                tipeNilai: mp.tipeNilai,
-                nilai: getDefaultValueForType(mp),
-                satuan: mp.satuan || '-',
-                keterangan: mp.deskripsi || '-',
-                isUsed: true,
-                options: mp.options || [],
-              }))
-            );
-          }
-          if (qcParamRes.status === 'success' && qcParamRes.data && qcParamRes.data.length > 0) {
-            setQcParameters(
-              qcParamRes.data.map((mp: MasterParameter, idx: number) => ({
-                id: mp.id || String(idx + 1),
-                parameterId: mp.id,
-                kode: mp.kode,
-                parameter: mp.nama,
-                tipeNilai: mp.tipeNilai,
-                nilaiMinimal: mp.batasLulus ? String(mp.batasLulus) : '-',
-                nilaiMaksimal: '-',
-                satuan: mp.satuan || '%',
-                keterangan: mp.deskripsi || 'Standar Mutu',
-                isUsed: true,
-              }))
-            );
-          }
+          // Awal list parameter dimulai dalam kondisi kosong
+          setKarakteristikList([]);
+          setQcParameters([]);
         }
 
         if (editId) {
@@ -390,6 +373,28 @@ function TambahVarietasForm() {
     toast.success(`Parameter '${newParam.nama}' ditambahkan ke Master Parameter & Varietas`);
   };
 
+  const handleAddCharFromCatalog = (selectedParams: MasterParameter[]) => {
+    const newItems: VarietyCharacteristicItem[] = selectedParams.map((mp) => ({
+      id: mp.id || String(Date.now() + Math.random()),
+      parameterId: mp.id,
+      kode: mp.kode,
+      parameter: mp.nama,
+      tipeNilai: mp.tipeNilai,
+      nilai: getDefaultValueForType(mp),
+      satuan: mp.satuan || '-',
+      keterangan: mp.deskripsi || '-',
+      isUsed: true,
+      options: mp.options || [],
+    }));
+    setKarakteristikList((prev) => [...prev, ...newItems]);
+    toast.success(`${newItems.length} parameter karakteristik berhasil ditambahkan dari katalog`);
+  };
+
+  const handleRemoveChar = (itemId: string) => {
+    setKarakteristikList((prev) => prev.filter((c) => c.id !== itemId && c.parameterId !== itemId));
+    toast.info('Parameter karakteristik dihapus dari daftar varietas');
+  };
+
   // ==================== QC Parameter Handlers ====================
   const handleToggleQcUsed = (id: string) => {
     setQcParameters((prev) =>
@@ -414,7 +419,7 @@ function TambahVarietasForm() {
       kode: newParam.kode,
       parameter: newParam.nama,
       tipeNilai: newParam.tipeNilai,
-      nilaiMinimal: newParam.batasLulus ? String(newParam.batasLulus) : '-',
+      nilaiMinimal: newParam.batasLulus !== null && newParam.batasLulus !== undefined ? String(newParam.batasLulus) : '-',
       nilaiMaksimal: '-',
       satuan: newParam.satuan || '%',
       keterangan: newParam.deskripsi || 'Standar Mutu',
@@ -422,6 +427,28 @@ function TambahVarietasForm() {
     };
     setQcParameters((prev) => [...prev, newQc]);
     toast.success(`Parameter QC '${newParam.nama}' ditambahkan ke Master Parameter & QC Varietas`);
+  };
+
+  const handleAddQcFromCatalog = (selectedParams: MasterParameter[]) => {
+    const newItems: VarietyQCParamItem[] = selectedParams.map((mp) => ({
+      id: mp.id || String(Date.now() + Math.random()),
+      parameterId: mp.id,
+      kode: mp.kode,
+      parameter: mp.nama,
+      tipeNilai: mp.tipeNilai,
+      nilaiMinimal: mp.batasLulus !== null && mp.batasLulus !== undefined ? String(mp.batasLulus) : '-',
+      nilaiMaksimal: '-',
+      satuan: mp.satuan || '%',
+      keterangan: mp.deskripsi || 'Standar Mutu',
+      isUsed: true,
+    }));
+    setQcParameters((prev) => [...prev, ...newItems]);
+    toast.success(`${newItems.length} parameter QC berhasil ditambahkan dari katalog`);
+  };
+
+  const handleRemoveQcParam = (itemId: string) => {
+    setQcParameters((prev) => prev.filter((p) => p.id !== itemId && p.parameterId !== itemId));
+    toast.info('Parameter QC dihapus dari daftar varietas');
   };
 
   const handleSaveDocFromModal = (newDoc: VarietyDocItem) => {
@@ -1310,14 +1337,24 @@ function TambahVarietasForm() {
                               </button>
                             </td>
                             <td className="py-3 px-3.5 text-center">
-                              <button
-                                type="button"
-                                onClick={() => handleOpenEditChar(item)}
-                                className="w-7 h-7 rounded-lg text-emerald-600 hover:bg-emerald-50 flex items-center justify-center transition-colors mx-auto"
-                                title="Edit Nilai Standart"
-                              >
-                                <i className="ri-edit-line text-sm"></i>
-                              </button>
+                              <div className="flex items-center justify-center gap-1">
+                                <button
+                                  type="button"
+                                  onClick={() => handleOpenEditChar(item)}
+                                  className="w-7 h-7 rounded-lg text-emerald-600 hover:bg-emerald-50 flex items-center justify-center transition-colors"
+                                  title="Edit Nilai Standart"
+                                >
+                                  <i className="ri-edit-line text-sm"></i>
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => handleRemoveChar(item.id || item.parameterId || '')}
+                                  className="w-7 h-7 rounded-lg text-rose-500 hover:bg-rose-50 flex items-center justify-center transition-colors"
+                                  title="Hapus Parameter dari Varietas"
+                                >
+                                  <i className="ri-delete-bin-line text-sm"></i>
+                                </button>
+                              </div>
                             </td>
                           </tr>
                         ))
@@ -1326,15 +1363,25 @@ function TambahVarietasForm() {
                   </table>
                 </div>
 
-                {/* Button: + Tambah Parameter Lainnya */}
-                <button
-                  type="button"
-                  onClick={() => setIsCharMasterModalOpen(true)}
-                  className="mt-3.5 inline-flex items-center gap-1.5 px-4 py-2 bg-white hover:bg-gray-50 border border-gray-300 text-gray-700 font-semibold text-xs rounded-xl shadow-2xs transition-colors"
-                >
-                  <i className="ri-add-line font-bold"></i>
-                  <span>Tambah Parameter Lainnya</span>
-                </button>
+                {/* Action Buttons: Katalog + Master Baru */}
+                <div className="mt-3.5 flex flex-wrap items-center gap-2.5">
+                  <button
+                    type="button"
+                    onClick={() => setIsCharCatalogOpen(true)}
+                    className="inline-flex items-center gap-1.5 px-4 py-2 bg-emerald-700 hover:bg-emerald-800 text-white font-semibold text-xs rounded-xl shadow-xs transition-colors"
+                  >
+                    <i className="ri-folder-shared-line text-sm"></i>
+                    <span>Pilih dari Katalog Karakteristik</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setIsCharMasterModalOpen(true)}
+                    className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-white hover:bg-gray-50 border border-gray-300 text-gray-700 font-semibold text-xs rounded-xl shadow-2xs transition-colors"
+                  >
+                    <i className="ri-add-line font-bold"></i>
+                    <span>Buat Master Parameter Baru</span>
+                  </button>
+                </div>
               </div>
 
               {/* Karakteristik Tambahan */}
@@ -1914,8 +1961,16 @@ function TambahVarietasForm() {
                   <tbody className="divide-y divide-gray-100">
                     {qcParameters.length === 0 ? (
                       <tr>
-                        <td colSpan={8} className="py-6 text-center text-gray-400">
-                          Belum ada parameter QC. Klik tombol di bawah untuk menambahkan.
+                        <td colSpan={8} className="py-8 text-center text-gray-400">
+                          <div className="max-w-xs mx-auto space-y-2">
+                            <div className="w-10 h-10 rounded-xl bg-gray-100 text-gray-400 flex items-center justify-center mx-auto text-lg">
+                              <i className="ri-shield-check-line"></i>
+                            </div>
+                            <p className="text-xs font-semibold text-gray-700">Belum ada parameter mutu QC</p>
+                            <p className="text-[11px] text-gray-500">
+                              Daftar awal kosong. Klik tombol di bawah untuk memilih parameter standar mutu pengujian dari katalog master.
+                            </p>
+                          </div>
                         </td>
                       </tr>
                     ) : (
@@ -1956,14 +2011,24 @@ function TambahVarietasForm() {
                             </button>
                           </td>
                           <td className="py-3 px-3.5 text-center">
-                            <button
-                              type="button"
-                              onClick={() => handleOpenEditQcParam(item)}
-                              className="w-7 h-7 rounded-lg text-emerald-600 hover:bg-emerald-50 flex items-center justify-center transition-colors mx-auto"
-                              title="Edit Parameter QC"
-                            >
-                              <i className="ri-edit-line text-sm"></i>
-                            </button>
+                            <div className="flex items-center justify-center gap-1">
+                              <button
+                                type="button"
+                                onClick={() => handleOpenEditQcParam(item)}
+                                className="w-7 h-7 rounded-lg text-emerald-600 hover:bg-emerald-50 flex items-center justify-center transition-colors"
+                                title="Edit Parameter QC"
+                              >
+                                <i className="ri-edit-line text-sm"></i>
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleRemoveQcParam(item.id || item.parameterId || '')}
+                                className="w-7 h-7 rounded-lg text-rose-500 hover:bg-rose-50 flex items-center justify-center transition-colors"
+                                title="Hapus Parameter dari Varietas"
+                              >
+                                <i className="ri-delete-bin-line text-sm"></i>
+                              </button>
+                            </div>
                           </td>
                         </tr>
                       ))
@@ -1972,14 +2037,25 @@ function TambahVarietasForm() {
                 </table>
               </div>
 
-              <button
-                type="button"
-                onClick={() => setIsQcMasterModalOpen(true)}
-                className="mt-3.5 inline-flex items-center gap-1.5 px-4 py-2 bg-white hover:bg-gray-50 border border-gray-300 text-gray-700 font-semibold text-xs rounded-xl shadow-2xs transition-colors"
-              >
-                <i className="ri-add-line font-bold"></i>
-                <span>Tambah Parameter QC</span>
-              </button>
+              {/* Action Buttons: Katalog + Master Baru */}
+              <div className="mt-3.5 flex flex-wrap items-center gap-2.5">
+                <button
+                  type="button"
+                  onClick={() => setIsQcCatalogOpen(true)}
+                  className="inline-flex items-center gap-1.5 px-4 py-2 bg-emerald-700 hover:bg-emerald-800 text-white font-semibold text-xs rounded-xl shadow-xs transition-colors"
+                >
+                  <i className="ri-folder-shared-line text-sm"></i>
+                  <span>Pilih dari Katalog Parameter QC</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setIsQcMasterModalOpen(true)}
+                  className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-white hover:bg-gray-50 border border-gray-300 text-gray-700 font-semibold text-xs rounded-xl shadow-2xs transition-colors"
+                >
+                  <i className="ri-add-line font-bold"></i>
+                  <span>Buat Master Parameter Baru</span>
+                </button>
+              </div>
             </div>
 
             {/* Sub-card 3: Standar / Acuan */}
@@ -2709,6 +2785,21 @@ function TambahVarietasForm() {
         onSuccess={handleCharMasterSuccess}
       />
 
+      {/* Modal Katalog Parameter Karakteristik (Checkbox Multi-Select) */}
+      <ModalKatalogMasterParameter
+        isOpen={isCharCatalogOpen}
+        onClose={() => setIsCharCatalogOpen(false)}
+        namaModul="VARIETAS"
+        title="Katalog Parameter Karakteristik Varietas"
+        subtitle="Pilih parameter karakteristik morfologi & agronomi benih dari database master."
+        alreadySelectedIds={karakteristikList.map((k) => k.parameterId || k.kode || k.parameter || '')}
+        onAddParameters={handleAddCharFromCatalog}
+        onOpenCreateNew={() => {
+          setIsCharCatalogOpen(false);
+          setIsCharMasterModalOpen(true);
+        }}
+      />
+
       {/* Modal Edit Nilai Standart Karakteristik */}
       <ModalEditNilaiKarakteristik
         isOpen={isCharEditModalOpen}
@@ -2727,6 +2818,21 @@ function TambahVarietasForm() {
         lockTipeNilai={true}
         title="Tambah Master Parameter QC"
         onSuccess={handleQcMasterSuccess}
+      />
+
+      {/* Modal Katalog Parameter QC (Checkbox Multi-Select) */}
+      <ModalKatalogMasterParameter
+        isOpen={isQcCatalogOpen}
+        onClose={() => setIsQcCatalogOpen(false)}
+        namaModul="QC"
+        title="Katalog Parameter Mutu QC"
+        subtitle="Pilih parameter standar mutu pengujian benih dari database master."
+        alreadySelectedIds={qcParameters.map((p) => p.parameterId || p.kode || p.parameter || '')}
+        onAddParameters={handleAddQcFromCatalog}
+        onOpenCreateNew={() => {
+          setIsQcCatalogOpen(false);
+          setIsQcMasterModalOpen(true);
+        }}
       />
 
       {/* Modal Edit Parameter QC */}
