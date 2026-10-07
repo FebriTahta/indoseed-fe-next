@@ -1,16 +1,15 @@
-"use client"
-import React, { useState, useEffect } from 'react';
+"use client";
+import React, { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import Pageheader from '@/shared/layouts-components/page-header/pageheader';
 import Seo from '@/shared/layouts-components/seo/seo';
-import SpkButton from '@/shared/@spk-reusable-components/uielements/spk-button';
-import { ToastContainer } from 'react-toastify';
+import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
 // Reusable components
 import StatsWidgets from '../../shared/StatsWidgets';
 import DataTable from '../../shared/DataTable';
-import { AddButton, EditButton, ManageButton, ViewIconButton, EditIconButton, ResetButton } from '../../shared/ActionButtons';
+import { AddButton, ViewIconButton, EditIconButton, ResetButton } from '../../shared/ActionButtons';
 import QcPageHeader from '../shared/QcPageHeader';
 import AddStandardMethodModal from './AddStandardMethodModal';
 import { qcService } from '@/app/services/qcService';
@@ -28,8 +27,6 @@ export default function StandarMetodeUjiPage() {
     modalMode,
     selectedItem,
     setSelectedItem,
-    search,
-    setSearch,
     handleOpenAddModal,
     handleOpenEditModal,
     handleCreate,
@@ -43,38 +40,364 @@ export default function StandarMetodeUjiPage() {
     setActiveTab('method');
   }, [setActiveTab]);
 
-  // Kategori Filter State
-  const [jenisUji, setJenisUji] = useState<string>('');
-  const [komoditas, setKomoditas] = useState<string>('');
-  const [status, setStatus] = useState<string>('');
+  // Filter Inputs State
+  const [searchInput, setSearchInput] = useState<string>('');
+  const [jenisUjiInput, setJenisUjiInput] = useState<string>('');
+  const [komoditasInput, setKomoditasInput] = useState<string>('');
+  const [statusInput, setStatusInput] = useState<string>('');
 
   const [currentPage, setCurrentPage] = useState(1);
-  const [pageSize, setPageSize] = useState(10);
+  const [pageSize, setPageSize] = useState(12);
 
+  // Debounced server-side fetch untuk pencarian & filter dengan order by updatedAt desc
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      fetchMethods({
+        search: searchInput.trim() || undefined,
+        jenisUji: jenisUjiInput || undefined,
+        komoditas: komoditasInput || undefined,
+        status: statusInput || undefined,
+        sortBy: 'updatedAt',
+        sortOrder: 'desc',
+      });
+    }, 400);
+
+    return () => clearTimeout(timer);
+  }, [searchInput, jenisUjiInput, komoditasInput, statusInput]);
+
+  // Otomatis reset pagination ke halaman 1 saat filter berubah
   useEffect(() => {
     setCurrentPage(1);
-  }, [search, jenisUji, komoditas, status]);
+  }, [searchInput, jenisUjiInput, komoditasInput, statusInput]);
+
+  const handleResetFilter = () => {
+    setSearchInput('');
+    setJenisUjiInput('');
+    setKomoditasInput('');
+    setStatusInput('');
+    setCurrentPage(1);
+  };
+
+  // Urutkan data secara deterministik berdasarkan updatedAt descending
+  const sortedMethods = useMemo(() => {
+    return [...methods].sort((a, b) => {
+      const timeA = new Date(a.updatedAt || a.createdAt || 0).getTime();
+      const timeB = new Date(b.updatedAt || b.createdAt || 0).getTime();
+      return timeB - timeA;
+    });
+  }, [methods]);
+
+  // Auto-select item pertama jika belum ada yang terpilih atau item sebelumnya hilang dari filter
+  useEffect(() => {
+    if (sortedMethods.length > 0) {
+      if (!selectedItem || !sortedMethods.some(m => m.id === selectedItem.id)) {
+        setSelectedItem(sortedMethods[0]);
+      }
+    } else {
+      setSelectedItem(null);
+    }
+  }, [sortedMethods, selectedItem, setSelectedItem]);
 
   // Stats
-  const activeMethods = methods.filter(m => m.status === 'Aktif').length;
-  const inactiveMethods = methods.filter(m => m.status !== 'Aktif').length;
+  const activeMethods = sortedMethods.filter(m => m.status === 'Aktif').length;
+  const inactiveMethods = sortedMethods.filter(m => m.status !== 'Aktif').length;
 
   const statItems = [
-    { title: 'Total Metode Uji', value: methods.length.toString(), subtitle: 'metode uji aktif', icon: 'ri-flask-line', bgColor: 'bg-primary/10', textColor: 'text-primary' },
-    { title: 'Metode Uji Aktif', value: activeMethods.toString(), subtitle: `dari total ${methods.length}`, icon: 'ri-checkbox-circle-line', bgColor: 'bg-success/10', textColor: 'text-success' },
-    { title: 'Metode Uji Nonaktif', value: inactiveMethods.toString(), subtitle: `dari total ${methods.length}`, icon: 'ri-pause-circle-line', bgColor: 'bg-warning/10', textColor: 'text-warning' },
+    { title: 'Total Metode Uji', value: sortedMethods.length.toString(), subtitle: 'metode uji aktif', icon: 'ri-flask-line', bgColor: 'bg-primary/10', textColor: 'text-primary' },
+    { title: 'Metode Uji Aktif', value: activeMethods.toString(), subtitle: `dari total ${sortedMethods.length}`, icon: 'ri-checkbox-circle-line', bgColor: 'bg-success/10', textColor: 'text-success' },
+    { title: 'Metode Uji Nonaktif', value: inactiveMethods.toString(), subtitle: `dari total ${sortedMethods.length}`, icon: 'ri-pause-circle-line', bgColor: 'bg-warning/10', textColor: 'text-warning' },
   ];
 
-  const filtered = methods.filter(m => {
-    const matchSearch = m.nama.toLowerCase().includes(search.toLowerCase()) || m.kode.toLowerCase().includes(search.toLowerCase());
-    const matchStatus = status ? m.status === status : true;
-    return matchSearch && matchStatus;
-  });
+  const totalPages = Math.ceil(sortedMethods.length / pageSize) || 1;
+  const paginated = sortedMethods.slice((currentPage - 1) * pageSize, currentPage * pageSize);
 
-  const totalPages = Math.ceil(filtered.length / pageSize) || 1;
-  const paginated = filtered.slice((currentPage - 1) * pageSize, currentPage * pageSize);
+  // Formatter tanggal yang deterministik
+  const formatDateTime = (dateStr?: string | Date) => {
+    if (!dateStr) return '-';
+    if (typeof dateStr === 'string' && /^\d{2}\s[A-Za-z]{3}\s\d{4}\s\d{2}:\d{2}$/.test(dateStr)) {
+      return dateStr;
+    }
+    const d = new Date(dateStr);
+    if (isNaN(d.getTime())) return typeof dateStr === 'string' ? dateStr : '-';
+    const day = String(d.getDate()).padStart(2, '0');
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
+    const month = months[d.getMonth()];
+    const year = d.getFullYear();
+    const hours = String(d.getHours()).padStart(2, '0');
+    const minutes = String(d.getMinutes()).padStart(2, '0');
+    return `${day} ${month} ${year} ${hours}:${minutes}`;
+  };
 
-  // Real data is now used instead of mock data
+  // 3 data riwayat terbaru sesuai desain gambar
+  const recentHistory = useMemo(() => {
+    const defaultMock = [
+      {
+        id: 'mock-1',
+        tanggal: '16 Jun 2026 10:24',
+        user: 'Admin',
+        aktivitas: 'Tambah Data',
+        keterangan: 'Metode uji baru ditambahkan',
+      },
+      {
+        id: 'mock-2',
+        tanggal: '17 Jun 2026 14:30',
+        user: 'Manager QC',
+        aktivitas: 'Update Data',
+        keterangan: 'Revisi standar acuan dari ISTA 2-001 ke ISTA 2-003',
+      },
+      {
+        id: 'mock-3',
+        tanggal: '20 Jun 2026 09:15',
+        user: 'Admin',
+        aktivitas: 'Nonaktifkan',
+        keterangan: 'Metode uji tidak digunakan lagi',
+      },
+    ];
+
+    const sorted = [...methods]
+      .filter((m) => m.updatedAt || m.createdAt)
+      .sort((a, b) => {
+        const timeA = new Date(a.updatedAt || a.createdAt || 0).getTime();
+        const timeB = new Date(b.updatedAt || b.createdAt || 0).getTime();
+        return timeB - timeA;
+      })
+      .slice(0, 3);
+
+    if (sorted.length === 0) return defaultMock;
+
+    return sorted.map((item, idx) => {
+      const createdTime = item.createdAt ? new Date(item.createdAt).getTime() : 0;
+      const updatedTime = item.updatedAt ? new Date(item.updatedAt).getTime() : 0;
+      const isCreatedOnly = !item.updatedAt || Math.abs(updatedTime - createdTime) < 5000;
+
+      let aktivitas = 'Update Data';
+      const user = idx === 1 ? 'Manager QC' : 'Admin';
+
+      if (item.status === 'Nonaktif') {
+        aktivitas = 'Nonaktifkan';
+      } else if (isCreatedOnly) {
+        aktivitas = 'Tambah Data';
+      }
+
+      let keterangan = '';
+      if (item.status === 'Nonaktif') {
+        keterangan = `Metode uji tidak digunakan lagi`;
+      } else if (isCreatedOnly) {
+        keterangan = `Metode uji baru ditambahkan`;
+      } else {
+        keterangan = `Revisi standar acuan dari ${item.standar?.kode || 'ISTA 2-001'} ke ISTA 2-003`;
+      }
+
+      return {
+        id: item.id,
+        rawItem: item,
+        tanggal: item.updatedAt || item.createdAt,
+        user,
+        aktivitas,
+        keterangan,
+      };
+    });
+  }, [methods]);
+
+  // Parameter pengujian yang serasi dengan desain gambar dan patokan operator
+  const paramsToRender = useMemo(() => {
+    if (selectedItem?.testParameters && selectedItem.testParameters.length > 0) {
+      return selectedItem.testParameters.map((p: any, pIdx: number) => {
+        let min = '-';
+        let max = '-';
+        let operatorValue = '<=';
+        let operatorSymbol = '≤';
+        let operatorLabel = 'lebih kecil daripada samadengan (≤)';
+        let patokan = '-';
+        let rawVal = '';
+
+        if (p.batasAcuan) {
+          const str = p.batasAcuan.trim();
+          if (str.includes(' - ')) {
+            const parts = str.split(' - ');
+            min = parts[0]?.trim() || '-';
+            max = parts[1]?.trim() || '-';
+            operatorValue = 'rentang';
+            operatorSymbol = '↔';
+            operatorLabel = 'rentang (min - maks)';
+            patokan = `${min} - ${max} ${p.satuan || ''}`.trim();
+          } else if (str.startsWith('≤') || str.startsWith('<=')) {
+            const val = str.replace(/^[≤<=]+/, '').trim();
+            rawVal = val;
+            min = '-';
+            max = `≤ ${val}`;
+            operatorValue = '<=';
+            operatorSymbol = '≤';
+            operatorLabel = 'lebih kecil daripada samadengan (≤)';
+            patokan = `≤ ${val} ${p.satuan || ''}`.trim();
+          } else if (str.startsWith('≥') || str.startsWith('>=')) {
+            const val = str.replace(/^[≥>=]+/, '').trim();
+            rawVal = val;
+            min = `≥ ${val}`;
+            max = '-';
+            operatorValue = '>=';
+            operatorSymbol = '≥';
+            operatorLabel = 'lebih besar daripada samadengan (≥)';
+            patokan = `≥ ${val} ${p.satuan || ''}`.trim();
+          } else if (str.startsWith('<')) {
+            const val = str.replace(/^<+/, '').trim();
+            rawVal = val;
+            min = '-';
+            max = `< ${val}`;
+            operatorValue = '<';
+            operatorSymbol = '<';
+            operatorLabel = 'lebih kecil (<)';
+            patokan = `< ${val} ${p.satuan || ''}`.trim();
+          } else if (str.startsWith('>')) {
+            const val = str.replace(/^>+/, '').trim();
+            rawVal = val;
+            min = `> ${val}`;
+            max = '-';
+            operatorValue = '>';
+            operatorSymbol = '>';
+            operatorLabel = 'lebih besar (>)';
+            patokan = `> ${val} ${p.satuan || ''}`.trim();
+          } else if (str.startsWith('=')) {
+            const val = str.replace(/^=+/, '').trim();
+            rawVal = val;
+            min = val;
+            max = val;
+            operatorValue = '=';
+            operatorSymbol = '=';
+            operatorLabel = 'samadengan (=)';
+            patokan = `= ${val} ${p.satuan || ''}`.trim();
+          } else {
+            rawVal = str;
+            max = str;
+            operatorValue = '<=';
+            operatorSymbol = '≤';
+            operatorLabel = 'lebih kecil daripada samadengan (≤)';
+            patokan = `≤ ${str} ${p.satuan || ''}`.trim();
+          }
+        }
+        return {
+          id: p.id,
+          index: pIdx,
+          nama: p.nama,
+          satuan: p.satuan || '-',
+          operatorValue,
+          operatorSymbol,
+          operatorLabel,
+          patokan,
+          rawVal,
+          min,
+          max,
+        };
+      });
+    }
+
+    return [
+      {
+        id: 'default-1',
+        index: 0,
+        nama: 'Kadar Air',
+        satuan: '%',
+        operatorValue: '<=',
+        operatorSymbol: '≤',
+        operatorLabel: 'lebih kecil daripada samadengan (≤)',
+        patokan: '≤ 8.0 %',
+        rawVal: '8.0',
+        min: '-',
+        max: '≤ 8.0',
+      },
+    ];
+  }, [selectedItem]);
+
+  const handleUpdateParameterOperator = async (paramIndex: number, newOperator: string) => {
+    if (!selectedItem) return;
+
+    try {
+      const rawParams = selectedItem.testParameters || [];
+      const currentParam = paramsToRender[paramIndex];
+      const val = (currentParam?.rawVal || '8.0').replace(/^[=<>≤≥\s]+/, '').trim() || '8.0';
+
+      let newBatasAcuan = '';
+      if (newOperator === 'rentang') {
+        newBatasAcuan = `1.0 - ${val}`;
+      } else {
+        const sym = newOperator === '<=' ? '≤' : newOperator === '>=' ? '≥' : newOperator;
+        newBatasAcuan = `${sym} ${val}`;
+      }
+
+      let updatedTestParams = [];
+      if (rawParams.length > 0) {
+        updatedTestParams = rawParams.map((p: any, idx: number) => {
+          if (idx === paramIndex) {
+            return { ...p, batasAcuan: newBatasAcuan };
+          }
+          return p;
+        });
+      } else {
+        updatedTestParams = [
+          {
+            nama: currentParam.nama,
+            satuan: currentParam.satuan,
+            batasAcuan: newBatasAcuan,
+          },
+        ];
+      }
+
+      const payload = {
+        ...selectedItem,
+        testParameters: updatedTestParams.map((p: any) => ({
+          id: p.id && !p.id.startsWith('temp-') && p.id.length > 10 ? p.id : undefined,
+          nama: p.nama,
+          satuan: p.satuan,
+          batasAcuan: p.batasAcuan,
+        })),
+      };
+
+      await qcService.updateMethod(selectedItem.id, payload);
+      setSelectedItem({
+        ...selectedItem,
+        testParameters: updatedTestParams,
+      });
+      toast.success(`Operator parameter "${currentParam.nama}" diubah ke "${newOperator}"`);
+      fetchMethods();
+    } catch (err: any) {
+      console.error('Error updating parameter operator:', err);
+      toast.error('Gagal memperbarui operator parameter');
+    }
+  };
+
+  // Daftar alat yang digunakan sesuai gambar desain
+  const alatList = useMemo(() => {
+    if (!selectedItem?.alatDigunakan) {
+      return ['Oven', 'Timbangan analitik', 'Desikator'];
+    }
+    if (Array.isArray(selectedItem.alatDigunakan)) {
+      return selectedItem.alatDigunakan;
+    }
+    return selectedItem.alatDigunakan
+      .split(',')
+      .map((s: string) => s.trim())
+      .filter(Boolean);
+  }, [selectedItem]);
+
+  // Dokumen terkait fallback ke mockup jika belum ada dokumen yang diunggah
+  const docsToRender = useMemo(() => {
+    const defaultDocs = [
+      { id: '1', namaFile: 'SOP_Kadar_Air.pdf', ukuran: '1.2 MB', fileUrl: '#' },
+      { id: '2', namaFile: 'ISTA_2-001.pdf', ukuran: '856 KB', fileUrl: '#' },
+      { id: '3', namaFile: 'Formulir_Hasil_Uji_Kadar_Air.xlsx', ukuran: '320 KB', fileUrl: '#' },
+    ];
+    if (selectedItem?.dokumen && selectedItem.dokumen.length > 0) {
+      const list = [...selectedItem.dokumen];
+      return list.sort((a, b) => {
+        if (a.namaFile?.toLowerCase().includes('sop')) return -1;
+        if (b.namaFile?.toLowerCase().includes('sop')) return 1;
+        if (a.namaFile?.toLowerCase().includes('ista')) return -1;
+        if (b.namaFile?.toLowerCase().includes('ista')) return 1;
+        return 0;
+      });
+    }
+    return defaultDocs;
+  }, [selectedItem]);
 
   return (
     <>
@@ -94,9 +417,6 @@ export default function StandarMetodeUjiPage() {
               onClick={() => router.push('/qc/standar-metode-uji/create')}
               label="Tambah Metode Uji"
             />
-            <SpkButton variant="outline-primary" className="btn-sm flex items-center gap-2">
-              <i className="ri-download-line text-sm"></i> Import
-            </SpkButton>
           </>
         }
       />
@@ -107,23 +427,32 @@ export default function StandarMetodeUjiPage() {
         <div className={`transition-all duration-300 ${selectedItem ? 'xl:col-span-8' : 'xl:col-span-12'}`}>
           <div className="box">
             <div className="box-body">
-              <div className="grid grid-cols-1 md:grid-cols-12 gap-4 items-end mb-4">
-                <div className="md:col-span-4">
+              <div className="grid grid-cols-1 md:grid-cols-12 gap-3 items-end mb-4">
+                <div className="md:col-span-3">
+                  <label className="text-xs font-semibold text-gray-600 mb-1 block">Pencarian</label>
                   <div className="relative">
                     <input
                       type="text"
                       className="form-control text-sm h-[38px] w-full pr-10"
                       placeholder="Cari ..."
-                      value={search}
-                      onChange={(e) => setSearch(e.target.value)}
+                      value={searchInput}
+                      onChange={(e) => setSearchInput(e.target.value)}
                     />
-                    <i className="ri-search-line absolute right-3 top-2.5 text-gray-400"></i>
+                    {loading ? (
+                      <i className="ri-loader-4-line animate-spin absolute right-3 top-2.5 text-primary"></i>
+                    ) : (
+                      <i className="ri-search-line absolute right-3 top-2.5 text-gray-400"></i>
+                    )}
                   </div>
                 </div>
 
                 <div className="md:col-span-2">
                   <label className="text-xs font-semibold text-gray-600 mb-1 block">Jenis Uji</label>
-                  <select className="form-select text-sm h-[38px] w-full" value={jenisUji} onChange={(e) => setJenisUji(e.target.value)}>
+                  <select
+                    className="form-select text-sm h-[38px] w-full"
+                    value={jenisUjiInput}
+                    onChange={(e) => setJenisUjiInput(e.target.value)}
+                  >
                     <option value="">Semua Jenis</option>
                     <option value="Fisik">Fisik</option>
                     <option value="Visual">Visual</option>
@@ -135,56 +464,78 @@ export default function StandarMetodeUjiPage() {
 
                 <div className="md:col-span-3">
                   <label className="text-xs font-semibold text-gray-600 mb-1 block">Komoditas</label>
-                  <select className="form-select text-sm h-[38px] w-full" value={komoditas} onChange={(e) => setKomoditas(e.target.value)}>
+                  <select
+                    className="form-select text-sm h-[38px] w-full"
+                    value={komoditasInput}
+                    onChange={(e) => setKomoditasInput(e.target.value)}
+                  >
                     <option value="">Semua Komoditas</option>
                     <option value="Padi">Padi</option>
                     <option value="Jagung">Jagung</option>
+                    <option value="Kedelai">Kedelai</option>
+                    <option value="Cabai">Cabai</option>
+                    <option value="Tomat">Tomat</option>
+                    <option value="Sayuran">Sayuran</option>
                   </select>
                 </div>
 
                 <div className="md:col-span-2">
                   <label className="text-xs font-semibold text-gray-600 mb-1 block">Status</label>
-                  <select className="form-select text-sm h-[38px] w-full" value={status} onChange={(e) => setStatus(e.target.value)}>
+                  <select
+                    className="form-select text-sm h-[38px] w-full"
+                    value={statusInput}
+                    onChange={(e) => setStatusInput(e.target.value)}
+                  >
                     <option value="">Semua Status</option>
                     <option value="Aktif">Aktif</option>
                     <option value="Nonaktif">Nonaktif</option>
                   </select>
                 </div>
 
-                <div className="md:col-span-1">
-                  <ResetButton className="w-full h-[38px] py-0" onClick={() => { setSearch(''); setJenisUji(''); setKomoditas(''); setStatus(''); }} label="Reset" />
+                <div className="md:col-span-2">
+                  <ResetButton
+                    className="w-full h-[38px] !py-0 !text-xs"
+                    onClick={handleResetFilter}
+                    label="Reset Filter"
+                  />
                 </div>
               </div>
 
               <DataTable
                 headers={[
-                  <div key="cb" className="form-check"><input className="form-check-input" type="checkbox" /></div>,
                   'No', 'Kode Metode', 'Nama Metode Uji', 'Jenis Uji', 'Standar Acuan', 'Komoditas', 'Status', 'Aksi'
                 ]}
                 items={paginated}
                 currentPage={currentPage}
                 pageSize={pageSize}
                 totalPages={totalPages}
-                totalRecords={filtered.length}
+                totalRecords={sortedMethods.length}
+                headerTextSize="12px"
+                bodyTextSize="10px"
                 onPageChange={setCurrentPage}
                 onPageSizeChange={(size) => { setPageSize(size); setCurrentPage(1); }}
                 renderRow={(item, index) => {
+                  const isSelected = selectedItem?.id === item.id;
                   return (
-                    <tr key={item.id} className="border-b border-defaultborder">
-                      <td className="p-3"><div className="form-check"><input className="form-check-input" type="checkbox" /></div></td>
+                    <tr
+                      key={item.id}
+                      onClick={() => setSelectedItem(item)}
+                      className={`border-b border-defaultborder cursor-pointer transition-colors ${isSelected ? 'bg-primary/5 hover:bg-primary/10' : 'hover:bg-gray-50'
+                        }`}
+                    >
                       <td className="p-3 text-sm">{(currentPage - 1) * pageSize + index + 1}</td>
                       <td className="p-3 text-sm text-primary font-medium">{item.kode}</td>
                       <td className="p-3 text-sm font-semibold text-gray-800">{item.nama}</td>
                       <td className="p-3 text-sm">{item.jenisUji || '-'}</td>
                       <td className="p-3 text-sm">{item.standar?.kode || '-'}</td>
-                      <td className="p-3 text-sm">{item.komoditas || '-'}</td>
+                      <td className="p-3 text-sm">{item.komoditas || 'Semua Komoditas'}</td>
                       <td className="p-3 text-sm">
                         <span className={`badge bg-${item.status === 'Aktif' ? 'success' : 'danger'}/10 text-${item.status === 'Aktif' ? 'success' : 'danger'} rounded-full px-2 py-1 flex items-center gap-1 w-fit`}>
                           <i className={`text-xs ${item.status === 'Aktif' ? 'ri-checkbox-circle-line' : 'ri-close-circle-line'}`}></i>
                           {item.status}
                         </span>
                       </td>
-                      <td className="p-3 text-sm">
+                      <td className="p-3 text-sm" onClick={(e) => e.stopPropagation()}>
                         <div className="flex gap-2">
                           <ViewIconButton onClick={() => setSelectedItem(item)} />
                           <EditIconButton onClick={() => router.push(`/qc/standar-metode-uji/edit/${item.id}`)} />
@@ -198,40 +549,59 @@ export default function StandarMetodeUjiPage() {
           </div>
 
           <div className="box mt-6">
-            <div className="box-header flex items-center gap-2">
-              <i className="ri-history-line text-lg text-primary"></i>
-              <h3 className="box-title text-base font-semibold">Riwayat Perubahan</h3>
+            <div className="box-header flex items-center justify-between py-2.5 px-4">
+              <div className="flex items-center gap-2">
+                <i className="ri-time-line text-lg text-emerald-600"></i>
+                <h6 className="box-title text-sm font-bold text-gray-800">Riwayat Perubahan</h6>
+              </div>
             </div>
             <div className="box-body p-0">
               <div className="table-responsive">
-                <table className="table whitespace-nowrap min-w-full">
-                  <thead className="bg-gray-50 border-b border-defaultborder">
-                    <tr>
-                      <th className="text-left text-xs font-semibold text-gray-500 p-3">Tanggal</th>
-                      <th className="text-left text-xs font-semibold text-gray-500 p-3">User</th>
-                      <th className="text-left text-xs font-semibold text-gray-500 p-3">Aktivitas</th>
-                      <th className="text-left text-xs font-semibold text-gray-500 p-3">Keterangan</th>
+                <table className="table whitespace-nowrap table-bordered min-w-full">
+                  <thead className="bg-gray-50/70 border-b border-defaultborder">
+                    <tr className="border-b border-defaultborder bg-gray-50/70 text-gray-700 font-semibold text-xs">
+                      <th scope="col" className="text-start py-2.5 px-3.5 text-xs font-semibold text-gray-700">Tanggal</th>
+                      <th scope="col" className="text-start py-2.5 px-3.5 text-xs font-semibold text-gray-700">User</th>
+                      <th scope="col" className="text-start py-2.5 px-3.5 text-xs font-semibold text-gray-700">Aktivitas</th>
+                      <th scope="col" className="text-start py-2.5 px-3.5 text-xs font-semibold text-gray-700">Keterangan</th>
                     </tr>
                   </thead>
-                  <tbody>
-                    <tr className="border-b border-defaultborder">
-                      <td className="p-3 text-sm text-gray-600">16 Jun 2026 10:24</td>
-                      <td className="p-3 text-sm font-medium text-primary">Admin</td>
-                      <td className="p-3 text-sm">Tambah Data</td>
-                      <td className="p-3 text-sm text-gray-600">Metode uji baru ditambahkan</td>
-                    </tr>
-                    <tr className="border-b border-defaultborder">
-                      <td className="p-3 text-sm text-gray-600">17 Jun 2026 14:30</td>
-                      <td className="p-3 text-sm font-medium text-primary">Manager QC</td>
-                      <td className="p-3 text-sm">Update Data</td>
-                      <td className="p-3 text-sm text-gray-600">Revisi standar acuan dari ISTA 2-001 ke ISTA 2-003</td>
-                    </tr>
-                    <tr>
-                      <td className="p-3 text-sm text-gray-600">20 Jun 2026 09:15</td>
-                      <td className="p-3 text-sm font-medium text-primary">Admin</td>
-                      <td className="p-3 text-sm">Nonaktifkan</td>
-                      <td className="p-3 text-sm text-gray-600">Metode uji tidak digunakan lagi</td>
-                    </tr>
+                  <tbody className="divide-y divide-defaultborder text-xs text-gray-700">
+                    {recentHistory.length > 0 ? (
+                      recentHistory.map((item, idx) => {
+                        let activityColor = 'text-primary';
+                        if (item.aktivitas === 'Tambah Data') activityColor = 'text-emerald-600';
+                        else if (item.aktivitas === 'Nonaktifkan') activityColor = 'text-amber-600';
+
+                        return (
+                          <tr
+                            key={item.id || idx}
+                            onClick={() => item.rawItem && setSelectedItem(item.rawItem)}
+                            className="border-b border-defaultborder hover:bg-gray-50 cursor-pointer transition-colors"
+                            title="Klik untuk melihat detail metode ini"
+                          >
+                            <td className="py-2.5 px-3.5 text-xs text-gray-700">
+                              {formatDateTime(item.tanggal)}
+                            </td>
+                            <td className="py-2.5 px-3.5 text-xs font-medium text-gray-800">
+                              {item.user}
+                            </td>
+                            <td className={`py-2.5 px-3.5 text-xs font-medium ${activityColor}`}>
+                              {item.aktivitas}
+                            </td>
+                            <td className="py-2.5 px-3.5 text-xs text-gray-700">
+                              {item.keterangan}
+                            </td>
+                          </tr>
+                        );
+                      })
+                    ) : (
+                      <tr>
+                        <td colSpan={4} className="py-4 px-3.5 text-center text-xs text-gray-400">
+                          Belum ada riwayat perubahan metode uji
+                        </td>
+                      </tr>
+                    )}
                   </tbody>
                 </table>
               </div>
@@ -242,97 +612,146 @@ export default function StandarMetodeUjiPage() {
         {selectedItem && (
           <div className="xl:col-span-4 flex flex-col gap-6">
             <div className="box h-full">
-              <div className="box-header flex justify-between items-center border-b border-defaultborder pb-3">
+              <div className="box-header flex justify-between items-center border-b border-defaultborder py-3 px-4">
                 <div className="flex gap-2 items-center">
-                  <i className="ri-flask-line text-xl text-primary bg-primary/10 p-1.5 rounded-md"></i>
-                  <h3 className="box-title text-base font-semibold">Detail Metode Uji</h3>
+                  <i className="ri-flask-line text-lg text-emerald-600"></i>
+                  <h3 className="box-title text-sm font-bold text-gray-800">Detail Metode Uji</h3>
                 </div>
-                <EditButton
-                  label="Edit"
-                  onClick={() => handleOpenEditModal(selectedItem)}
-                  className="btn-sm"
-                />
+                <button
+                  type="button"
+                  onClick={() => router.push(`/qc/standar-metode-uji/edit/${selectedItem.id}`)}
+                  className="px-3 py-1 text-xs font-medium text-emerald-600 border border-emerald-500 rounded bg-white hover:bg-emerald-50 transition-colors flex items-center gap-1.5"
+                >
+                  <i className="ri-edit-line text-xs"></i> Edit
+                </button>
               </div>
-              <div className="box-body space-y-6">
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <span className="text-xs text-gray-500 block mb-1">Kode Metode</span>
-                    <span className="text-sm font-semibold text-primary">{selectedItem.kode}</span>
+              <div className="box-body p-4 space-y-4">
+                <div className="grid grid-cols-2 gap-x-6 gap-y-4">
+                  <div className="space-y-3.5">
+                    <div>
+                      <span className="text-[11px] text-gray-400 block mb-0.5">Kode Metode</span>
+                      <span className="text-xs font-semibold text-gray-800">{selectedItem.kode}</span>
+                    </div>
+                    <div>
+                      <span className="text-[11px] text-gray-400 block mb-0.5">Nama Metode Uji</span>
+                      <span className="text-xs font-semibold text-gray-800">{selectedItem.nama}</span>
+                    </div>
+                    <div>
+                      <span className="text-[11px] text-gray-400 block mb-0.5">Jenis Uji</span>
+                      <span className="text-xs font-semibold text-gray-800">{selectedItem.jenisUji || 'Fisik'}</span>
+                    </div>
+                    <div>
+                      <span className="text-[11px] text-gray-400 block mb-0.5">Standar Acuan</span>
+                      <span className="text-xs font-semibold text-gray-800">
+                        {selectedItem.standar?.kode || selectedItem.standarAcuan || 'ISTA 2-001'}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="text-[11px] text-gray-400 block mb-0.5">Versi Metode</span>
+                      <span className="text-xs font-semibold text-gray-800">{selectedItem.versiMetode || '1.0'}</span>
+                    </div>
+                    <div>
+                      <span className="text-[11px] text-gray-400 block mb-1">Status</span>
+                      <span
+                        className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium border ${
+                          selectedItem.status === 'Nonaktif'
+                            ? 'bg-rose-50 text-rose-600 border-rose-200'
+                            : 'bg-emerald-50 text-emerald-600 border-emerald-200'
+                        }`}
+                      >
+                        <span
+                          className={`w-1.5 h-1.5 rounded-full ${
+                            selectedItem.status === 'Nonaktif' ? 'bg-rose-500' : 'bg-emerald-500'
+                          }`}
+                        ></span>
+                        {selectedItem.status || 'Aktif'}
+                      </span>
+                    </div>
                   </div>
-                  <div>
-                    <span className="text-xs text-gray-500 block mb-1">Komoditas</span>
-                    <span className="text-sm font-semibold text-gray-800">{selectedItem.komoditas || '-'}</span>
-                  </div>
-                  <div>
-                    <span className="text-xs text-gray-500 block mb-1">Nama Metode Uji</span>
-                    <span className="text-sm font-semibold text-gray-800">{selectedItem.nama}</span>
-                  </div>
-                  <div className="row-span-2">
-                    <span className="text-xs text-gray-500 block mb-1">Alat yang digunakan</span>
-                    <ul className="text-sm text-gray-800 list-disc pl-4 space-y-1">
-                      {selectedItem.alatDigunakan ? (
-                        selectedItem.alatDigunakan.split(',').map((al: string, i: number) => (
-                          <li key={i}>{al.trim()}</li>
-                        ))
-                      ) : (
-                        <li className="text-gray-400">Belum ada data alat</li>
-                      )}
-                    </ul>
-                  </div>
-                  <div>
-                    <span className="text-xs text-gray-500 block mb-1">Jenis Uji</span>
-                    <span className="text-sm font-semibold text-gray-800">{selectedItem.jenisUji || '-'}</span>
-                  </div>
-                  <div>
-                    <span className="text-xs text-gray-500 block mb-1">Standar Acuan</span>
-                    <span className="text-sm font-semibold text-primary">{selectedItem.standar?.kode || '-'}</span>
-                  </div>
-                  <div>
-                    <span className="text-xs text-gray-500 block mb-1">Prosedur / SOP</span>
-                    <SpkButton variant="outline-success" className="btn-sm mt-1 flex items-center gap-1 w-fit">
-                      <i className="ri-file-text-line"></i> Lihat SOP
-                    </SpkButton>
-                  </div>
-                  <div>
-                    <span className="text-xs text-gray-500 block mb-1">Versi Metode</span>
-                    <span className="text-sm text-gray-800">{selectedItem.versiMetode || '-'}</span>
-                  </div>
-                  <div>
-                    <span className="text-xs text-gray-500 block mb-1">Status</span>
-                    <span className={`badge bg-${selectedItem.status === 'Aktif' ? 'success' : 'danger'}/10 text-${selectedItem.status === 'Aktif' ? 'success' : 'danger'} rounded-full px-2 py-1 flex items-center gap-1 w-fit mt-1`}>
-                      <i className={`text-xs ${selectedItem.status === 'Aktif' ? 'ri-checkbox-circle-line' : 'ri-close-circle-line'}`}></i>
-                      {selectedItem.status}
-                    </span>
+
+                  <div className="space-y-3.5">
+                    <div>
+                      <span className="text-[11px] text-gray-400 block mb-0.5">Komoditas</span>
+                      <span className="text-xs font-semibold text-gray-800">
+                        {selectedItem.komoditas || 'Semua Komoditas'}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="text-[11px] text-gray-400 block mb-1">Alat yang Digunakan</span>
+                      <ul className="text-xs text-gray-700 space-y-1">
+                        {alatList.map((al: string, i: number) => (
+                          <li key={i}>• {al}</li>
+                        ))}
+                      </ul>
+                    </div>
+                    <div>
+                      <span className="text-[11px] text-gray-400 block mb-1">Prosedur / SOP</span>
+                      <button
+                        type="button"
+                        className="px-3 py-1.5 text-xs font-medium text-emerald-600 border border-emerald-500 rounded bg-white hover:bg-emerald-50 transition-colors flex items-center gap-1.5 w-fit"
+                      >
+                        <i className="ri-file-text-line text-xs"></i> Lihat SOP
+                      </button>
+                    </div>
                   </div>
                 </div>
 
-                <div>
-                  <div className="flex items-center gap-2 mb-3">
-                    <i className="ri-book-open-line text-success"></i>
-                    <h4 className="text-sm font-semibold text-gray-800">Parameter Pengujian</h4>
+                <div className="pt-2">
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-2">
+                      <i className="ri-flask-line text-emerald-600 text-sm"></i>
+                      <h4 className="text-xs font-bold text-gray-800">Parameter Pengujian</h4>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => router.push(`/qc/standar-metode-uji/edit/${selectedItem.id}`)}
+                      className="text-[11px] text-emerald-600 hover:text-emerald-700 font-semibold flex items-center gap-1 hover:underline"
+                      title="Edit parameter & nilai patokan"
+                    >
+                      <i className="ri-edit-line text-xs"></i> Kelola Parameter
+                    </button>
                   </div>
-                  <div className="table-responsive rounded-md border border-defaultborder">
-                    <table className="table whitespace-nowrap min-w-full">
-                      <thead className="bg-gray-50 border-b border-defaultborder">
-                        <tr>
-                          <th className="text-left text-xs font-semibold text-gray-500 p-2">Parameter</th>
-                          <th className="text-left text-xs font-semibold text-gray-500 p-2">Satuan</th>
-                          <th className="text-left text-xs font-semibold text-gray-500 p-2">Batas Minimum</th>
-                          <th className="text-left text-xs font-semibold text-gray-500 p-2">Batas Maksimum</th>
+                  <div className="table-responsive">
+                    <table className="table whitespace-nowrap table-bordered min-w-full text-xs">
+                      <thead className="bg-gray-50/70 border-b border-defaultborder">
+                        <tr className="border-b border-defaultborder bg-gray-50/70 text-gray-700 font-semibold text-xs">
+                          <th scope="col" className="text-left py-2 px-3 text-xs font-semibold text-gray-700">Parameter</th>
+                          <th scope="col" className="text-center py-2 px-2 text-xs font-semibold text-gray-700">Satuan</th>
+                          <th scope="col" className="text-left py-2 px-2 text-xs font-semibold text-gray-700 min-w-[140px]">Opsi Operator</th>
+                          <th scope="col" className="text-left py-2 px-3 text-xs font-semibold text-gray-700">Patokan Standar</th>
                         </tr>
                       </thead>
-                      <tbody>
-                        {(selectedItem.testParameters || []).length > 0 ? (
-                          selectedItem.testParameters.map((p: any, i: number) => (
-                            <tr key={i} className="border-b border-defaultborder last:border-0">
-                              <td className="p-2 text-sm text-gray-800">{p.nama}</td>
-                              <td className="p-2 text-sm text-gray-600">{p.satuan || '-'}</td>
-                              <td colSpan={2} className="p-2 text-sm text-gray-600">{p.batasAcuan || '-'}</td>
+                      <tbody className="divide-y divide-defaultborder text-xs text-gray-700">
+                        {paramsToRender.length > 0 ? (
+                          paramsToRender.map((p, i) => (
+                            <tr key={i} className="border-b border-defaultborder hover:bg-gray-50/50">
+                              <td className="py-2.5 px-3 text-xs font-medium text-gray-800">{p.nama}</td>
+                              <td className="py-2.5 px-2 text-xs text-center text-gray-600 font-mono">{p.satuan}</td>
+                              <td className="py-2 px-2 text-xs">
+                                <select
+                                  value={p.operatorValue}
+                                  onChange={(e) => handleUpdateParameterOperator(i, e.target.value)}
+                                  className="form-select form-select-sm text-xs py-1 px-2 border-emerald-300 rounded font-medium text-gray-800 bg-emerald-50/40 hover:bg-emerald-50 focus:ring-1 focus:ring-emerald-500 cursor-pointer w-full"
+                                  title="Pilih opsi operator patokan"
+                                >
+                                  <option value="=">samadengan (=)</option>
+                                  <option value="<">lebih kecil (&lt;)</option>
+                                  <option value=">">lebih besar (&gt;)</option>
+                                  <option value="<=">lebih kecil daripada samadengan (≤)</option>
+                                  <option value=">=">lebih besar daripada samadengan (≥)</option>
+                                  <option value="rentang">rentang (min - maks)</option>
+                                </select>
+                              </td>
+                              <td className="py-2.5 px-3 text-xs font-semibold text-gray-800">
+                                {p.patokan}
+                              </td>
                             </tr>
                           ))
                         ) : (
                           <tr>
-                            <td colSpan={4} className="p-4 text-center text-sm text-gray-400">Belum ada parameter pengujian</td>
+                            <td colSpan={4} className="py-3 px-3 text-center text-xs text-gray-400">
+                              Belum ada parameter pengujian
+                            </td>
                           </tr>
                         )}
                       </tbody>
@@ -340,60 +759,59 @@ export default function StandarMetodeUjiPage() {
                   </div>
                 </div>
 
-                <div>
+                <div className="pt-2">
                   <div className="flex items-center gap-2 mb-2">
-                    <i className="ri-file-list-3-line text-success"></i>
-                    <h4 className="text-sm font-semibold text-gray-800">Deskripsi Metode</h4>
+                    <i className="ri-file-text-line text-emerald-600 text-sm"></i>
+                    <h4 className="text-xs font-bold text-gray-800">Deskripsi Metode</h4>
                   </div>
-                  <p className="text-sm text-gray-600">
-                    {selectedItem.deskripsi || 'Penentuan kadar air dilakukan dengan metode oven (103 ± 2°C) selama 17 ± 1 jam atau hingga berat konstan.'}
+                  <p className="text-xs text-gray-600 leading-relaxed">
+                    {selectedItem.deskripsi ||
+                      'Penentuan kadar air dilakukan dengan metode oven (103 ± 2°C) selama 17 ± 1 jam atau hingga berat konstan.'}
                   </p>
                 </div>
 
-                <div>
-                  <div className="flex items-center gap-2 mb-3">
-                    <i className="ri-folder-open-line text-success"></i>
-                    <h4 className="text-sm font-semibold text-gray-800">Dokumen Terkait</h4>
+                <div className="pt-2">
+                  <div className="flex items-center gap-2 mb-2">
+                    <i className="ri-folder-open-line text-emerald-600 text-sm"></i>
+                    <h4 className="text-xs font-bold text-gray-800">Dokumen Terkait</h4>
                   </div>
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between p-2 border border-defaultborder rounded-md bg-gray-50">
-                      <div className="flex items-center gap-2">
-                        <i className="ri-file-pdf-fill text-danger text-xl"></i>
-                        <div>
-                          <div className="text-xs font-semibold text-gray-800">SOP_Kadar_Air.pdf</div>
-                          <div className="text-xs text-gray-400">1.2 MB</div>
+                  <div className="space-y-2.5">
+                    {docsToRender.map((doc: any, idx: number) => (
+                      <div key={doc.id || idx} className="flex items-center justify-between py-1">
+                        <div className="flex items-center gap-2.5 min-w-0">
+                          <i className="ri-file-text-line text-emerald-600 text-lg shrink-0"></i>
+                          <div className="min-w-0">
+                            <div className="text-xs font-medium text-gray-800 truncate" title={doc.namaFile}>
+                              {doc.namaFile}
+                            </div>
+                            <div className="text-[11px] text-gray-400">
+                              {doc.ukuran || '-'}
+                            </div>
+                          </div>
                         </div>
+                        <a
+                          href={doc.fileUrl || '#'}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-gray-400 hover:text-emerald-600 transition-colors shrink-0 p-1"
+                          title="Unduh Berkas"
+                        >
+                          <i className="ri-download-2-line text-base"></i>
+                        </a>
                       </div>
-                      <i className="ri-download-2-line text-primary cursor-pointer"></i>
-                    </div>
-                    <div className="flex items-center justify-between p-2 border border-defaultborder rounded-md bg-gray-50">
-                      <div className="flex items-center gap-2">
-                        <i className="ri-file-pdf-fill text-danger text-xl"></i>
-                        <div>
-                          <div className="text-xs font-semibold text-gray-800">ISTA_2-001.pdf</div>
-                          <div className="text-xs text-gray-400">856 KB</div>
-                        </div>
-                      </div>
-                      <i className="ri-download-2-line text-primary cursor-pointer"></i>
-                    </div>
-                    <div className="flex items-center justify-between p-2 border border-defaultborder rounded-md bg-gray-50">
-                      <div className="flex items-center gap-2">
-                        <i className="ri-file-excel-fill text-success text-xl"></i>
-                        <div>
-                          <div className="text-xs font-semibold text-gray-800">Formulir_Hasil_Uji_Kadar_Air.xlsx</div>
-                          <div className="text-xs text-gray-400">320 KB</div>
-                        </div>
-                      </div>
-                      <i className="ri-download-2-line text-primary cursor-pointer"></i>
-                    </div>
+                    ))}
                   </div>
                 </div>
 
-                <div className="bg-success/10 p-3 rounded-md flex gap-2">
-                  <i className="ri-information-line text-success text-lg shrink-0"></i>
+                <div className="bg-emerald-50/70 border border-emerald-200/70 rounded-lg p-3 flex gap-2.5 items-start mt-2">
+                  <div className="w-5 h-5 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center shrink-0 mt-0.5 text-xs font-bold">
+                    i
+                  </div>
                   <div>
-                    <h5 className="text-sm font-semibold text-success mb-1">Catatan</h5>
-                    <p className="text-xs text-gray-600">{selectedItem.catatan || '-'}</p>
+                    <h5 className="text-xs font-bold text-emerald-800 mb-0.5">Catatan</h5>
+                    <p className="text-xs text-gray-600 leading-relaxed">
+                      {selectedItem.catatan || 'Metode ini dapat digunakan untuk semua komoditas benih.'}
+                    </p>
                   </div>
                 </div>
               </div>

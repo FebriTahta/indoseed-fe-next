@@ -1,87 +1,227 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import DataTable from "@/app/(components)/(content-layout)/shared/DataTable";
-import dynamic from "next/dynamic";
-const Select = dynamic(() => import("react-select"), { ssr: false });
-import { AddButton, ViewIconButton, EditIconButton, ExportButton } from "@/app/(components)/(content-layout)/shared/ActionButtons";
-import PermintaanForm from "./PermintaanForm";
-
-const mockData = [
-  {
-    id: "1",
-    noPermintaan: "RQ-QC-2026-00125",
-    tanggalPermintaan: "16 Jun 2026 08:15",
-    batch: "BTH-2026-00125",
-    komoditasVarietas: "Melon / Tere F1",
-    tipe: "QC / Benih",
-    jumlahSampel: "500 gram",
-    jenisPengujian: "Lengkap (6)",
-    pemohon: "Produksi",
-    prioritas: "Normal",
-    status: "Menunggu Persetujuan",
-  },
-  {
-    id: "2",
-    noPermintaan: "RQ-QC-2026-00124",
-    tanggalPermintaan: "15 Jun 2026 14:20",
-    batch: "BTH-2026-00124",
-    komoditasVarietas: "Cabai / Keriting",
-    tipe: "QC / Benih",
-    jumlahSampel: "500 gram",
-    jenisPengujian: "Lengkap (5)",
-    pemohon: "Produksi",
-    prioritas: "Normal",
-    status: "Sampling",
-  },
-  {
-    id: "3",
-    noPermintaan: "RQ-QC-2026-00123",
-    tanggalPermintaan: "14 Jun 2026 09:10",
-    batch: "BTH-2026-00122",
-    komoditasVarietas: "Padi / Inpari 32",
-    tipe: "QC / Benih",
-    jumlahSampel: "1 kg",
-    jenisPengujian: "Lengkap (6)",
-    pemohon: "Produksi",
-    prioritas: "Urgent",
-    status: "Dalam Pengujian",
-  },
-  {
-    id: "4",
-    noPermintaan: "RQ-QC-2026-00122",
-    tanggalPermintaan: "13 Jun 2026 11:45",
-    batch: "BTH-2026-00121",
-    komoditasVarietas: "Melon / Tere F1",
-    tipe: "QC / Benih",
-    jumlahSampel: "500 gram",
-    jenisPengujian: "Lengkap (6)",
-    pemohon: "Produksi",
-    prioritas: "Normal",
-    status: "Menunggu Review",
-  },
-  {
-    id: "5",
-    noPermintaan: "RQ-QC-2026-00121",
-    tanggalPermintaan: "12 Jun 2026 10:30",
-    batch: "BTH-2026-00119",
-    komoditasVarietas: "Cabai / Rawit",
-    tipe: "QC / Benih",
-    jumlahSampel: "500 gram",
-    jenisPengujian: "Lengkap (5)",
-    pemohon: "Produksi",
-    prioritas: "Normal",
-    status: "Selesai",
-  },
-];
+import StatsWidgets, { StatItem } from "@/app/(components)/(content-layout)/shared/StatsWidgets";
+import FilterRow, { FilterSelectConfig } from "@/app/(components)/(content-layout)/shared/FilterRow";
+import {
+  EditIconButton,
+  DeleteIconButton,
+} from "@/app/(components)/(content-layout)/shared/ActionButtons";
+import { toast } from "react-toastify";
+import { permintaanPengujianService } from "@/app/services/permintaanPengujianService";
+import { PermintaanPengujian, PermintaanSummary } from "@/app/types/qc";
 
 const PermintaanList = () => {
   const router = useRouter();
   const [searchTerm, setSearchTerm] = useState("");
+  const [filterPeriode, setFilterPeriode] = useState("");
+  const [filterStatus, setFilterStatus] = useState("");
+  const [filterKomoditas, setFilterKomoditas] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
-  const [isModalOpen, setIsModalOpen] = useState(false);
+
+  const [data, setData] = useState<PermintaanPengujian[]>([]);
+  const [totalRecords, setTotalRecords] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
+  const [isLoading, setIsLoading] = useState(true);
+  const [summary, setSummary] = useState<PermintaanSummary>({
+    total: 0,
+    menungguPersetujuan: 0,
+    sampling: 0,
+    dalamPengujian: 0,
+    menungguReview: 0,
+    selesai: 0,
+    ditolak: 0,
+  });
+
+  const fetchSummary = useCallback(async () => {
+    try {
+      const res = await permintaanPengujianService.getPermintaanSummary();
+      if (res && res.data) {
+        setSummary(res.data);
+      }
+    } catch (err) {
+      console.error("Error fetching summary:", err);
+    }
+  }, []);
+
+  const fetchData = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      const res = await permintaanPengujianService.getPermintaanList({
+        search: searchTerm,
+        periode: filterPeriode,
+        status: filterStatus,
+        komoditas: filterKomoditas,
+        sortBy: "updatedAt",
+        sortOrder: "desc",
+        page: currentPage,
+        pageSize,
+      });
+      if (res && res.data) {
+        // Ensure sorting descending by updatedAt
+        const sorted = (res.data || []).slice().sort((a: any, b: any) => {
+          const timeA = new Date(a.updatedAt || a.tanggal || 0).getTime();
+          const timeB = new Date(b.updatedAt || b.tanggal || 0).getTime();
+          return timeB - timeA;
+        });
+        setData(sorted);
+        setTotalRecords(res.total || 0);
+        setTotalPages(res.totalPages || 1);
+      }
+    } catch (err) {
+      console.error("Error fetching permintaan pengujian:", err);
+      toast.error("Gagal memuat data permintaan pengujian");
+    } finally {
+      setIsLoading(false);
+    }
+  }, [searchTerm, filterPeriode, filterStatus, filterKomoditas, currentPage, pageSize]);
+
+  useEffect(() => {
+    fetchSummary();
+  }, [fetchSummary]);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
+
+  const handleResetFilter = () => {
+    setSearchTerm("");
+    setFilterPeriode("");
+    setFilterStatus("");
+    setFilterKomoditas("");
+    setCurrentPage(1);
+  };
+
+  const handleDelete = async (id: string, noPermintaan: string) => {
+    if (window.confirm(`Hapus permintaan pengujian ${noPermintaan}?`)) {
+      try {
+        await permintaanPengujianService.deletePermintaan(id);
+        toast.success(`Permintaan ${noPermintaan} berhasil dihapus`);
+        fetchData();
+        fetchSummary();
+      } catch (err: any) {
+        toast.error(err.response?.data?.message || "Gagal menghapus permintaan pengujian");
+      }
+    }
+  };
+
+  // Reusable Stat Items
+  const statItems: StatItem[] = useMemo(
+    () => [
+      {
+        title: "Total Permintaan",
+        value: summary.total,
+        subtitle: "Keseluruhan batch",
+        icon: "ri-file-list-3-line",
+        bgColor: "bg-blue-50",
+        textColor: "text-blue-600",
+      },
+      {
+        title: "Menunggu Persetujuan",
+        value: summary.menungguPersetujuan,
+        subtitle: "Perlu diproses",
+        icon: "ri-time-line",
+        bgColor: "bg-amber-50",
+        textColor: "text-amber-600",
+      },
+      {
+        title: "Sampling",
+        value: summary.sampling,
+        subtitle: "Pengambilan sampel",
+        icon: "ri-test-tube-line",
+        bgColor: "bg-indigo-50",
+        textColor: "text-indigo-600",
+      },
+      {
+        title: "Dalam Pengujian",
+        value: summary.dalamPengujian,
+        subtitle: "Proses analisa lab",
+        icon: "ri-settings-4-line",
+        bgColor: "bg-purple-50",
+        textColor: "text-purple-600",
+      },
+      {
+        title: "Selesai",
+        value: summary.selesai,
+        subtitle: "Hasil terbit",
+        icon: "ri-checkbox-circle-line",
+        bgColor: "bg-emerald-50",
+        textColor: "text-emerald-600",
+      },
+    ],
+    [summary]
+  );
+
+  // Reusable Select Filter Config
+  const filterConfig: FilterSelectConfig[] = useMemo(
+    () => [
+      {
+        value: filterPeriode
+          ? {
+              value: filterPeriode,
+              label:
+                filterPeriode === "today"
+                  ? "Hari Ini"
+                  : filterPeriode === "week"
+                  ? "Minggu Ini"
+                  : "Bulan Ini",
+            }
+          : null,
+        onChange: (val: any) => {
+          setFilterPeriode(val?.value || "");
+          setCurrentPage(1);
+        },
+        options: [
+          { value: "today", label: "Hari Ini" },
+          { value: "week", label: "Minggu Ini" },
+          { value: "month", label: "Bulan Ini" },
+        ],
+        placeholder: "Semua Periode",
+        widthClass: "sm:w-36",
+      },
+      {
+        value: filterStatus
+          ? { value: filterStatus, label: filterStatus }
+          : null,
+        onChange: (val: any) => {
+          setFilterStatus(val?.value || "");
+          setCurrentPage(1);
+        },
+        options: [
+          { value: "Menunggu Persetujuan", label: "Menunggu Persetujuan" },
+          { value: "Sampling", label: "Sampling" },
+          { value: "Dalam Pengujian", label: "Dalam Pengujian" },
+          { value: "Menunggu Review", label: "Menunggu Review" },
+          { value: "Selesai", label: "Selesai" },
+          { value: "Ditolak", label: "Ditolak" },
+        ],
+        placeholder: "Semua Status",
+        widthClass: "sm:w-44",
+      },
+      {
+        value: filterKomoditas
+          ? { value: filterKomoditas, label: filterKomoditas }
+          : null,
+        onChange: (val: any) => {
+          setFilterKomoditas(val?.value || "");
+          setCurrentPage(1);
+        },
+        options: [
+          { value: "Melon", label: "Melon" },
+          { value: "Cabai", label: "Cabai" },
+          { value: "Padi", label: "Padi" },
+          { value: "Kedelai", label: "Kedelai" },
+          { value: "Jagung", label: "Jagung" },
+        ],
+        placeholder: "Semua Komoditas",
+        widthClass: "sm:w-36",
+      },
+    ],
+    [filterPeriode, filterStatus, filterKomoditas]
+  );
 
   const headers = [
     "No.",
@@ -101,224 +241,176 @@ const PermintaanList = () => {
   const renderStatusBadge = (status: string) => {
     switch (status) {
       case "Menunggu Persetujuan":
-        return <span className="px-2 py-1 bg-yellow-100 text-yellow-700 rounded-full text-xs font-medium"><i className="ri-time-line mr-1"></i>Menunggu Persetujuan</span>;
+        return (
+          <span className="px-2 py-1 bg-yellow-100 text-yellow-700 rounded-full text-xs font-small inline-flex items-center gap-1">
+            <i className="ri-time-line"></i> Menunggu Persetujuan
+          </span>
+        );
       case "Sampling":
-        return <span className="px-2 py-1 bg-blue-100 text-blue-700 rounded-full text-xs font-medium"><i className="ri-test-tube-line mr-1"></i>Sampling</span>;
+        return (
+          <span className="px-2 py-1 bg-blue-100 text-blue-700 rounded-full text-xs font-small inline-flex items-center gap-1">
+            <i className="ri-test-tube-line"></i> Sampling
+          </span>
+        );
       case "Dalam Pengujian":
-        return <span className="px-2 py-1 bg-purple-100 text-purple-700 rounded-full text-xs font-medium"><i className="ri-settings-4-line mr-1"></i>Dalam Pengujian</span>;
+        return (
+          <span className="px-2 py-1 bg-purple-100 text-purple-700 rounded-full text-xs font-small inline-flex items-center gap-1">
+            <i className="ri-settings-4-line"></i> Dalam Pengujian
+          </span>
+        );
       case "Menunggu Review":
-        return <span className="px-2 py-1 bg-orange-100 text-orange-700 rounded-full text-xs font-medium"><i className="ri-search-eye-line mr-1"></i>Menunggu Review</span>;
+        return (
+          <span className="px-2 py-1 bg-orange-100 text-orange-700 rounded-full text-xs font-small inline-flex items-center gap-1">
+            <i className="ri-search-eye-line"></i> Menunggu Review
+          </span>
+        );
       case "Selesai":
-        return <span className="px-2 py-1 bg-emerald-100 text-emerald-700 rounded-full text-xs font-medium"><i className="ri-checkbox-circle-line mr-1"></i>Selesai</span>;
+        return (
+          <span className="px-2 py-1 bg-emerald-100 text-emerald-700 rounded-full text-xs font-small inline-flex items-center gap-1">
+            <i className="ri-checkbox-circle-line"></i> Selesai
+          </span>
+        );
       case "Ditolak":
-        return <span className="px-2 py-1 bg-red-100 text-red-700 rounded-full text-xs font-medium"><i className="ri-close-circle-line mr-1"></i>Ditolak</span>;
+        return (
+          <span className="px-2 py-1 bg-red-100 text-red-700 rounded-full text-xs font-small inline-flex items-center gap-1">
+            <i className="ri-close-circle-line"></i> Ditolak
+          </span>
+        );
       default:
-        return <span className="px-2 py-1 bg-gray-100 text-gray-700 rounded-full text-xs font-medium">{status}</span>;
+        return (
+          <span className="px-2 py-1 bg-gray-100 text-gray-700 rounded-full text-xs font-small">
+            {status}
+          </span>
+        );
     }
   };
 
   const renderPrioritas = (prioritas: string) => {
-    if (prioritas === "Urgent") {
-      return <span className="text-red-600 font-medium">Urgent</span>;
+    if (prioritas?.toLowerCase() === "urgent") {
+      return (
+        <span className="text-red-600 font-semibold inline-flex items-center gap-1">
+          <i className="ri-alarm-warning-line"></i> Urgent
+        </span>
+      );
     }
-    return <span className="text-gray-600">Normal</span>;
+    return <span className="text-gray-600 font-medium">Normal</span>;
   };
 
-  const renderRow = (item: any, index: number) => (
-    <tr key={item.id} className="hover:bg-gray-50 border-b border-defaultborder transition-colors">
+  const formatDate = (dateVal: string | Date | undefined) => {
+    if (!dateVal) return "-";
+    try {
+      const d = new Date(dateVal);
+      return d.toLocaleDateString("id-ID", {
+        day: "2-digit",
+        month: "short",
+        year: "numeric",
+      });
+    } catch {
+      return String(dateVal);
+    }
+  };
 
-      <td className="p-4 text-center">{(index + 1).toString()}</td>
-      <td className="p-4"><span className="text-primary font-medium">{item.noPermintaan}</span></td>
-      <td className="p-4">{item.tanggalPermintaan}</td>
-      <td className="p-4"><span className="font-medium text-gray-700">{item.batch}</span></td>
-      <td className="p-4">{item.komoditasVarietas}</td>
-      <td className="p-4">{item.tipe}</td>
-      <td className="p-4">{item.jumlahSampel}</td>
-      <td className="p-4">{item.jenisPengujian}</td>
-      <td className="p-4">{item.pemohon}</td>
-      <td className="p-4">{renderPrioritas(item.prioritas)}</td>
-      <td className="p-4">{renderStatusBadge(item.status)}</td>
-      <td className="p-4">
-        <div className="flex gap-2 justify-center">
-          <ViewIconButton title="Lihat" />
-          <EditIconButton onClick={() => router.push(`/qc/permintaan-pengujian/edit/${item.id}`)} />
-        </div>
-      </td>
-    </tr>
-  );
+  const renderRow = (item: PermintaanPengujian, index: number) => {
+    const paramCount = item.parameters?.length || 0;
+    const komoditasVarietas = `${item.komoditas || "-"} / ${item.varietas || "-"}`;
+    const pemohonLabel =
+      item.pemohon === "produksi"
+        ? "Produksi"
+        : item.pemohon === "gudang"
+        ? "Gudang"
+        : item.pemohon === "rnd"
+        ? "R & D"
+        : item.pemohon || "-";
+
+    return (
+      <tr
+        key={item.id}
+        className="hover:bg-gray-50 border-b border-defaultborder transition-colors text-xs"
+      >
+        <td className="p-3 text-center text-gray-500">
+          {(currentPage - 1) * pageSize + index + 1}
+        </td>
+        <td className="p-3 font-semibold text-emerald-700">
+          {item.noPermintaan}
+        </td>
+        <td className="p-3 text-gray-600">{formatDate(item.tanggal)}</td>
+        <td className="p-3">
+          <span className="font-medium text-gray-800 bg-gray-100 px-2 py-0.5 rounded">
+            {item.kodeBatch}
+          </span>
+        </td>
+        <td className="p-3 text-gray-700 font-medium">{komoditasVarietas}</td>
+        <td className="p-3 text-gray-500">{item.tipe || "QC / Benih"}</td>
+        <td className="p-3 text-gray-700">
+          {item.jumlahSampel || 0} {item.satuanSampel || "gram"}
+        </td>
+        <td className="p-3">
+          <span className="inline-flex items-center gap-1 text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded font-medium">
+            <i className="ri-flask-line"></i> {paramCount} Parameter
+          </span>
+        </td>
+        <td className="p-3 text-gray-700">{pemohonLabel}</td>
+        <td className="p-3">{renderPrioritas(item.prioritas)}</td>
+        <td className="p-3">{renderStatusBadge(item.status)}</td>
+        <td className="p-3">
+          <div className="flex gap-1.5 justify-center">
+            <EditIconButton
+              title="Edit Permintaan"
+              onClick={() =>
+                router.push(`/qc/permintaan-pengujian/edit/${item.id}`)
+              }
+            />
+            <DeleteIconButton
+              title="Hapus"
+              onClick={() => handleDelete(item.id, item.noPermintaan)}
+            />
+          </div>
+        </td>
+      </tr>
+    );
+  };
 
   return (
     <div className="space-y-6">
-      {/* Stat Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-        <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex items-center justify-between">
-          <div>
-            <p className="text-sm text-gray-500 font-medium mb-1">Total Permintaan</p>
-            <h3 className="text-3xl font-bold text-gray-800">128</h3>
-            <p className="text-xs text-emerald-600 mt-1"><i className="ri-arrow-up-line"></i> 8% dari bulan lalu</p>
-          </div>
-          <div className="w-12 h-12 rounded-full bg-blue-50 flex items-center justify-center text-blue-600">
-            <i className="ri-file-list-3-line text-2xl"></i>
-          </div>
-        </div>
-        <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex items-center justify-between">
-          <div>
-            <p className="text-sm text-gray-500 font-medium mb-1">Menunggu Persetujuan</p>
-            <h3 className="text-3xl font-bold text-gray-800">18</h3>
-            <p className="text-xs text-gray-500 mt-1">perlu diproses</p>
-          </div>
-          <div className="w-12 h-12 rounded-full bg-orange-50 flex items-center justify-center text-orange-600">
-            <i className="ri-time-line text-2xl"></i>
-          </div>
-        </div>
-        <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex items-center justify-between">
-          <div>
-            <p className="text-sm text-gray-500 font-medium mb-1">Sampling</p>
-            <h3 className="text-3xl font-bold text-gray-800">12</h3>
-            <p className="text-xs text-gray-500 mt-1">menunggu sampel</p>
-          </div>
-          <div className="w-12 h-12 rounded-full bg-indigo-50 flex items-center justify-center text-indigo-600">
-            <i className="ri-flask-line text-2xl"></i>
-          </div>
-        </div>
-        <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex items-center justify-between">
-          <div>
-            <p className="text-sm text-gray-500 font-medium mb-1">Dalam Pengujian</p>
-            <h3 className="text-3xl font-bold text-gray-800">24</h3>
-            <p className="text-xs text-gray-500 mt-1">proses analisa</p>
-          </div>
-          <div className="w-12 h-12 rounded-full bg-purple-50 flex items-center justify-center text-purple-600">
-            <i className="ri-settings-4-line text-2xl"></i>
-          </div>
-        </div>
-        <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex items-center justify-between">
-          <div>
-            <p className="text-sm text-gray-500 font-medium mb-1">Selesai</p>
-            <h3 className="text-3xl font-bold text-gray-800">65</h3>
-            <p className="text-xs text-gray-500 mt-1">lulus / tidak lulus</p>
-          </div>
-          <div className="w-12 h-12 rounded-full bg-emerald-50 flex items-center justify-center text-emerald-600">
-            <i className="ri-checkbox-circle-line text-2xl"></i>
-          </div>
-        </div>
-      </div>
+      {/* Reusable Stats Widgets */}
+      <StatsWidgets items={statItems} columns={5} />
 
+      {/* Reusable Filter Row Bar */}
+      <FilterRow
+        search={searchTerm}
+        onSearchChange={(val) => {
+          setSearchTerm(val);
+          setCurrentPage(1);
+        }}
+        searchPlaceholder="Cari No. Permintaan, Batch, Komoditas..."
+        selectFilters={filterConfig}
+        onReset={handleResetFilter}
+        onExport={() => toast.info("Mengekspor data permintaan pengujian...")}
+        onAdd={() => router.push("/qc/permintaan-pengujian/create")}
+        addLabel="Buat Permintaan"
+      />
+
+      {/* Reusable Data Table */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-        {/* Toolbar */}
-        <div className="p-4 border-b border-gray-100 flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div className="flex items-center gap-2 flex-wrap">
-            <div className="relative">
-              <input
-                type="text"
-                placeholder="Cari No. Permintaan, Batch..."
-                className="pl-10 pr-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary w-64"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-              />
-              <i className="ri-search-line absolute left-3 top-2.5 text-gray-400"></i>
-            </div>
-            <div className="w-40">
-              <Select
-                instanceId="filter-periode"
-                options={[
-                  { value: "", label: "Semua Periode" },
-                  { value: "today", label: "Hari Ini" },
-                  { value: "week", label: "Minggu Ini" },
-                  { value: "month", label: "Bulan Ini" },
-                ]}
-                placeholder="Periode"
-                className="text-sm"
-              />
-            </div>
-            <div className="w-40">
-              <Select
-                instanceId="filter-status"
-                options={[
-                  { value: "", label: "Semua Status" },
-                  { value: "menunggu", label: "Menunggu Persetujuan" },
-                  { value: "sampling", label: "Sampling" },
-                  { value: "dalam_pengujian", label: "Dalam Pengujian" },
-                  { value: "selesai", label: "Selesai" },
-                ]}
-                placeholder="Status"
-                className="text-sm"
-              />
-            </div>
-            <div className="w-40">
-              <Select
-                instanceId="filter-komoditas"
-                options={[
-                  { value: "", label: "Semua Komoditas" },
-                  { value: "melon", label: "Melon" },
-                  { value: "cabai", label: "Cabai" },
-                  { value: "padi", label: "Padi" },
-                ]}
-                placeholder="Komoditas"
-                className="text-sm"
-              />
-            </div>
-            <button className="flex items-center gap-2 px-3 py-2 border border-gray-200 rounded-lg text-sm hover:bg-gray-50">
-              <i className="ri-refresh-line"></i> Reset Filter
-            </button>
-          </div>
-          <div className="flex gap-2">
-            <AddButton label="Buat Permintaan" onClick={() => setIsModalOpen(true)} />
-            <ExportButton />
-          </div>
-        </div>
-
-        {/* Table */}
         <DataTable
           headers={headers}
-          items={mockData}
+          items={data}
           renderRow={renderRow}
           currentPage={currentPage}
           pageSize={pageSize}
-          totalPages={1}
-          totalRecords={mockData.length}
+          totalPages={totalPages}
+          totalRecords={totalRecords}
           onPageChange={setCurrentPage}
-          onPageSizeChange={setPageSize}
-          headerTextSize="12px"
-          bodyTextSize="10px"
+          onPageSizeChange={(newSize) => {
+            setPageSize(newSize);
+            setCurrentPage(1);
+          }}
+          headerTextSize="11px"
+          bodyTextSize="11px"
+          isLoading={isLoading}
+          emptyMessage="Tidak ada permintaan pengujian yang sesuai dengan kriteria filter."
         />
       </div>
-
-      {/* Modal Buat Permintaan */}
-      {isModalOpen && (
-        <div className="fixed inset-0 z-[9999] overflow-y-auto">
-          {/* Backdrop */}
-          <div
-            className="fixed inset-0 bg-black/50 backdrop-blur-sm transition-opacity"
-            onClick={() => setIsModalOpen(false)}
-          ></div>
-
-          {/* Center Container */}
-          <div className="flex min-h-full items-center justify-center p-4">
-            <div className="relative w-full max-w-[75vw] animate-slide-down">
-              {/* Modal Header */}
-              <div className="flex items-center justify-between p-4 border-b border-defaultborder bg-emerald-600 text-white rounded-t-xl">
-                <h5 className="text-white font-bold mb-0 flex items-center gap-2">
-                  <i className="ri-test-tube-line"></i> Buat Permintaan Pengujian
-                </h5>
-                <button
-                  type="button"
-                  onClick={() => setIsModalOpen(false)}
-                  className="text-white/80 hover:text-white transition-colors"
-                >
-                  <i className="ri-close-line text-2xl"></i>
-                </button>
-              </div>
-
-              {/* Form Content */}
-              <div className="bg-white">
-                <div className="p-0 border-0 shadow-none mb-0 bg-white">
-                  <PermintaanForm onCancel={() => setIsModalOpen(false)} />
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 };

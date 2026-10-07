@@ -5,14 +5,10 @@ import { useRouter } from "next/navigation";
 import { useState, Fragment } from "react";
 import { ToastContainer, toast } from 'react-toastify';
 
-
-// import Turnstile from "./Turnstile";
-
 export default function SignIn() {
     const [passwordshow1, setpasswordshow1] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
     const [captchaToken, setCaptchaToken] = useState<string | null>(null);
-    const [turnstileKey, setTurnstileKey] = useState(0);
 
     const [err1, setError1] = useState("");
     const [data, setData] = useState({
@@ -37,16 +33,6 @@ export default function SignIn() {
 
     const handleLogin = async (e: any) => {
         e.preventDefault();
-
-        // const siteKey = process.env.NEXT_PUBLIC_CLOUDFLARE_TURNISTILE_SITE_KEY || '0x4AAAAAADsac7zEzG0Ar8xw';
-        // if (siteKey && !captchaToken) {
-        //     toast.error('Silakan selesaikan captcha terlebih dahulu', {
-        //         position: 'top-right',
-        //         autoClose: 1500,
-        //     });
-        //     return;
-        // }
-
         setIsLoading(true);
 
         try {
@@ -71,7 +57,6 @@ export default function SignIn() {
             }
 
             const result = await response.json();
-            // Optionally save token
             if (result && result.token) {
                 localStorage.setItem('token', result.token);
             }
@@ -89,9 +74,7 @@ export default function SignIn() {
                     const firstRole = payload.roles && payload.roles.length > 0 ? payload.roles[0] : null;
                     userRole = payload.role || payload.activeRole?.name || (firstRole ? (typeof firstRole === 'object' ? firstRole.name : firstRole) : "");
                 }
-            } catch (e) {
-                console.error("Could not parse JWT token for role", e);
-            }
+            } catch (e) {}
 
             if (!userRole) {
                 userRole = result.user?.activeRole?.name ||
@@ -101,30 +84,15 @@ export default function SignIn() {
                     "";
             }
 
-            toast.success('Login successful', {
-                position: 'top-right',
-                autoClose: 1500,
-                hideProgressBar: false,
-                closeOnClick: true,
-                pauseOnHover: true,
-                draggable: true,
-            });
+            toast.success('Login berhasil', { position: 'top-right', autoClose: 1500 });
             setTimeout(() => {
                 RouteChange(userRole);
             }, 1200);
 
         } catch (error: any) {
-            setTurnstileKey(prev => prev + 1);
             setCaptchaToken(null);
             setError1(error.message || 'Login failed');
-            toast.error(error.message || 'Invalid login credentials', {
-                position: 'top-right',
-                autoClose: 1500,
-                hideProgressBar: false,
-                closeOnClick: true,
-                pauseOnHover: true,
-                draggable: true,
-            });
+            toast.error(error.message || 'Invalid login credentials', { position: 'top-right', autoClose: 1500 });
         } finally {
             setIsLoading(false);
         }
@@ -134,119 +102,168 @@ export default function SignIn() {
         <Fragment>
             <div className="container">
                 <div className="grid grid-cols-12 justify-center items-center authentication authentication-basic h-full min-h-screen">
-                    <div className="hidden lg:block lg:col-span-6"></div>
-                    <div className="col-span-12 sm:col-span-10 sm:col-start-2 md:col-span-8 md:col-start-2 lg:col-span-6 flex justify-center items-center h-full">
-                        <div className="box w-full">
+                    {/* The Empty Div for Background on Left */}
+                    <div className="hidden lg:block lg:col-span-7"></div>
+                    
+                    {/* Form container on Right */}
+                    <div className="col-span-12 sm:col-span-10 sm:col-start-2 md:col-span-8 md:col-start-3 lg:col-span-5 lg:col-start-8 flex justify-center lg:justify-end items-center h-full pr-0 lg:pr-8 xl:pr-12">
+                        <div className="box w-full max-w-sm bg-white py-6 px-6 shadow-2xl shadow-emerald-900/10 border-0 rounded-2xl">
+                            
+                            <div className="flex justify-center mb-4">
+                                <Image width={160} height={64} src="/assets/images/logo-web-green.png" alt="Indoseed Logo" className="object-contain drop-shadow-sm" />
+                            </div>
+                            
+                            <h2 className="text-center text-2xl font-extrabold text-gray-900 tracking-tight">
+                                Selamat Datang
+                            </h2>
+                            <p className="mt-1 mb-5 text-center text-xs text-gray-600">
+                                Masuk ke sistem informasi perusahaan benih
+                            </p>
 
-
-
-                            {/* <nav className="!block firebase-data mt-6 bg-light mx-auto p-2 rounded-md" aria-label="Tabs" role='tablist'>
-                                <div className="flex justify-center space-x-2 rtl:space-x-reverse">
-                                    <Image width={200} height={100} src="/assets/images/logo-web-green.png" alt="user-img" className='' />
-                                </div>
-                            </nav> */}
-                            <div className="box-body !p-6 sm:!p-10 md:!p-[3rem]">
-
-                                <h4 className="mb-1">
-                                    Selamat Datang Kembali
-                                </h4>
-
-                                <span className="text-textmuted dark:text-textmuted/50">
-                                    Silahkan login untuk mengakses <br className="hidden sm:inline" /> sistem informasi perusahaan benih.
-                                </span>
-
-                                <div className="grid grid-cols-12 gap-y-3 mt-4">
-                                    <div className="xl:col-span-12 col-span-12">
-                                        {err1 && <div className="alert-danger px-4 py-3 shadow-md mb-2" role="alert">
-                                            <div className="flex">
-                                                <div className="py-1">
-                                                </div>
-                                                <div>{err1}</div>
-                                            </div>
-                                        </div>}
-                                    </div>
-                                    <div className="xl:col-span-12 col-span-12">
-                                        <label htmlFor="signin-username" className="form-label text-defaulttextcolor">Email / Username <sup className="text-xs text-danger">*</sup></label>
-                                        {/* <input type="text" name="username" className="form-control" onChange={changeHandler} value={username} id="signin-username" placeholder="Username" /> */}
-                                        <div className="input-group">
-                                            <div className="input-group-text"><i className="ri-user-line"></i></div>
-                                            <input type="text" name="username" className="form-control" onChange={changeHandler} value={username} id="signin-username" placeholder="Username" />
-                                        </div>
-                                    </div>
-                                    <div className="xl:col-span-12 col-span-12 mb-2">
-                                        <label htmlFor="signin-password" className="form-label text-defaulttextcolor block">Kata Sandi<sup className="text-xs text-danger">*</sup></label>
-                                        <div className="relative">
-                                            <div className="input-group">
-                                                <div className="input-group-text"><i className="ri-lock-line"></i></div>
-                                                <input type={(passwordshow1) ? 'text' : "password"} className="form-control form-control-lg !rounded-s-md "
-                                                    name="password"
-                                                    placeholder="Password" value={password}
-                                                    onChange={changeHandler} />
-                                            </div>
-                                            {/* <input type={(passwordshow1) ? 'text' : "password"} className="form-control form-control-lg !rounded-s-md "
-                                                name="password"
-                                                placeholder="Password" value={password}
-                                                onChange={changeHandler} /> */}
-                                            <Link scroll={false} href="#!" onClick={(e) => { e.preventDefault(); setpasswordshow1(!passwordshow1); }} className="show-password-button text-textmuted dark:text-textmuted/50" id="button-addon2">
-                                                <i className={`${passwordshow1 ? 'ri-eye-line' : 'ri-eye-off-line'} align-middle`}></i>
-                                            </Link>
-                                        </div>
-                                        <div className="mt-2">
-                                            <div className="form-check">
-                                                <input className="form-check-input" type="checkbox" defaultValue="" id="defaultCheck1" />
-                                                <label className="form-check-label text-textmuted dark:text-textmuted/50 font-normal" htmlFor="defaultCheck1">
-                                                    Ingat Saya ?
-                                                </label>
-                                            </div>
-                                        </div>
+                            {err1 && (
+                                <div className="mb-4 rounded-lg bg-red-50 p-3 border border-red-100 flex items-start">
+                                    <i className="ri-error-warning-fill text-red-500 text-lg mt-0.5 mr-3"></i>
+                                    <div>
+                                        <h3 className="text-sm font-medium text-red-800">Login Gagal</h3>
+                                        <div className="mt-1 text-xs text-red-700">{err1}</div>
                                     </div>
                                 </div>
-                                {/* <Turnstile
-                                    key={turnstileKey}
-                                    siteKey={process.env.NEXT_PUBLIC_CLOUDFLARE_TURNISTILE_SITE_KEY || '0x4AAAAAADsac7zEzG0Ar8xw'}
-                                    onSuccess={(token) => setCaptchaToken(token)}
-                                    onExpire={() => setCaptchaToken(null)}
-                                    onError={() => setCaptchaToken(null)}
-                                /> */}
-                                <div className="grid mt-4">
-                                    <button className="ti-btn ti-btn-primary" onClick={handleLogin} disabled={isLoading}>
-                                        <i className="ti ti-login-2" /> {isLoading ? 'Process Login...' : 'Login'}
+                            )}
+
+                            <form className="space-y-4" onSubmit={handleLogin}>
+                                <div>
+                                    <label htmlFor="username" className="block text-xs font-medium text-gray-700">
+                                        Email atau Username
+                                    </label>
+                                    <div className="mt-1 relative rounded-md shadow-sm">
+                                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                            <i className="ri-user-line text-gray-400 text-sm"></i>
+                                        </div>
+                                        <input
+                                            id="username"
+                                            name="username"
+                                            type="text"
+                                            required
+                                            value={username}
+                                            onChange={changeHandler}
+                                            onKeyDown={(e) => {
+                                                if (e.key === 'Enter') {
+                                                    handleLogin(e);
+                                                }
+                                            }}
+                                            className="block w-full pl-9 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-emerald-500 focus:border-emerald-500 text-sm transition-colors"
+                                            placeholder="Masukkan email / username"
+                                        />
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <label htmlFor="password" className="block text-xs font-medium text-gray-700">
+                                        Kata Sandi
+                                    </label>
+                                    <div className="mt-1 relative rounded-md shadow-sm">
+                                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                            <i className="ri-lock-line text-gray-400 text-sm"></i>
+                                        </div>
+                                        <input
+                                            id="password"
+                                            name="password"
+                                            type={passwordshow1 ? "text" : "password"}
+                                            required
+                                            value={password}
+                                            onChange={changeHandler}
+                                            onKeyDown={(e) => {
+                                                if (e.key === 'Enter') {
+                                                    handleLogin(e);
+                                                }
+                                            }}
+                                            className="block w-full pl-9 pr-9 py-2 border border-gray-300 rounded-lg focus:ring-emerald-500 focus:border-emerald-500 text-sm transition-colors"
+                                            placeholder="••••••••"
+                                        />
+                                        <div className="absolute inset-y-0 right-0 pr-3 flex items-center">
+                                            <button
+                                                type="button"
+                                                onClick={() => setpasswordshow1(!passwordshow1)}
+                                                className="text-gray-400 hover:text-gray-500 focus:outline-none"
+                                            >
+                                                <i className={passwordshow1 ? "ri-eye-line" : "ri-eye-off-line"} style={{ fontSize: '14px' }}></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="flex items-center justify-between mt-1">
+                                    <div className="flex items-center">
+                                        <input
+                                            id="remember-me"
+                                            name="remember-me"
+                                            type="checkbox"
+                                            className="h-3 w-3 text-emerald-600 focus:ring-emerald-500 border-gray-300 rounded"
+                                        />
+                                        <label htmlFor="remember-me" className="ml-2 block text-xs text-gray-700">
+                                            Ingat saya
+                                        </label>
+                                    </div>
+
+                                    <div className="text-xs">
+                                        <a href="#" className="font-medium text-emerald-600 hover:text-emerald-500">
+                                            Lupa sandi?
+                                        </a>
+                                    </div>
+                                </div>
+
+                                <div className="pt-2">
+                                    <button
+                                        type="submit"
+                                        disabled={isLoading}
+                                        className="w-full flex justify-center py-2 px-4 border border-transparent rounded-lg shadow-sm text-sm font-bold text-white bg-emerald-600 hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 disabled:opacity-70 transition-colors"
+                                    >
+                                        {isLoading ? (
+                                            <span className="flex items-center gap-2">
+                                                <i className="ri-loader-4-line animate-spin"></i> Memproses...
+                                            </span>
+                                        ) : (
+                                            "Masuk"
+                                        )}
                                     </button>
                                 </div>
-                                <div className="text-center">
-                                    <p className="text-textmuted dark:text-textmuted/50 mt-3 mb-0">Dont have an account? <Link href="/auth/sign-up" className="text-primary">Sign Up</Link></p>
-                                </div>
+                            </form>
 
-
-                                <div className="flex items-center gap-4 rounded-xl bg-emerald-50 mt-5 px-5 py-4">
-                                    <div className="flex h-10 w-10 items-center justify-center">
-                                        {/* <AlertTriangle
-                                            className="h-6 w-6 text-yellow-500"
-                                            fill="#FACC15"
-                                            strokeWidth={2}
-                                        /> */}
-                                        <i className="fa-solid fa-triangle-exclamation text-yellow-400 text-2xl ti ti-alert-triangle"></i>
+                            <div className="mt-5">
+                                <div className="relative">
+                                    <div className="absolute inset-0 flex items-center">
+                                        <div className="w-full border-t border-gray-200" />
                                     </div>
-
-                                    <div>
-                                        <p className="text-sm text-emerald-700">
-                                            Sistem ini dilindungi dengan enkripsi SSL
-                                        </p>
-
-                                        <p className="mt-1 text-sm  text-emerald-700">
-                                            dan <span className="font-semibold">standar keamanan tinggi.</span>
-                                        </p>
+                                    <div className="relative flex justify-center text-xs">
+                                        <span className="px-2 bg-white text-gray-500">Atau</span>
                                     </div>
                                 </div>
 
-                                <div className="text-center">
-                                    <p className="text-textmuted italic dark:text-textmuted/50 mt-3 mb-0">Sistem informasi perusahaan benih</p>
+                                <div className="mt-4 text-center text-xs">
+                                    <span className="text-gray-600">Belum punya akun? </span>
+                                    <Link href="/auth/sign-up" className="font-medium text-emerald-600 hover:text-emerald-500">
+                                        Daftar Sekarang
+                                    </Link>
                                 </div>
-
                             </div>
+
+                            <div className="mt-5 bg-emerald-50 rounded-xl p-3 flex items-start gap-2 border border-emerald-100">
+                                <div className="shrink-0">
+                                    <i className="ri-shield-check-fill text-emerald-500 text-lg"></i>
+                                </div>
+                                <div>
+                                    <p className="text-[11px] font-semibold text-emerald-800">Koneksi Aman</p>
+                                    <p className="text-[10px] text-emerald-700 mt-0.5 leading-tight">
+                                        Sistem ini dilindungi dengan standar keamanan tinggi dan enkripsi data end-to-end.
+                                    </p>
+                                </div>
+                            </div>
+
+                            <p className="text-center text-[10px] text-gray-400 mt-5">
+                                &copy; {new Date().getFullYear()} SI BENIH - Sistem Informasi Perusahaan Benih.
+                            </p>
                         </div>
                     </div>
-                    {/* <div className="xxl:col-span-4 xl:col-span-4 lg:col-span-3 md:col-span-3 sm:col-span-2 col-span-12"></div> */}
                 </div>
             </div>
             <ToastContainer />
