@@ -10,6 +10,7 @@ import 'leaflet/dist/leaflet.css';
 import Seo from '@/shared/layouts-components/seo/seo';
 import api from '@/app/lib/axios';
 import penanggungJawabService from '@/app/services/penanggungJawabService';
+import kelompokTaniService from '@/app/services/kelompokTaniService';
 import commodityService from '@/app/services/commodityService';
 import varietyService from '@/app/services/varietyService';
 import partnerService from '@/app/services/partnerService';
@@ -17,6 +18,7 @@ import partnerService from '@/app/services/partnerService';
 import { Commodity } from '@/app/types/commodity';
 import { Variety } from '@/app/types/variety';
 import { PenanggungJawab } from '@/app/types/penanggungJawab';
+import { KelompokTani } from '@/app/types/kelompokTani';
 
 import ModalTambahLahan, { LahanItem } from './component/ModalTambahLahan';
 import PetaDaftarLahan from './component/PetaDaftarLahan';
@@ -35,6 +37,7 @@ export default function TambahPetaniMitraPage() {
 
   // Master Data States
   const [penanggungJawabList, setPenanggungJawabList] = useState<PenanggungJawab[]>([]);
+  const [kelompokTaniList, setKelompokTaniList] = useState<KelompokTani[]>([]);
   const [commodities, setCommodities] = useState<Commodity[]>([]);
   const [varieties, setVarieties] = useState<Variety[]>([]);
   const [isLoadingMaster, setIsLoadingMaster] = useState(true);
@@ -46,6 +49,8 @@ export default function TambahPetaniMitraPage() {
   const [alamat, setAlamat] = useState('');
   const [noHp, setNoHp] = useState('');
   const [email, setEmail] = useState('');
+  const [penanggungJawabId, setPenanggungJawabId] = useState('');
+  const [kelompokTaniId, setKelompokTaniId] = useState('');
   const [kelompokTani, setKelompokTani] = useState('');
   const [komoditasUtama, setKomoditasUtama] = useState('');
   const [status, setStatus] = useState<'Aktif' | 'Non Aktif'>('Aktif');
@@ -79,13 +84,24 @@ export default function TambahPetaniMitraPage() {
     const fetchMasterData = async () => {
       setIsLoadingMaster(true);
       try {
-        const [pjRes, comRes, varRes, partnerRes] = await Promise.all([
+        const [pjRes, ktRes, comRes, varRes, partnerRes] = await Promise.all([
           penanggungJawabService
             .getPenanggungJawab({ pageSize: 100, status: 'Aktif' })
             .catch(async (err) => {
               console.warn('Error fetching penanggung jawab, fallback to api.get:', err);
               try {
                 const res = await api.get('/master/penanggung-jawab', { params: { pageSize: 100, status: 'Aktif' } });
+                return res.data;
+              } catch {
+                return { status: 'error', data: [] } as any;
+              }
+            }),
+          kelompokTaniService
+            .getKelompokTani({ pageSize: 500, status: 'Aktif' })
+            .catch(async (err) => {
+              console.warn('Error fetching kelompok tani, fallback to api.get:', err);
+              try {
+                const res = await api.get('/master/kelompok-tani', { params: { pageSize: 500, status: 'Aktif' } });
                 return res.data;
               } catch {
                 return { status: 'error', data: [] } as any;
@@ -126,7 +142,7 @@ export default function TambahPetaniMitraPage() {
             }),
         ]);
 
-        // 1. Penanggung Jawab for Kelompok Tani
+        // 1. Penanggung Jawab
         let pjList = Array.isArray(pjRes?.data)
           ? pjRes.data
           : Array.isArray(pjRes?.items)
@@ -144,6 +160,25 @@ export default function TambahPetaniMitraPage() {
           }
         }
         setPenanggungJawabList(pjList);
+
+        // 2. Kelompok Tani
+        let ktList = Array.isArray(ktRes?.data)
+          ? ktRes.data
+          : Array.isArray(ktRes?.items)
+          ? ktRes.items
+          : Array.isArray(ktRes)
+          ? ktRes
+          : [];
+        if (ktList.length === 0) {
+          try {
+            const fallbackKt = await api.get('/master/kelompok-tani?pageSize=500&status=Aktif');
+            if (Array.isArray(fallbackKt.data?.data)) ktList = fallbackKt.data.data;
+            else if (Array.isArray(fallbackKt.data)) ktList = fallbackKt.data;
+          } catch (e) {
+            console.error('Final fallback kelompok tani error:', e);
+          }
+        }
+        setKelompokTaniList(ktList);
 
         // 2. Master Komoditas
         let comList = Array.isArray(comRes?.data)
@@ -305,6 +340,8 @@ export default function TambahPetaniMitraPage() {
       const formData = new FormData();
       formData.append('kodePetani', kodePetani);
       formData.append('namaPetani', namaPetani);
+      if (penanggungJawabId) formData.append('penanggungJawabId', penanggungJawabId);
+      if (kelompokTaniId) formData.append('kelompokTaniId', kelompokTaniId);
       formData.append('kelompokTani', kelompokTani);
       formData.append('komoditasUtama', komoditasUtama);
       if (selectedCommodity) {
@@ -565,30 +602,90 @@ export default function TambahPetaniMitraPage() {
                 </div>
               </div>
 
-              {/* Row 4: Kelompok Tani (Master Penanggung Jawab), Komoditas Utama, Status */}
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              {/* Row 4: Penanggung Jawab & Kelompok Tani (Pilih Penanggung Jawab lalu Kelompok Tani) */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-bold text-gray-700 mb-1.5">
+                    Penanggung Jawab <span className="text-danger">*</span>
+                  </label>
+                  <select
+                    value={penanggungJawabId}
+                    onChange={(e) => {
+                      const newPjId = e.target.value;
+                      setPenanggungJawabId(newPjId);
+                      if (kelompokTaniId) {
+                        const currentKt = kelompokTaniList.find((k) => k.id === kelompokTaniId);
+                        if (currentKt && currentKt.penanggungJawabId && currentKt.penanggungJawabId !== newPjId) {
+                          setKelompokTaniId('');
+                          setKelompokTani('');
+                        }
+                      }
+                    }}
+                    className="form-select w-full border border-defaultborder p-2.5 rounded-lg text-xs bg-white text-gray-800 cursor-pointer focus:border-emerald-500 transition"
+                  >
+                    <option value="">Pilih Penanggung Jawab</option>
+                    {penanggungJawabList.map((pj: any) => {
+                      const name = pj.nama || pj.namaPenanggungJawab || '';
+                      return (
+                        <option key={pj.id} value={pj.id}>
+                          {pj.kodePersonel ? `[${pj.kodePersonel}] ` : ''}{name} ({pj.peran || 'PJ'})
+                        </option>
+                      );
+                    })}
+                  </select>
+                  <p className="text-[10px] text-gray-400 mt-1">
+                    Pilih penanggung jawab pembina terlebih dahulu.
+                  </p>
+                </div>
+
                 <div>
                   <label className="block text-xs font-bold text-gray-700 mb-1.5">
                     Kelompok Tani <span className="text-danger">*</span>
                   </label>
                   <select
-                    value={kelompokTani}
-                    onChange={(e) => setKelompokTani(e.target.value)}
+                    value={kelompokTaniId}
+                    onChange={(e) => {
+                      const newKtId = e.target.value;
+                      setKelompokTaniId(newKtId);
+                      const selectedKt = kelompokTaniList.find((k) => k.id === newKtId);
+                      if (selectedKt) {
+                        setKelompokTani(selectedKt.namaKelompok);
+                        if (selectedKt.penanggungJawabId && (!penanggungJawabId || penanggungJawabId !== selectedKt.penanggungJawabId)) {
+                          setPenanggungJawabId(selectedKt.penanggungJawabId);
+                        }
+                        if (selectedKt.komoditasUtama && !komoditasUtama) {
+                          setKomoditasUtama(selectedKt.komoditasUtama);
+                        }
+                      } else {
+                        setKelompokTani('');
+                      }
+                    }}
                     className="form-select w-full border border-defaultborder p-2.5 rounded-lg text-xs bg-white text-gray-800 cursor-pointer focus:border-emerald-500 transition"
                   >
-                    <option value="">Pilih kelompok tani</option>
-                    {penanggungJawabList.map((pj: any) => {
-                      const name = pj.nama || pj.namaPenanggungJawab || '';
-                      const key = pj.id || name;
-                      return (
-                        <option key={key} value={name}>
-                          {name}
-                        </option>
-                      );
-                    })}
+                    <option value="">
+                      {penanggungJawabId
+                        ? `-- Pilih Kelompok Tani --`
+                        : '-- Pilih Kelompok Tani --'}
+                    </option>
+                    {(penanggungJawabId
+                      ? kelompokTaniList.filter((kt) => !kt.penanggungJawabId || kt.penanggungJawabId === penanggungJawabId)
+                      : kelompokTaniList
+                    ).map((kt: any) => (
+                      <option key={kt.id} value={kt.id}>
+                        {kt.kodeKelompok ? `[${kt.kodeKelompok}] ` : ''}{kt.namaKelompok} (Ketua: {kt.ketua})
+                      </option>
+                    ))}
                   </select>
+                  <p className="text-[10px] text-gray-400 mt-1">
+                    {penanggungJawabId
+                      ? `Kelompok tani di bawah binaan penanggung jawab terpilih.`
+                      : `Pilih kelompok tani binaan mitra.`}
+                  </p>
                 </div>
+              </div>
 
+              {/* Row 5: Komoditas Utama & Status */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-bold text-gray-700 mb-1.5">
                     Komoditas Utama <span className="text-danger">*</span>

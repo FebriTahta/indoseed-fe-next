@@ -289,8 +289,20 @@ export default function ModalDetailPetani({
                       </div>
                     </div>
 
-                    {/* Row 4: Kelompok Tani, Komoditas Utama, Status */}
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    {/* Row 4: Penanggung Jawab & Kelompok Tani */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div>
+                        <span className="block text-xs font-bold text-gray-700 mb-1.5">
+                          Penanggung Jawab
+                        </span>
+                        <div className="w-full border border-defaultborder p-2.5 rounded-lg text-xs bg-gray-50/80 text-emerald-800 font-semibold flex items-center gap-1.5 truncate">
+                          <i className="ri-user-star-line text-emerald-600"></i>
+                          <span>
+                            {partner.penanggungJawab?.nama || (typeof partner.penanggungJawab === 'string' ? partner.penanggungJawab : '-')}
+                          </span>
+                        </div>
+                      </div>
+
                       <div>
                         <span className="block text-xs font-bold text-gray-700 mb-1.5">
                           Kelompok Tani
@@ -299,7 +311,10 @@ export default function ModalDetailPetani({
                           {partner.kelompokTani || '-'}
                         </div>
                       </div>
+                    </div>
 
+                    {/* Row 5: Komoditas Utama & Status */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div>
                         <span className="block text-xs font-bold text-gray-700 mb-1.5">
                           Komoditas Utama

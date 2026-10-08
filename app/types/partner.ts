@@ -5,6 +5,10 @@ export interface Partner {
   kodePetani: string;
   namaPetani: string;
   kelompokTani: string;
+  kelompokTaniId?: string | null;
+  kelompok?: any;
+  penanggungJawabId?: string | null;
+  penanggungJawab?: any;
   komoditasUtama: string;
   commodityId?: string | null;
   commodity?: any;
@@ -27,4 +31,6 @@ export interface Partner {
   tglDiubah: string;
   diubahOleh: string;
   greenhouses?: Land[];
+  createdAt?: string;
+  updatedAt?: string;
 }

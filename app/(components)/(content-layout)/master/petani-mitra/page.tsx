@@ -32,6 +32,8 @@ export default function PetaniMitraPage() {
     kelompokTaniOptions,
     statusOptions,
     komoditasOptions,
+    penanggungJawabList,
+    kelompokTaniList,
     search,
     setSearch,
     filterKelompok,
@@ -126,7 +128,15 @@ export default function PetaniMitraPage() {
           </div>
           <span className="text-gray-800 font-semibold">{item.namaPetani}</span>
         </td>
-        <td className="p-4 text-gray-600 font-medium">{item.kelompokTani}</td>
+        <td className="p-4">
+          <div className="text-gray-800 font-semibold">{item.kelompokTani}</div>
+          {(item.penanggungJawab?.nama || (typeof item.penanggungJawab === 'string' && item.penanggungJawab)) && (
+            <div className="text-[11px] text-emerald-700 font-medium flex items-center gap-1 mt-0.5">
+              <i className="ri-user-star-line text-[10px]"></i>
+              <span>PJ: {typeof item.penanggungJawab === 'object' ? item.penanggungJawab.nama : item.penanggungJawab}</span>
+            </div>
+          )}
+        </td>
         <td className="p-4">
           <span className="inline-flex items-center gap-1.5 text-xs text-emerald-700 font-semibold bg-emerald-50 px-2.5 py-1 rounded">
             <i className="ri-leaf-line"></i>
@@ -267,18 +277,72 @@ export default function PetaniMitraPage() {
 
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="block text-xs font-bold text-gray-700 mb-1.5">Kelompok Tani *</label>
-            <input
-              type="text"
-              value={formValues.kelompokTani}
-              onChange={(e) => setFormValues(prev => ({ ...prev, kelompokTani: e.target.value }))}
-              className="form-control w-full border border-defaultborder p-2 rounded text-sm"
-              placeholder="Contoh: Karya Tani"
+            <label className="block text-xs font-bold text-gray-700 mb-1.5">Penanggung Jawab *</label>
+            <select
+              value={formValues.penanggungJawabId || ''}
+              onChange={(e) => {
+                const newPjId = e.target.value;
+                setFormValues(prev => {
+                  const currentKt = kelompokTaniList.find(k => k.id === prev.kelompokTaniId);
+                  const shouldResetKt = currentKt && currentKt.penanggungJawabId && currentKt.penanggungJawabId !== newPjId;
+                  return {
+                    ...prev,
+                    penanggungJawabId: newPjId,
+                    kelompokTaniId: shouldResetKt ? '' : prev.kelompokTaniId,
+                    kelompokTani: shouldResetKt ? '' : prev.kelompokTani,
+                  };
+                });
+              }}
+              className="form-select w-full border border-defaultborder p-2 rounded text-sm bg-white cursor-pointer focus:border-emerald-500"
               required
               disabled={isSubmitLoading}
-            />
+            >
+              <option value="">Pilih Penanggung Jawab</option>
+              {penanggungJawabList.map((pj: any) => (
+                <option key={pj.id} value={pj.id}>
+                  {pj.kodePersonel ? `[${pj.kodePersonel}] ` : ''}{pj.nama} ({pj.peran || 'PJ'})
+                </option>
+              ))}
+            </select>
           </div>
 
+          <div>
+            <label className="block text-xs font-bold text-gray-700 mb-1.5">Kelompok Tani *</label>
+            <select
+              value={formValues.kelompokTaniId || ''}
+              onChange={(e) => {
+                const newKtId = e.target.value;
+                const selectedKt = kelompokTaniList.find(k => k.id === newKtId);
+                setFormValues(prev => ({
+                  ...prev,
+                  kelompokTaniId: newKtId,
+                  kelompokTani: selectedKt ? selectedKt.namaKelompok : prev.kelompokTani,
+                  penanggungJawabId: selectedKt?.penanggungJawabId || prev.penanggungJawabId,
+                  komoditasUtama: selectedKt?.komoditasUtama && !prev.komoditasUtama ? selectedKt.komoditasUtama : prev.komoditasUtama,
+                }));
+              }}
+              className="form-select w-full border border-defaultborder p-2 rounded text-sm bg-white cursor-pointer focus:border-emerald-500"
+              required
+              disabled={isSubmitLoading}
+            >
+              <option value="">
+                {formValues.penanggungJawabId
+                  ? `-- Pilih Kelompok Tani --`
+                  : '-- Pilih Kelompok Tani --'}
+              </option>
+              {(formValues.penanggungJawabId
+                ? kelompokTaniList.filter(kt => !kt.penanggungJawabId || kt.penanggungJawabId === formValues.penanggungJawabId)
+                : kelompokTaniList
+              ).map((kt: any) => (
+                <option key={kt.id} value={kt.id}>
+                  {kt.kodeKelompok ? `[${kt.kodeKelompok}] ` : ''}{kt.namaKelompok}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 gap-4">
           <div>
             <label className="block text-xs font-bold text-gray-700 mb-1.5">Komoditas Utama *</label>
             <select
@@ -292,6 +356,20 @@ export default function PetaniMitraPage() {
               {komoditasOptions.map((opt) => (
                 <option key={opt.value} value={opt.value}>{opt.label}</option>
               ))}
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-xs font-bold text-gray-700 mb-1.5">Status *</label>
+            <select
+              value={formValues.status}
+              onChange={(e) => setFormValues(prev => ({ ...prev, status: e.target.value as any }))}
+              className="form-select w-full border border-defaultborder p-2 rounded text-sm bg-white cursor-pointer font-semibold"
+              required
+              disabled={isSubmitLoading}
+            >
+              <option value="Aktif">Aktif</option>
+              <option value="Non Aktif">Non Aktif</option>
             </select>
           </div>
         </div>
