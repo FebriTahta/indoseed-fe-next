@@ -102,6 +102,19 @@ export function isMethodMatchingCommodityOrVariety(
   return false;
 }
 
+/**
+ * Parameter yang boleh DITAMBAHKAN ke permintaan: parameter aktif, metode ujinya aktif, dan metode
+ * relevan dengan komoditas/varietas. Selaras dengan validasi backend (buildParameterRows).
+ */
+export const isParameterSelectable = (
+  p: TestParameter,
+  komoditasPermintaan?: string | null,
+  varietasPermintaan?: string | null
+) =>
+  p.status === 'Aktif' &&
+  p.metode?.status === 'Aktif' &&
+  isMethodMatchingCommodityOrVariety(p.metode, komoditasPermintaan, varietasPermintaan);
+
 export default function ManageParameterUjiModal({
   isOpen,
   onClose,
@@ -150,11 +163,9 @@ export default function ManageParameterUjiModal({
     }
   }, [isOpen, selectedParameters, initialDbParameters]);
 
-  // Parameter yang relevan berdasarkan komoditas/varietas permintaan atau metode uji global
+  // Hanya parameter aktif dari metode uji aktif yang relevan dengan komoditas/varietas permintaan
   const applicableParameters = useMemo(() => {
-    return dbParameters.filter(
-      (p) => p.status !== 'Nonaktif' && isMethodMatchingCommodityOrVariety(p.metode, komoditas, varietas)
-    );
+    return dbParameters.filter((p) => isParameterSelectable(p, komoditas, varietas));
   }, [dbParameters, komoditas, varietas]);
 
   // Kategori yang tersedia berdasarkan parameter yang lolos filter komoditas/varietas

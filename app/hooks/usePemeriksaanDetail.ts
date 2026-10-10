@@ -8,12 +8,16 @@ import {
 import { HASIL_AKHIR, PermintaanPengujian, PermintaanPengujianParameter, QC_STATUS } from '@/app/types/qc';
 import { evaluateHasil } from '@/app/lib/batasAcuan';
 import { getErrorMessage } from '@/app/lib/format';
+import { sudahDiuji } from '@/app/lib/validitasHasil';
+import { useCurrentUser } from '@/app/hooks/useCurrentUser';
+import { RincianDraft, toRincianDraft, toRincianPayload } from '@/app/lib/perkecambahan';
 
 export interface ParamDraft {
   nilaiHasil: string;
   hasilTeks: string;
   statusHasil: string;
   catatanHasil: string;
+  rincian: RincianDraft;
 }
 
 const toDraft = (p: PermintaanPengujianParameter): ParamDraft => ({
@@ -21,6 +25,7 @@ const toDraft = (p: PermintaanPengujianParameter): ParamDraft => ({
   hasilTeks: p.hasilTeks || '',
   statusHasil: p.statusHasil || '',
   catatanHasil: p.catatanHasil || '',
+  rincian: toRincianDraft(p.rincianHasil),
 });
 
 const toNumberOrNull = (v: string) => {
@@ -62,7 +67,11 @@ export function usePemeriksaanDetail(id: string) {
   }, [reload]);
 
   const activeParams = useMemo(() => (data?.parameters || []).filter((p) => p.checked), [data]);
-  const canInput = data?.status === QC_STATUS.DALAM_PENGUJIAN;
+  // Pelaksanaan pengujian hanya oleh penguji (superadmin melalui "login sebagai" juga ber-role penguji).
+  const { isPenguji } = useCurrentUser();
+  const canInput = isPenguji && data?.status === QC_STATUS.DALAM_PENGUJIAN;
+  const canEditDokumentasi =
+    isPenguji && (data?.status === QC_STATUS.SAMPLING || data?.status === QC_STATUS.DALAM_PENGUJIAN);
 
   const setParamDraft = (paramId: string, patch: Partial<ParamDraft>) => {
     setDrafts((prev) => ({ ...prev, [paramId]: { ...prev[paramId], ...patch } }));
@@ -85,6 +94,17 @@ export function usePemeriksaanDetail(id: string) {
     if (statuses.some((s) => !s)) return null;
     return statuses.includes(HASIL_AKHIR.TIDAK_LULUS) ? HASIL_AKHIR.TIDAK_LULUS : HASIL_AKHIR.LULUS;
   }, [activeParams, statusOf]);
+
+  /** Parameter aktif yang belum diuji menurut draft saat ini — submit diblokir selama masih ada. */
+  const belumDiuji = useMemo(
+    () =>
+      activeParams.filter((p) => {
+        const d = drafts[p.id] || toDraft(p);
+        return !sudahDiuji({ nilai: d.nilaiHasil, teks: d.hasilTeks, status: statusOf(p) });
+      }),
+    [activeParams, drafts, statusOf]
+  );
+  const canSubmit = canInput && activeParams.length > 0 && belumDiuji.length === 0;
 
   const run = async (fn: () => Promise<{ data: PermintaanPengujian }>, success?: string) => {
     setBusy(true);
@@ -110,6 +130,7 @@ export function usePemeriksaanDetail(id: string) {
         hasilTeks: d.hasilTeks.trim() || null,
         statusHasil: d.statusHasil || null,
         catatanHasil: d.catatanHasil.trim() || null,
+        rincianHasil: toRincianPayload(d.rincian),
       };
     }),
     catatanPengujian: catatanPengujian.trim() || null,
@@ -143,6 +164,9 @@ export function usePemeriksaanDetail(id: string) {
       () => pemeriksaanPengujianService.review(data!.id, keputusan, catatan),
       keputusan === 'setujui' ? 'Hasil pengujian disetujui' : 'Hasil dikembalikan untuk revisi'
     );
+
+  const ujiUlang = (alasan: string) =>
+    run(() => pemeriksaanPengujianService.ujiUlang(data!.id, alasan), 'Pengujian dikembalikan untuk diuji ulang');
 
   const uploadDokumentasi = async (file: File, keterangan?: string) => {
     if (!data) return;
@@ -180,6 +204,10 @@ export function usePemeriksaanDetail(id: string) {
     busy,
     dirty,
     canInput,
+    canEditDokumentasi,
+    isPenguji,
+    canSubmit,
+    belumDiuji,
     activeParams,
     drafts,
     setParamDraft,
@@ -195,6 +223,7 @@ export function usePemeriksaanDetail(id: string) {
     submitReview,
     terimaSampel,
     review,
+    ujiUlang,
     uploadDokumentasi,
     deleteDokumentasi,
   };

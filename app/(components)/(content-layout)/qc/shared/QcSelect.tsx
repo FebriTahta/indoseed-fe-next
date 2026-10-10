@@ -58,7 +58,13 @@ export default function QcSelect({
       noOptionsMessage={() => noOptionsMessage}
       formatOptionLabel={formatOptionLabel as any}
       menuPortalTarget={typeof document !== 'undefined' ? document.body : undefined}
-      styles={{ menuPortal: (base: any) => ({ ...base, zIndex: 10000 }) }}
+      styles={{
+        menuPortal: (base: any) => ({ ...base, zIndex: 10000 }),
+        // Teks satu baris dengan elipsis agar tinggi kontrol tetap seragam di kolom sempit.
+        valueContainer: (base: any) => ({ ...base, flexWrap: 'nowrap' }),
+        placeholder: (base: any) => ({ ...base, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }),
+        singleValue: (base: any) => ({ ...base, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }),
+      }}
     />
   );
 }

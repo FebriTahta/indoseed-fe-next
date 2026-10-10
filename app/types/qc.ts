@@ -126,6 +126,16 @@ export interface LaboratoriumRef {
   namaLaboratorium: string;
 }
 
+/** Rincian uji perkecambahan (daya berkecambah). */
+export interface RincianHasil {
+  jumlahBenih: number | null;
+  hariPengamatan: number | null;
+  benihNormal: number | null;
+  benihAbnormal: number | null;
+  benihMati: number | null;
+  benihKeras: number | null;
+}
+
 export interface PermintaanPengujianParameter {
   id: string;
   permintaanId?: string;
@@ -148,6 +158,7 @@ export interface PermintaanPengujianParameter {
   hasilTeks?: string | null;
   statusHasil?: string | null;
   catatanHasil?: string | null;
+  rincianHasil?: RincianHasil | null;
   diujiOleh?: string | null;
   tanggalUji?: string | null;
   metodeRef?: {
@@ -234,6 +245,10 @@ export interface PermintaanPengujian {
   laboratorium?: LaboratoriumRef | null;
   batchProduksi?: any;
   _count?: { dokumen: number };
+  /** Parameter aktif yang belum memiliki nilai & status hasil (dihitung backend). */
+  parameterBelumDiuji?: { id: string; nama: string }[];
+  /** Sudah Menunggu Review / Selesai padahal masih ada parameter yang belum diuji. */
+  hasilTidakValid?: boolean;
   /** Hanya pada detail pemeriksaan: lahan asal sampel beserta koordinatnya. */
   lokasiAsal?: LokasiAsal | null;
 }
@@ -269,6 +284,8 @@ export interface HasilSummary {
   menungguReview: number;
   lulus: number;
   tidakLulus: number;
+  /** Hasil dengan parameter yang belum diuji (perlu pengujian ulang). */
+  tidakValid?: number;
 }
 
 export interface BatchOption {
@@ -321,6 +338,9 @@ export const QC_STATUS = {
   SELESAI: 'Selesai',
   DITOLAK: 'Ditolak',
 } as const;
+
+/** Label tampilan untuk hasil yang tidak valid (bukan status alur di database). */
+export const HASIL_TIDAK_VALID = 'Tidak Valid';
 
 export const HASIL_AKHIR = {
   LULUS: 'Lulus',

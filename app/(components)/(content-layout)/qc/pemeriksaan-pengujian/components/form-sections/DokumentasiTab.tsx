@@ -1,18 +1,19 @@
 "use client";
 
 import React, { useState } from "react";
+import { useConfirmDeleteDokumentasi } from "./useConfirmDeleteDokumentasi";
 import QcCard from "../../../shared/QcCard";
 import QcDocumentList from "../../../shared/QcDocumentList";
 import QcFileDropzone from "../../../shared/QcFileDropzone";
 import { PemeriksaanDetailState } from "@/app/hooks/usePemeriksaanDetail";
-import { QC_STATUS } from "@/app/types/qc";
 
 const DokumentasiTab = ({ state }: { state: PemeriksaanDetailState }) => {
   const { data, busy, uploadDokumentasi, deleteDokumentasi } = state;
   const [keterangan, setKeterangan] = useState("");
+  const confirmDeleteDokumentasi = useConfirmDeleteDokumentasi(deleteDokumentasi);
   if (!data) return null;
 
-  const canEdit = data.status === QC_STATUS.SAMPLING || data.status === QC_STATUS.DALAM_PENGUJIAN;
+  const canEdit = state.canEditDokumentasi;
   const docs = (data.dokumen || []).filter((d) => d.kategori === "Dokumentasi");
 
   return (
@@ -48,13 +49,7 @@ const DokumentasiTab = ({ state }: { state: PemeriksaanDetailState }) => {
         variant="grid"
         documents={docs}
         emptyMessage="Belum ada dokumentasi pengujian."
-        onDelete={
-          canEdit
-            ? (doc) => {
-                if (doc.id && window.confirm(`Hapus dokumentasi "${doc.namaFile}"?`)) deleteDokumentasi(doc.id);
-              }
-            : undefined
-        }
+        onDelete={canEdit ? confirmDeleteDokumentasi : undefined}
       />
     </QcCard>
   );

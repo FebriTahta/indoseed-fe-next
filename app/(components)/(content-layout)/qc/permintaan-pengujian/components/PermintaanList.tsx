@@ -5,6 +5,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "react-toastify";
 import DataTable from "@/app/(components)/(content-layout)/shared/DataTable";
+import { useConfirm } from "@/app/(components)/(content-layout)/shared/ConfirmDialog";
 import StatsWidgets, { StatItem } from "@/app/(components)/(content-layout)/shared/StatsWidgets";
 import FilterRow, { FilterSelectConfig } from "@/app/(components)/(content-layout)/shared/FilterRow";
 import {
@@ -69,10 +70,23 @@ const PermintaanList = () => {
     fetchSummary();
   };
 
+  const confirm = useConfirm();
+
   const isEditable = (status: string) => meta.editableStatuses.includes(status);
 
   const handleDelete = async (item: PermintaanPengujian) => {
-    if (!window.confirm(`Hapus permintaan pengujian ${item.noPermintaan}?`)) return;
+    const ok = await confirm({
+      title: "Hapus Permintaan Pengujian?",
+      message: "Data permintaan beserta lampirannya akan dihapus permanen dan tidak dapat dikembalikan.",
+      details: (
+        <>
+          <strong>{item.noPermintaan}</strong> — batch {item.kodeBatch} ({item.komoditas || "-"} / {item.varietas || "-"})
+        </>
+      ),
+      tone: "danger",
+      confirmText: "Ya, Hapus",
+    });
+    if (!ok) return;
     try {
       await permintaanPengujianService.deletePermintaan(item.id);
       toast.success(`Permintaan ${item.noPermintaan} berhasil dihapus`);
@@ -271,8 +285,13 @@ const PermintaanList = () => {
 
       <QcReasonModal
         isOpen={!!dialog}
-        title={dialog?.type === "approve" ? "Setujui Permintaan Pengujian" : "Tolak Permintaan Pengujian"}
+        title={dialog?.type === "approve" ? "Setujui Permintaan Pengujian?" : "Tolak Permintaan Pengujian?"}
         description={
+          dialog?.type === "approve"
+            ? "Permintaan akan diteruskan ke tahap sampling."
+            : "Permintaan akan ditolak dan dikembalikan ke pemohon."
+        }
+        details={
           dialog && (
             <>
               <strong>{dialog.item.noPermintaan}</strong> — batch {dialog.item.kodeBatch} ({dialog.item.komoditas} /{" "}
@@ -280,9 +299,11 @@ const PermintaanList = () => {
             </>
           )
         }
+        tone={dialog?.type === "approve" ? "success" : "danger"}
+        icon={dialog?.type === "approve" ? "ri-check-double-line" : "ri-close-circle-line"}
         label={dialog?.type === "approve" ? "Catatan (opsional)" : "Alasan penolakan"}
         placeholder={dialog?.type === "approve" ? "Catatan persetujuan..." : "Jelaskan alasan permintaan ditolak..."}
-        submitText={dialog?.type === "approve" ? "Setujui" : "Tolak Permintaan"}
+        submitText={dialog?.type === "approve" ? "Ya, Setujui" : "Tolak Permintaan"}
         required={dialog?.type === "reject"}
         onClose={() => setDialog(null)}
         onSubmit={handleDialogSubmit}

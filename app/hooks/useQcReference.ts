@@ -29,12 +29,17 @@ export const invalidateQcReference = (keyPrefix?: string) => {
   [...cache.keys()].filter((k) => !keyPrefix || k.startsWith(keyPrefix)).forEach((k) => cache.delete(k));
 };
 
-export function useCachedResource<T>(key: string, fetcher: () => Promise<T>, initial: T) {
+/** `enabled = false` melewati fetch (mis. role tidak berhak mengakses endpoint tersebut). */
+export function useCachedResource<T>(key: string, fetcher: () => Promise<T>, initial: T, enabled = true) {
   const [data, setData] = useState<T>(initial);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(enabled);
 
   const load = useCallback(
     (force = false) => {
+      if (!enabled) {
+        setLoading(false);
+        return;
+      }
       if (force) cache.delete(key);
       setLoading(true);
       cachedFetch(key, fetcher)
@@ -43,7 +48,7 @@ export function useCachedResource<T>(key: string, fetcher: () => Promise<T>, ini
         .finally(() => setLoading(false));
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [key]
+    [key, enabled]
   );
 
   useEffect(() => load(), [load]);
@@ -86,14 +91,15 @@ export function useQcMeta() {
 
 // ---------- Referensi data master lain ----------
 
-export function usePengujiOptions() {
+export function usePengujiOptions(enabled = true) {
   const { data, loading } = useCachedResource(
     'penguji:aktif',
     async () => {
       const res = await pengujiService.getPengujis({ status: 'Aktif', limit: 500 });
       return (res?.data || []) as { id: string; nama: string; kodePenguji: string; laboratoriumId?: string | null; laboratorium?: { namaLaboratorium: string } | null }[];
     },
-    []
+    [],
+    enabled
   );
   const options = useMemo<SelectOption[]>(
     () =>
@@ -130,4 +136,14 @@ export function useKomoditasOptions() {
     [data]
   );
   return { komoditas: data, options, loading };
+}
+
+export function useMetodeUjiOptions() {
+  const { data, loading } = useCachedResource(
+    'metode-uji:aktif',
+    async () => (await qcService.getMethods({ status: 'Aktif' })).data || [],
+    []
+  );
+  const options = useMemo<SelectOption[]>(() => data.map((m) => ({ value: m.id, label: m.nama })), [data]);
+  return { metodeUji: data, options, loading };
 }

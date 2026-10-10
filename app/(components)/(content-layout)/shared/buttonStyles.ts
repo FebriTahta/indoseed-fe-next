@@ -3,7 +3,15 @@
  *   md (36px) → tombol aksi halaman/form/modal
  *   sm (28px) → tombol di dalam tabel/kartu
  */
-export type ButtonVariant = 'primary' | 'outline' | 'secondary' | 'warning' | 'danger' | 'ghost';
+export type ButtonVariant =
+  | 'primary'
+  | 'outline'
+  | 'secondary'
+  | 'warning'
+  | 'danger'
+  | 'ghost'
+  | 'warningSolid'
+  | 'dangerSolid';
 export type ButtonSize = 'sm' | 'md';
 
 const BASE =
@@ -23,6 +31,8 @@ const VARIANT: Record<ButtonVariant, string> = {
   warning: 'bg-white border-amber-400 text-amber-700 hover:bg-amber-50',
   danger: 'bg-white border-rose-300 text-rose-600 hover:bg-rose-50',
   ghost: 'bg-transparent border-transparent text-emerald-700 hover:bg-emerald-50',
+  warningSolid: 'bg-amber-500 border-amber-500 text-white hover:bg-amber-600 hover:border-amber-600',
+  dangerSolid: 'bg-rose-600 border-rose-600 text-white hover:bg-rose-700 hover:border-rose-700',
 };
 
 export const buttonClass = (variant: ButtonVariant = 'primary', size: ButtonSize = 'md', extra = '') =>

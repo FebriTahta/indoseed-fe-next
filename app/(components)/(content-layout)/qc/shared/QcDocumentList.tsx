@@ -2,6 +2,8 @@ import React, { useMemo } from 'react';
 import { iconButtonClass } from '@/app/(components)/(content-layout)/shared/buttonStyles';
 import { formatDateTime } from '@/app/lib/format';
 import { useImageLightbox } from './QcImageLightbox';
+import { fileIconClass, isImageFile } from './fileUtils';
+import { useFileDownload } from '@/app/hooks/useFileDownload';
 
 export interface QcDocumentItem {
   id?: string;
@@ -14,20 +16,8 @@ export interface QcDocumentItem {
   createdAt?: string | Date;
 }
 
-const extOf = (doc: QcDocumentItem) =>
-  (doc.namaFile.split('.').pop() || doc.tipeFile?.split('/').pop() || '').toLowerCase();
-
-export const isImageDoc = (doc: QcDocumentItem) =>
-  ['jpg', 'jpeg', 'png', 'webp', 'gif', 'svg'].includes(extOf(doc)) || Boolean(doc.tipeFile?.startsWith('image/'));
-
-const iconOf = (doc: QcDocumentItem) => {
-  const ext = extOf(doc);
-  if (isImageDoc(doc)) return 'ri-image-line text-sky-500';
-  if (ext === 'pdf') return 'ri-file-pdf-2-line text-rose-500';
-  if (['doc', 'docx'].includes(ext)) return 'ri-file-word-line text-blue-500';
-  if (['xls', 'xlsx', 'csv'].includes(ext)) return 'ri-file-excel-line text-emerald-600';
-  return 'ri-file-text-line text-gray-400';
-};
+/** Dipertahankan untuk kompatibilitas impor lama. */
+export const isImageDoc = (doc: QcDocumentItem) => isImageFile(doc);
 
 interface QcDocumentListProps {
   documents: QcDocumentItem[];
@@ -45,20 +35,24 @@ export default function QcDocumentList({
 }: QcDocumentListProps) {
   const images = useMemo(() => documents.filter(isImageDoc), [documents]);
   const { open: openPreview, lightbox } = useImageLightbox(images);
+  const { download, open: openFile, pendingUrl } = useFileDownload();
 
   if (!documents.length) return <p className="text-xs text-gray-400 italic">{emptyMessage}</p>;
 
-  /** Gambar dibuka di lightbox, file lain di tab baru. */
-  const docLink = (doc: QcDocumentItem, className: string, children: React.ReactNode) =>
-    isImageDoc(doc) ? (
-      <button type="button" onClick={() => openPreview(doc.fileUrl)} className={`text-left ${className}`} title="Lihat pratinjau">
-        {children}
-      </button>
-    ) : (
-      <a href={doc.fileUrl} target="_blank" rel="noopener noreferrer" className={className}>
-        {children}
-      </a>
-    );
+  /**
+   * Gambar dibuka di lightbox; file lain dibuka di tab baru lewat server (keberadaan file dicek
+   * lebih dulu sehingga file yang hilang dari penyimpanan menampilkan pesan yang jelas).
+   */
+  const docLink = (doc: QcDocumentItem, className: string, children: React.ReactNode) => (
+    <button
+      type="button"
+      onClick={() => (isImageDoc(doc) ? openPreview(doc.fileUrl) : openFile(doc.fileUrl, doc.namaFile))}
+      className={`text-left ${className}`}
+      title={isImageDoc(doc) ? 'Lihat pratinjau' : 'Buka dokumen'}
+    >
+      {children}
+    </button>
+  );
 
   if (variant === 'grid') {
     return (
@@ -74,7 +68,7 @@ export default function QcDocumentList({
                   // eslint-disable-next-line @next/next/no-img-element
                   <img src={doc.fileUrl} alt={doc.keterangan || doc.namaFile} className="w-full h-full object-cover" />
                 ) : (
-                  <i className={`${iconOf(doc)} text-3xl`}></i>
+                  <i className={`${fileIconClass(doc)} text-3xl`}></i>
                 )}
               </div>
               <div className="p-2">
@@ -109,22 +103,23 @@ export default function QcDocumentList({
       {documents.map((doc) => (
         <li key={doc.id || doc.fileUrl} className="flex items-start justify-between gap-2 py-2">
           <div className="flex items-start gap-2 min-w-0">
-            <i className={`${iconOf(doc)} text-lg mt-0.5`}></i>
+            <i className={`${fileIconClass(doc)} text-lg mt-0.5`}></i>
             <div className="min-w-0">
               {docLink(doc, "block max-w-full text-xs font-medium text-gray-800 truncate hover:text-emerald-700", doc.namaFile)}
               <p className="text-[10px] text-gray-400">{[doc.ukuran, doc.keterangan].filter(Boolean).join(' • ') || '-'}</p>
             </div>
           </div>
           <div className="flex items-center gap-1 shrink-0">
-            <a
-              href={doc.fileUrl}
-              target="_blank"
-              rel="noopener noreferrer"
+            <button
+              type="button"
+              onClick={() => download(doc.fileUrl, doc.namaFile)}
+              disabled={pendingUrl === doc.fileUrl}
               className={iconButtonClass("emerald")}
-              title="Unduh / lihat"
+              title="Unduh"
+              aria-label={`Unduh ${doc.namaFile}`}
             >
-              <i className="ri-download-2-line"></i>
-            </a>
+              <i className={pendingUrl === doc.fileUrl ? "ri-loader-4-line animate-spin" : "ri-download-2-line"}></i>
+            </button>
             {onDelete && (
               <button
                 type="button"

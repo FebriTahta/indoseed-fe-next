@@ -1,13 +1,14 @@
 import React, { useRef, useState } from "react";
 import { buttonClass, iconButtonClass } from "@/app/(components)/(content-layout)/shared/buttonStyles";
 import QcCard from "../../../shared/QcCard";
+import { useConfirmDeleteDokumentasi } from "./useConfirmDeleteDokumentasi";
 import { isImageDoc } from "../../../shared/QcDocumentList";
 import { useImageLightbox } from "../../../shared/QcImageLightbox";
 import { formatDateTime } from "@/app/lib/format";
 import QcTimeline from "../../../shared/QcTimeline";
 import { pendingStepsFor } from "../../../shared/qcFlow";
 import { PemeriksaanDetailState } from "@/app/hooks/usePemeriksaanDetail";
-import { HASIL_AKHIR, PermintaanPengujianParameter, QC_STATUS } from "@/app/types/qc";
+import { HASIL_AKHIR, PermintaanPengujianParameter } from "@/app/types/qc";
 
 interface RightSidebarProps {
   state: PemeriksaanDetailState;
@@ -133,8 +134,9 @@ function DokumentasiCard({ state }: { state: PemeriksaanDetailState }) {
   const inputRef = useRef<HTMLInputElement>(null);
   const docs = (data?.dokumen || []).filter((d) => d.kategori === "Dokumentasi");
   const { open: openPreview, lightbox } = useImageLightbox(docs.filter(isImageDoc));
+  const confirmDeleteDokumentasi = useConfirmDeleteDokumentasi(deleteDokumentasi);
   if (!data) return null;
-  const canEdit = data.status === QC_STATUS.SAMPLING || data.status === QC_STATUS.DALAM_PENGUJIAN;
+  const canEdit = state.canEditDokumentasi;
 
   return (
     <QcCard
@@ -200,7 +202,7 @@ function DokumentasiCard({ state }: { state: PemeriksaanDetailState }) {
                 <button
                   type="button"
                   title="Hapus"
-                  onClick={() => window.confirm(`Hapus dokumentasi "${doc.namaFile}"?`) && deleteDokumentasi(doc.id)}
+                  onClick={() => confirmDeleteDokumentasi(doc)}
                   className={iconButtonClass("gray", "absolute top-1 right-1 !w-6 !h-6 shadow-sm hover:!text-rose-600")}
                 >
                   <i className="ri-close-line text-xs"></i>

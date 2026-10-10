@@ -9,7 +9,8 @@ export default function QcToastLayout({ children }: { children: React.ReactNode 
   return (
     <>
       {children}
-      <ToastContainer position="top-right" autoClose={3000} newestOnTop />
+      {/* z-index di atas modal/pratinjau (z-[10000]) agar pesan error unduhan tetap terlihat. */}
+      <ToastContainer position="top-right" autoClose={3000} newestOnTop style={{ zIndex: 10050 }} />
     </>
   );
 }

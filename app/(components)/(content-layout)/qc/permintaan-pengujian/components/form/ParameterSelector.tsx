@@ -2,7 +2,7 @@ import React, { useMemo, useState } from "react";
 import { buttonClass, iconButtonClass } from "@/app/(components)/(content-layout)/shared/buttonStyles";
 import { toast } from "react-toastify";
 import QcSelect from "../../../shared/QcSelect";
-import { FormParameterItem, isMethodMatchingCommodityOrVariety, toFormParameter } from "../ManageParameterUjiModal";
+import { FormParameterItem, isParameterSelectable, toFormParameter } from "../ManageParameterUjiModal";
 import { TestParameter } from "@/app/types/qc";
 
 const CATEGORY_CLASS: Record<string, string> = {
@@ -36,10 +36,7 @@ export default function ParameterSelector({
   const available = useMemo(() => {
     const used = new Set(parameters.map((p) => p.parameterId));
     return masterParameters.filter(
-      (p) =>
-        !used.has(p.id) &&
-        p.status !== "Nonaktif" &&
-        isMethodMatchingCommodityOrVariety(p.metode, komoditas, varietas)
+      (p) => !used.has(p.id) && isParameterSelectable(p, komoditas, varietas)
     );
   }, [masterParameters, parameters, komoditas, varietas]);
 

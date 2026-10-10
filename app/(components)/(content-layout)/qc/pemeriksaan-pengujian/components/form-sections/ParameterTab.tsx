@@ -1,4 +1,4 @@
-import React, { useMemo } from "react";
+import React, { useMemo, useState } from "react";
 import { buttonClass } from "@/app/(components)/(content-layout)/shared/buttonStyles";
 import ParameterResultTable from "../../../shared/ParameterResultTable";
 import QcStatusBadge from "../../../shared/QcStatusBadge";
@@ -7,7 +7,17 @@ import { useImageLightbox } from "../../../shared/QcImageLightbox";
 import { useQcLookups } from "@/app/hooks/useQcReference";
 import { PemeriksaanDetailState } from "@/app/hooks/usePemeriksaanDetail";
 import { isNumericBatas } from "@/app/lib/batasAcuan";
-import { formatDateTime } from "@/app/lib/format";
+import {
+  HARI_PENGAMATAN_OPTIONS,
+  KATEGORI_BENIH,
+  RincianDraft,
+  RincianField,
+  hitungDayaBerkecambah,
+  isParameterPerkecambahan,
+  toRincianDraft,
+  toRincianPayload,
+  totalBenih,
+} from "@/app/lib/perkecambahan";
 
 interface ParameterTabProps {
   state: PemeriksaanDetailState;
@@ -19,21 +29,87 @@ const Label = ({ children }: { children: React.ReactNode }) => (
   <p className="text-[11px] text-gray-500 mb-1">{children}</p>
 );
 
-/** Tab "Parameter Pengujian": tabel isian hasil + detail parameter terpilih. */
+const fieldClass =
+  "w-full h-[36px] px-3 border border-gray-200 rounded-md text-sm text-gray-800 bg-white focus:outline-none focus:border-emerald-500";
+
+/** Isian angka rincian (atau teks baca-saja bila tidak dalam mode input). */
+const CountField = ({
+  label,
+  value,
+  suffix,
+  editable,
+  onChange,
+}: {
+  label: string;
+  value: string;
+  suffix?: string;
+  editable: boolean;
+  onChange: (v: string) => void;
+}) => (
+  <div>
+    <Label>{label}</Label>
+    <div className="relative">
+      {editable ? (
+        <input
+          type="number"
+          min={0}
+          step={1}
+          inputMode="numeric"
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          aria-label={label}
+          className={`${fieldClass} ${suffix ? "pr-12" : ""}`}
+        />
+      ) : (
+        <div className={`${fieldClass} flex items-center`}>{value !== "" ? value : "-"}</div>
+      )}
+      {suffix && (
+        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[11px] text-gray-400 pointer-events-none">
+          {suffix}
+        </span>
+      )}
+    </div>
+  </div>
+);
+
+/** Tab "Parameter Pengujian": tabel isian hasil + detail parameter uji perkecambahan (daya berkecambah). */
 const ParameterTab = ({ state, hasilAkhirOptions, onLihatDokumentasi }: ParameterTabProps) => {
   const { activeParams, drafts, setParamDraft, statusOf, canInput, data } = state;
-  // Kartu detail hanya untuk parameter uji perkecambahan (daftar nama dari master lookup).
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  // Detail hanya untuk parameter uji perkecambahan (daftar nama dari master lookup).
   const { lookups } = useQcLookups(["PARAMETER_PERKECAMBAHAN"]);
-  const selected = useMemo(() => {
-    const names = (lookups.PARAMETER_PERKECAMBAHAN || []).map((l) => l.nama.trim().toLowerCase());
-    return activeParams.find((p) => names.some((n) => p.nama.trim().toLowerCase().includes(n)));
-  }, [lookups, activeParams]);
+  const perkecambahanNames = useMemo(
+    () => (lookups.PARAMETER_PERKECAMBAHAN || []).map((l) => l.nama.trim().toLowerCase()),
+    [lookups]
+  );
+  const perkecambahanParams = useMemo(
+    () => activeParams.filter((p) => isParameterPerkecambahan(p.nama, perkecambahanNames)),
+    [perkecambahanNames, activeParams]
+  );
+  const selected = perkecambahanParams.find((p) => p.id === selectedId) ?? perkecambahanParams[0];
   const status = selected ? statusOf(selected) : null;
   const gagal = status === "Tidak Lulus";
   const draft = selected ? drafts[selected.id] : undefined;
   const satuan = selected?.satuan && selected.satuan !== "-" ? selected.satuan : "";
   const numeric = selected ? isNumericBatas(selected.batasAcuan ?? selected.standar) : false;
-  const nilai = draft ? draft.nilaiHasil || draft.hasilTeks : selected?.nilaiHasil ?? selected?.hasilTeks ?? "";
+  const nilai = draft ? draft.nilaiHasil || draft.hasilTeks : (selected?.nilaiHasil ?? selected?.hasilTeks ?? "");
+  // Hasil akhir dihitung dari rincian: benih normal ÷ jumlah benih diuji.
+  const rincian = draft?.rincian ?? toRincianDraft(selected?.rincianHasil);
+  const rincianPayload = toRincianPayload(rincian);
+  const jumlahBenih = rincianPayload?.jumlahBenih ?? null;
+  const total = totalBenih(rincianPayload);
+  const semuaKategoriTerisi = KATEGORI_BENIH.every(({ field }) => rincianPayload?.[field] != null);
+  const totalTidakSesuai =
+    jumlahBenih !== null && (total > jumlahBenih || (semuaKategoriTerisi && total !== jumlahBenih));
+  const setRincian = (field: RincianField, value: string) => {
+    if (!selected) return;
+    const next: RincianDraft = { ...rincian, [field]: value };
+    const daya = hitungDayaBerkecambah(toRincianPayload(next));
+    setParamDraft(selected.id, {
+      rincian: next,
+      nilaiHasil: daya === null ? "" : String(daya),
+    });
+  };
   const fotos = (data?.dokumen || []).filter((d) => d.kategori === "Dokumentasi" && isImageDoc(d));
   const { open: openPreview, lightbox } = useImageLightbox(fotos);
 
@@ -58,7 +134,15 @@ const ParameterTab = ({ state, hasilAkhirOptions, onLihatDokumentasi }: Paramete
           onChangeDraft={setParamDraft}
           statusOf={statusOf}
           hasilAkhirOptions={hasilAkhirOptions}
+          selectedId={selected?.id}
+          onSelect={setSelectedId}
+          isSelectable={(p) => perkecambahanParams.some((x) => x.id === p.id)}
         />
+        {perkecambahanParams.length > 1 && (
+          <p className="text-[10px] text-gray-400 mt-2">
+            <i className="ri-cursor-line"></i> Klik baris parameter perkecambahan untuk melihat rincian dan SOP-nya.
+          </p>
+        )}
       </div>
 
       {selected && (
@@ -75,7 +159,11 @@ const ParameterTab = ({ state, hasilAkhirOptions, onLihatDokumentasi }: Paramete
             <div className="lg:col-span-3 space-y-3 text-xs text-gray-800">
               <div>
                 <Label>Metode Uji</Label>
-                <p>{selected.metodeRef ? `${selected.metodeRef.kode} – ${selected.metodeRef.nama}` : selected.metode || "-"}</p>
+                <p>
+                  {selected.metodeRef
+                    ? `${selected.metodeRef.kode} – ${selected.metodeRef.nama}`
+                    : selected.metode || "-"}
+                </p>
               </div>
               <div>
                 <Label>Standar Acuan</Label>
@@ -85,6 +173,12 @@ const ParameterTab = ({ state, hasilAkhirOptions, onLihatDokumentasi }: Paramete
                 <Label>Standar</Label>
                 <p>{selected.standar || "-"}</p>
               </div>
+              {selected.definisi && (
+                <div>
+                  <Label>Definisi</Label>
+                  <p className="text-gray-600">{selected.definisi}</p>
+                </div>
+              )}
               <div>
                 <Label>SOP</Label>
                 <QcDocumentList documents={selected.metodeRef?.dokumen || []} emptyMessage="Belum ada SOP." />
@@ -94,42 +188,70 @@ const ParameterTab = ({ state, hasilAkhirOptions, onLihatDokumentasi }: Paramete
             {/* Rincian hasil */}
             <div className="lg:col-span-5 space-y-3">
               <p className="text-xs font-semibold text-gray-800">Rincian Hasil</p>
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <Label>Diuji Oleh</Label>
-                  <div className="h-[34px] px-2.5 border border-gray-200 rounded-md text-xs flex items-center">{selected.diujiOleh || "-"}</div>
-                </div>
-                <div>
-                  <Label>Tanggal Uji</Label>
-                  <div className="h-[34px] px-2.5 border border-gray-200 rounded-md text-xs flex items-center">{formatDateTime(selected.tanggalUji)}</div>
-                </div>
-              </div>
-              <div>
-                <Label>Catatan Hasil</Label>
-                {canInput ? (
-                  <textarea
-                    rows={4}
-                    value={draft?.catatanHasil || ""}
-                    onChange={(e) => setParamDraft(selected.id, { catatanHasil: e.target.value })}
-                    placeholder="Rincian pengamatan, mis. jumlah benih diuji, benih normal/abnormal, mati, keras..."
-                    aria-label={`Catatan hasil ${selected.nama}`}
-                    className="w-full border border-gray-200 rounded-md p-2 text-xs focus:outline-none focus:border-emerald-500"
+              <div className="space-y-3">
+                <div className="grid grid-cols-2 gap-3">
+                  <CountField
+                    label="Jumlah Benih Diuji"
+                    value={rincian.jumlahBenih}
+                    suffix="butir"
+                    editable={canInput}
+                    onChange={(v) => setRincian("jumlahBenih", v)}
                   />
-                ) : (
-                  <p className="text-xs text-gray-600 whitespace-pre-line border border-gray-100 rounded-md p-2 min-h-[60px]">
-                    {selected.catatanHasil || "-"}
+                  <div>
+                    <Label>Hari Pengamatan</Label>
+                    {canInput ? (
+                      <select
+                        value={rincian.hariPengamatan}
+                        onChange={(e) => setRincian("hariPengamatan", e.target.value)}
+                        aria-label="Hari pengamatan"
+                        className={fieldClass}
+                      >
+                        <option value="">Pilih hari</option>
+                        {HARI_PENGAMATAN_OPTIONS.map((h) => (
+                          <option key={h} value={h}>
+                            Hari ke-{h}
+                          </option>
+                        ))}
+                      </select>
+                    ) : (
+                      <div className={`${fieldClass} flex items-center`}>
+                        {rincian.hariPengamatan ? `Hari ke-${rincian.hariPengamatan}` : "-"}
+                      </div>
+                    )}
+                  </div>
+                  {KATEGORI_BENIH.map(({ field, label }) => (
+                    <CountField
+                      key={field}
+                      label={label}
+                      value={rincian[field]}
+                      editable={canInput}
+                      onChange={(v) => setRincian(field, v)}
+                    />
+                  ))}
+                </div>
+                {jumlahBenih !== null && (
+                  <p className={`text-[11px] ${totalTidakSesuai ? "text-rose-600" : "text-gray-500"}`}>
+                    <i className={totalTidakSesuai ? "ri-error-warning-line" : "ri-information-line"}></i> Total benih:{" "}
+                    {total} / {jumlahBenih} butir
+                    {totalTidakSesuai &&
+                      " — total normal, abnormal, mati, dan keras harus sama dengan jumlah benih diuji."}
                   </p>
                 )}
               </div>
               <div>
                 <p className="text-xs font-semibold text-gray-800 mb-1">Hasil Akhir</p>
                 <div className="flex">
-                  {canInput && draft ? (
+                  {canInput && draft && !rincianPayload ? (
                     <input
                       type={numeric ? "number" : "text"}
                       step="any"
                       value={numeric ? draft.nilaiHasil : draft.hasilTeks}
-                      onChange={(e) => setParamDraft(selected.id, numeric ? { nilaiHasil: e.target.value } : { hasilTeks: e.target.value })}
+                      onChange={(e) =>
+                        setParamDraft(
+                          selected.id,
+                          numeric ? { nilaiHasil: e.target.value } : { hasilTeks: e.target.value }
+                        )
+                      }
                       aria-label={`Hasil akhir ${selected.nama}`}
                       className={`flex-1 min-w-0 h-[36px] px-3 border rounded-l-md text-sm font-semibold focus:outline-none ${
                         gagal ? "bg-rose-50 border-rose-200 text-rose-600" : "border-gray-200 text-gray-800"

@@ -6,9 +6,11 @@ import Pageheader from "@/shared/layouts-components/page-header/pageheader";
 import HasilPengujianList from "./components/HasilPengujianList";
 import { AddButton, ExportButton } from "../../shared/ActionButtons";
 import { useRouter } from "next/navigation";
+import { useCurrentUser } from "@/app/hooks/useCurrentUser";
 
 const HasilPengujianPage = () => {
   const router = useRouter();
+  const { isPenguji } = useCurrentUser();
 
   return (
     <>
@@ -26,10 +28,12 @@ const HasilPengujianPage = () => {
             </div>
           </div>
           <div className="flex gap-2">
-            <AddButton
-              label="Input Hasil Pengujian"
-              onClick={() => router.push("/qc/pemeriksaan-pengujian")}
-            />
+            {isPenguji && (
+              <AddButton
+                label="Input Hasil Pengujian"
+                onClick={() => router.push("/qc/pemeriksaan-pengujian")}
+              />
+            )}
             <ExportButton label="Export" onClick={() => {}} />
             <button type="button" title="Lainnya" className={iconButtonClass("gray", "!w-9 !h-9")}>
               <i className="ri-more-2-fill"></i>

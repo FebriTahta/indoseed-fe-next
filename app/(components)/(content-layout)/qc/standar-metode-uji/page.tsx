@@ -187,7 +187,7 @@ export default function StandarMetodeUjiPage() {
     <>
       <Seo title="Master Metode Uji" />
       <Pageheader currentpage="Master Metode Uji" activepage="Master Data" mainpage="QC & LAB" />
-      <ToastContainer position="top-right" autoClose={3000} hideProgressBar={false} />
+      <ToastContainer position="top-right" autoClose={3000} hideProgressBar={false} style={{ zIndex: 10050 }} />
 
       <QcPageHeader
         title="Master Metode Uji"

@@ -1,7 +1,7 @@
 "use client";
 
 import { buttonClass, iconButtonClass } from '@/app/(components)/(content-layout)/shared/buttonStyles';
-import React, { useState, useEffect, useRef, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import dynamic from 'next/dynamic';
 const CreatableSelect = dynamic(() => import('react-select/creatable'), { ssr: false });
@@ -9,7 +9,6 @@ import Pageheader from '@/shared/layouts-components/page-header/pageheader';
 import { qcService } from '@/app/services/qcService';
 import { commodityService } from '@/app/services/commodityService';
 import { varietyService } from '@/app/services/varietyService';
-import uploadService from '@/app/services/uploadService';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import SpkButton from '@/shared/@spk-reusable-components/uielements/spk-button';
@@ -18,6 +17,7 @@ import { Commodity } from '@/app/types/commodity';
 import { Variety } from '@/app/types/variety';
 import { TestMethodDocument } from '@/app/types/qc';
 import { useQcLookups } from '@/app/hooks/useQcReference';
+import DokumenTerkaitSection from './DokumenTerkaitSection';
 
 interface ParameterItem {
   id: string; // temp id for UI mapping
@@ -102,8 +102,6 @@ export default function MetodeUjiForm({ mode, initialData }: { mode: 'create' | 
   const [isUploading, setIsUploading] = useState<boolean>(false);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
-  const [isDragging, setIsDragging] = useState<boolean>(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Multi-select state for commodities & varieties
   const [selectedKomoditas, setSelectedKomoditas] = useState<string[]>(['Semua Komoditas']);
@@ -363,98 +361,6 @@ export default function MetodeUjiForm({ mode, initialData }: { mode: 'create' | 
     setParameters(newParams);
   };
 
-  const handleFileUpload = async (files: FileList | File[]) => {
-    if (!files || files.length === 0) return;
-
-    try {
-      setIsUploading(true);
-      const newDocs: TestMethodDocument[] = [];
-      for (let i = 0; i < files.length; i++) {
-        const file = files[i];
-        const sizeFormatted = file.size > 1024 * 1024
-          ? `${(file.size / (1024 * 1024)).toFixed(1)} MB`
-          : `${(file.size / 1024).toFixed(1)} KB`;
-        const ext = file.name.split('.').pop()?.toLowerCase() || '';
-
-        const res = await uploadService.uploadFile(file, 'metode-uji');
-        if (res.success && res.data?.fileUrl) {
-          newDocs.push({
-            id: `temp-${Date.now()}-${i}-${Math.random().toString(36).substring(2, 7)}`,
-            namaFile: file.name,
-            fileUrl: res.data.fileUrl,
-            tipeFile: ext,
-            ukuran: sizeFormatted,
-          });
-        }
-      }
-      setDokumenList(prev => [...prev, ...newDocs]);
-      toast.success(`${newDocs.length} dokumen berhasil diunggah ke MinIO`);
-    } catch (error) {
-      console.error('Error uploading document:', error);
-      toast.error('Gagal mengupload dokumen ke MinIO');
-    } finally {
-      setIsUploading(false);
-      if (fileInputRef.current) fileInputRef.current.value = '';
-    }
-  };
-
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files) {
-      handleFileUpload(e.target.files);
-    }
-  };
-
-  const handleDragOver = (e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragging(true);
-  };
-
-  const handleDragLeave = (e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragging(false);
-  };
-
-  const handleDrop = (e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragging(false);
-    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
-      handleFileUpload(e.dataTransfer.files);
-    }
-  };
-
-  const handleRemoveDokumen = (index: number) => {
-    setDokumenList(prev => {
-      const copy = [...prev];
-      copy.splice(index, 1);
-      return copy;
-    });
-  };
-
-  const getFileIcon = (fileName: string, tipeFile?: string) => {
-    const ext = (tipeFile || fileName.split('.').pop() || '').toLowerCase();
-    if (['jpg', 'jpeg', 'png', 'webp', 'gif', 'svg'].includes(ext)) {
-      return <i className="ri-image-fill text-info text-xl"></i>;
-    }
-    if (ext === 'pdf') {
-      return <i className="ri-file-pdf-fill text-danger text-xl"></i>;
-    }
-    if (['doc', 'docx'].includes(ext)) {
-      return <i className="ri-file-word-fill text-primary text-xl"></i>;
-    }
-    if (['xls', 'xlsx'].includes(ext)) {
-      return <i className="ri-file-excel-fill text-success text-xl"></i>;
-    }
-    if (['ppt', 'pptx'].includes(ext)) {
-      return <i className="ri-file-ppt-fill text-warning text-xl"></i>;
-    }
-    return <i className="ri-file-text-fill text-gray-400 text-xl"></i>;
-  };
-
-  const isImageFile = (fileName: string, tipeFile?: string) => {
-    const ext = (tipeFile || fileName.split('.').pop() || '').toLowerCase();
-    return ['jpg', 'jpeg', 'png', 'webp', 'gif', 'svg'].includes(ext);
-  };
-
   const handleSave = async () => {
     const errors: Record<string, string> = {};
 
@@ -578,7 +484,7 @@ export default function MetodeUjiForm({ mode, initialData }: { mode: 'create' | 
 
   return (
     <div className="w-full">
-      <ToastContainer position="top-right" autoClose={3000} theme="colored" />
+      <ToastContainer position="top-right" autoClose={3000} theme="colored" style={{ zIndex: 10050 }} />
 
       <div className="flex items-center justify-between mb-4">
         <Pageheader
@@ -964,183 +870,12 @@ export default function MetodeUjiForm({ mode, initialData }: { mode: 'create' | 
         {/* Right Column */}
         <div className="lg:col-span-4 flex flex-col gap-6">
 
-          {/* Dokumen Terkait */}
-          <div className="box">
-            <div className="box-header flex items-center justify-between border-b border-defaultborder pb-3">
-              <div className="flex items-center gap-2">
-                <i className="ri-file-list-3-line text-lg text-primary"></i>
-                <h3 className="box-title font-semibold text-base">Dokumen Terkait</h3>
-              </div>
-              <span className="badge bg-primary/10 text-primary font-semibold text-xs rounded-full px-2.5 py-0.5">
-                {dokumenList.length} File
-              </span>
-            </div>
-            <div className="box-body pt-4">
-              <div
-                onDragOver={handleDragOver}
-                onDragLeave={handleDragLeave}
-                onDrop={handleDrop}
-                onClick={() => !isUploading && fileInputRef.current?.click()}
-                className={`border-2 border-dashed rounded-lg p-5 text-center transition-all cursor-pointer relative ${isDragging
-                  ? 'border-primary bg-primary/10 scale-[1.01]'
-                  : isUploading
-                    ? 'border-gray-200 bg-gray-50 cursor-wait'
-                    : 'border-gray-300 hover:border-primary/60 hover:bg-gray-50/80'
-                  }`}
-              >
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  multiple
-                  onChange={handleFileChange}
-                  disabled={isUploading}
-                  className="hidden"
-                  accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.jpg,.jpeg,.png,.webp,.svg,.txt,.csv"
-                />
-
-                {isUploading ? (
-                  <div className="flex flex-col items-center justify-center py-2">
-                    <div className="w-8 h-8 border-3 border-primary border-t-transparent rounded-full animate-spin mb-2"></div>
-                    <p className="text-xs font-semibold text-primary">Mengunggah ke MinIO Storage...</p>
-                    <p className="text-[11px] text-gray-400 mt-0.5">Mohon tunggu sebentar</p>
-                  </div>
-                ) : (
-                  <>
-                    <div className="text-primary text-3xl mb-1.5 flex justify-center">
-                      <div className="w-11 h-11 rounded-full bg-primary/10 flex items-center justify-center">
-                        <i className="ri-cloud-upload-line text-2xl"></i>
-                      </div>
-                    </div>
-                    <p className="text-xs font-semibold text-gray-800 mb-0.5">
-                      Upload Dokumen & Gambar Pendukung
-                    </p>
-                    <p className="text-[11px] text-gray-500 mb-2">
-                      PDF, DOCX, XLSX, JPG, PNG, WEBP (Maks. 10 MB per file)
-                    </p>
-                    <div className="flex items-center justify-center gap-2">
-                      <button
-                        type="button"
-                        className={buttonClass("outline", "sm")}
-                      >
-                        Pilih File
-                      </button>
-                      <span className="text-[10px] text-emerald-700 bg-emerald-50 border border-emerald-200 rounded px-1.5 py-0.5 flex items-center gap-1 font-medium">
-                        <i className="ri-hard-drive-2-line"></i> MinIO
-                      </span>
-                    </div>
-                  </>
-                )}
-              </div>
-
-              <div className="mt-4">
-                <div className="table-responsive rounded border border-defaultborder overflow-hidden">
-                  <table className="w-full text-left text-sm text-gray-500 border-collapse">
-                    <thead className="bg-gray-50/80">
-                      <tr>
-                        <th className="py-2.5 px-3 font-semibold text-xs border-b border-defaultborder text-primary">
-                          Berkas
-                        </th>
-                        <th className="py-2.5 px-3 font-semibold text-xs border-b border-defaultborder text-primary w-20 text-center">
-                          Ukuran
-                        </th>
-                        <th className="py-2.5 px-3 font-semibold text-xs border-b border-defaultborder text-primary w-20 text-center">
-                          Aksi
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-defaultborder">
-                      {dokumenList.length > 0 ? (
-                        dokumenList.map((doc, i) => {
-                          const isImg = isImageFile(doc.namaFile, doc.tipeFile);
-                          const ext = (doc.tipeFile || doc.namaFile.split('.').pop() || '').toUpperCase();
-                          return (
-                            <tr key={doc.id || i} className="hover:bg-gray-50/60 transition-colors">
-                              <td className="py-2.5 px-3">
-                                <div className="flex items-center gap-2.5">
-                                  {isImg && doc.fileUrl ? (
-                                    <a
-                                      href={doc.fileUrl}
-                                      target="_blank"
-                                      rel="noopener noreferrer"
-                                      className="relative block w-8 h-8 rounded border border-gray-200 overflow-hidden shrink-0 group"
-                                      title="Klik untuk melihat gambar penuh"
-                                    >
-                                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                                      <img
-                                        src={doc.fileUrl}
-                                        alt={doc.namaFile}
-                                        className="w-full h-full object-cover group-hover:scale-110 transition-transform"
-                                      />
-                                    </a>
-                                  ) : (
-                                    <div className="w-8 h-8 rounded bg-gray-100 flex items-center justify-center shrink-0">
-                                      {getFileIcon(doc.namaFile, doc.tipeFile)}
-                                    </div>
-                                  )}
-                                  <div className="min-w-0 flex-1">
-                                    <p
-                                      className="text-xs font-semibold text-gray-800 truncate mb-0.5"
-                                      title={doc.namaFile}
-                                    >
-                                      {doc.namaFile}
-                                    </p>
-                                    <div className="flex items-center gap-1.5">
-                                      <span className="text-[10px] font-mono text-gray-500 uppercase bg-gray-100 px-1 py-0.2 rounded">
-                                        {ext || 'FILE'}
-                                      </span>
-                                      <span className="text-[10px] text-emerald-600 flex items-center gap-0.5">
-                                        <i className="ri-check-line text-[11px]"></i> MinIO
-                                      </span>
-                                    </div>
-                                  </div>
-                                </div>
-                              </td>
-                              <td className="py-2.5 px-3 text-xs text-center text-gray-500 whitespace-nowrap">
-                                {doc.ukuran || '-'}
-                              </td>
-                              <td className="py-2.5 px-3 text-center whitespace-nowrap">
-                                <div className="flex items-center justify-center gap-1">
-                                  <a
-                                    href={doc.fileUrl}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className={iconButtonClass("blue")}
-                                    title="Buka / Unduh Berkas"
-                                  >
-                                    <i className="ri-external-link-line text-sm"></i>
-                                  </a>
-                                  <button
-                                    type="button"
-                                    onClick={() => handleRemoveDokumen(i)}
-                                    className={iconButtonClass("rose")}
-                                    title="Hapus Berkas"
-                                  >
-                                    <i className="ri-delete-bin-line text-sm"></i>
-                                  </button>
-                                </div>
-                              </td>
-                            </tr>
-                          );
-                        })
-                      ) : (
-                        <tr>
-                          <td colSpan={3} className="py-7 text-center">
-                            <div className="flex flex-col items-center justify-center text-gray-400">
-                              <i className="ri-folder-open-line text-3xl mb-1.5 opacity-40"></i>
-                              <span className="text-xs font-medium">Belum ada dokumen yang diunggah</span>
-                              <span className="text-[11px] text-gray-400 mt-0.5">
-                                Dokumen atau gambar akan otomatis disimpan ke MinIO
-                              </span>
-                            </div>
-                          </td>
-                        </tr>
-                      )}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            </div>
-          </div>
+          <DokumenTerkaitSection
+            documents={dokumenList}
+            onChange={setDokumenList}
+            isUploading={isUploading}
+            onUploadingChange={setIsUploading}
+          />
 
           {/* Catatan */}
           <div className="box">

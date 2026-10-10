@@ -5,10 +5,10 @@ import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import Pageheader from "@/shared/layouts-components/page-header/pageheader";
 import { CancelButton } from "../../../shared/ActionButtons";
+import { useConfirm } from "@/app/(components)/(content-layout)/shared/ConfirmDialog";
 import HeaderInfo from "./form-sections/HeaderInfo";
 import LeftSidebar from "./form-sections/LeftSidebar";
 import ParameterTab from "./form-sections/ParameterTab";
-import HasilTab from "./form-sections/HasilTab";
 import RightSidebar from "./form-sections/RightSidebar";
 import DokumentasiTab from "./form-sections/DokumentasiTab";
 import TerimaSampelCard from "./form-sections/TerimaSampelCard";
@@ -16,27 +16,63 @@ import QcTabs from "../../shared/QcTabs";
 import QcCard, { QcInfoList } from "../../shared/QcCard";
 import QcTimeline from "../../shared/QcTimeline";
 import QcStatusBadge from "../../shared/QcStatusBadge";
-import QcReasonModal from "../../shared/QcReasonModal";
+import ReviewHasilModal, { ReviewKeputusan } from "../../shared/ReviewHasilModal";
+import ParameterBelumDiujiAlert from "../../shared/ParameterBelumDiujiAlert";
+import PengujiOnlyNotice from "../../shared/PengujiOnlyNotice";
 import { usePemeriksaanDetail } from "@/app/hooks/usePemeriksaanDetail";
 import { useQcMeta } from "@/app/hooks/useQcReference";
+import { useCurrentUser } from "@/app/hooks/useCurrentUser";
 import { QC_STATUS } from "@/app/types/qc";
 import { formatDateTime } from "@/app/lib/format";
 
-type TabKey = "parameter" | "hasil" | "dokumentasi" | "catatan" | "audit";
-type ReviewDialog = "setujui" | "revisi" | null;
+type TabKey = "parameter" | "dokumentasi" | "catatan" | "audit";
 
 
 const PemeriksaanForm: React.FC<{ id: string }> = ({ id }) => {
   const router = useRouter();
   const state = usePemeriksaanDetail(id);
-  const { data, loading, busy, dirty, canInput } = state;
+  const { data, loading, busy, dirty, canInput, canSubmit, belumDiuji } = state;
   const { meta } = useQcMeta();
     const [activeTab, setActiveTab] = useState<TabKey>("parameter");
-  const [reviewDialog, setReviewDialog] = useState<ReviewDialog>(null);
+  const [reviewDialog, setReviewDialog] = useState<ReviewKeputusan | null>(null);
 
-  const goBack = () => {
-    if (dirty && !window.confirm("Ada perubahan hasil yang belum disimpan. Tinggalkan halaman?")) return;
+  const confirm = useConfirm();
+  const { canReview, isPenguji } = useCurrentUser();
+
+  const goBack = async () => {
+    if (
+      dirty &&
+      !(await confirm({
+        title: "Tinggalkan Halaman?",
+        message: "Ada perubahan hasil pengujian yang belum disimpan. Perubahan tersebut akan hilang jika Anda keluar.",
+        tone: "warning",
+        icon: "ri-logout-box-r-line",
+        confirmText: "Tinggalkan",
+        cancelText: "Tetap di Sini",
+      }))
+    ) {
+      return;
+    }
     router.push("/qc/pemeriksaan-pengujian");
+  };
+
+  const handleSubmitReview = async () => {
+    const ok = await confirm({
+      title: "Kirim Hasil untuk Review?",
+      message: "Hasil pengujian akan dikunci dan diteruskan ke supervisor untuk direview. Pastikan semua nilai sudah benar.",
+      details: (
+        <div className="flex items-center justify-between gap-2">
+          <span className="font-semibold">{data?.noPengujian || data?.noPermintaan}</span>
+          <span className="flex items-center gap-1.5 text-gray-500">
+            Kesimpulan sementara <QcStatusBadge status={state.hasilAkhirPreview} emptyLabel="-" />
+          </span>
+        </div>
+      ),
+      tone: "info",
+      icon: "ri-send-plane-line",
+      confirmText: "Ya, Kirim",
+    });
+    if (ok) state.submitReview();
   };
 
   if (loading && !data) {
@@ -82,7 +118,7 @@ const PemeriksaanForm: React.FC<{ id: string }> = ({ id }) => {
             <span className="text-[10px] text-gray-500 mb-0.5">Status</span>
             <QcStatusBadge status={data.status} size="sm" />
           </div>
-          {data.status === QC_STATUS.SAMPLING && (
+          {data.status === QC_STATUS.SAMPLING && !isPenguji && (
             <button
               type="button"
               onClick={() => router.push(`/qc/permintaan-pengujian/edit/${data.id}`)}
@@ -98,20 +134,27 @@ const PemeriksaanForm: React.FC<{ id: string }> = ({ id }) => {
               </button>
               <button
                 type="button"
-                disabled={busy}
-                onClick={() => window.confirm("Kirim hasil pengujian untuk direview?") && state.submitReview()}
+                disabled={busy || !canSubmit}
+                onClick={handleSubmitReview}
                 className={buttonClass("primary")}
+                title={canSubmit ? undefined : "Lengkapi hasil semua parameter uji terlebih dahulu"}
               >
                 <i className="ri-send-plane-line"></i> Submit untuk Review
               </button>
             </>
           )}
-          {data.status === QC_STATUS.MENUNGGU_REVIEW && (
+          {data.status === QC_STATUS.MENUNGGU_REVIEW && canReview && (
             <>
               <button type="button" disabled={busy} onClick={() => setReviewDialog("revisi")} className={buttonClass("warning")}>
                 <i className="ri-arrow-go-back-line"></i> Kembalikan (Revisi)
               </button>
-              <button type="button" disabled={busy} onClick={() => setReviewDialog("setujui")} className={buttonClass("primary")}>
+              <button
+                type="button"
+                disabled={busy || data.hasilTidakValid}
+                onClick={() => setReviewDialog("setujui")}
+                className={buttonClass("primary")}
+                title={data.hasilTidakValid ? "Hasil tidak valid, tidak dapat disetujui" : undefined}
+              >
                 <i className="ri-check-double-line"></i> Setujui Hasil
               </button>
             </>
@@ -120,12 +163,24 @@ const PemeriksaanForm: React.FC<{ id: string }> = ({ id }) => {
       </div>
 
       <div className="space-y-4">
+        {canInput && !canSubmit && <ParameterBelumDiujiAlert variant="belum-lengkap" parameters={belumDiuji} />}
+        {data.hasilTidakValid && (
+          <ParameterBelumDiujiAlert
+            variant="tidak-valid"
+            parameters={data.parameterBelumDiuji || []}
+            onUjiUlang={canReview ? state.ujiUlang : undefined}
+            busy={busy}
+          />
+        )}
         {belumDisetujui && (
           <div className="p-3 rounded-xl border border-amber-200 bg-amber-50 text-xs text-amber-800">
             <i className="ri-information-line"></i> Permintaan ini belum disetujui sehingga belum dapat diperiksa.
           </div>
         )}
-        {data.status === QC_STATUS.SAMPLING && <TerimaSampelCard data={data} busy={busy} onSubmit={state.terimaSampel} />}
+        {data.status === QC_STATUS.SAMPLING && isPenguji && <TerimaSampelCard data={data} busy={busy} onSubmit={state.terimaSampel} />}
+        {(data.status === QC_STATUS.SAMPLING || data.status === QC_STATUS.DALAM_PENGUJIAN) && !isPenguji && (
+          <PengujiOnlyNotice petugas={data.petugasQc?.nama} />
+        )}
 
         <HeaderInfo data={data} />
 
@@ -138,7 +193,6 @@ const PemeriksaanForm: React.FC<{ id: string }> = ({ id }) => {
             <QcTabs<TabKey>
               tabs={[
                 { key: "parameter", label: "Parameter Pengujian" },
-                { key: "hasil", label: "Hasil Pengujian" },
                 { key: "dokumentasi", label: "Dokumentasi" },
                 { key: "catatan", label: "Catatan" },
                 { key: "audit", label: "Audit Trail" },
@@ -155,7 +209,6 @@ const PemeriksaanForm: React.FC<{ id: string }> = ({ id }) => {
               />
             )}
 
-            {activeTab === "hasil" && <HasilTab state={state} />}
 
             {activeTab === "dokumentasi" && <DokumentasiTab state={state} />}
 
@@ -203,21 +256,12 @@ const PemeriksaanForm: React.FC<{ id: string }> = ({ id }) => {
         </div>
       </div>
 
-      <QcReasonModal
-        isOpen={!!reviewDialog}
-        title={reviewDialog === "setujui" ? "Setujui Hasil Pengujian" : "Kembalikan untuk Revisi"}
-        description={
-          <>
-            Kesimpulan: <QcStatusBadge status={data.hasilAkhir} /> — {data.noPengujian}
-          </>
-        }
-        label={reviewDialog === "setujui" ? "Catatan review (opsional)" : "Catatan revisi"}
-        submitText={reviewDialog === "setujui" ? "Setujui" : "Kembalikan"}
-        required={reviewDialog === "revisi"}
+      <ReviewHasilModal
+        keputusan={reviewDialog}
+        noPengujian={data.noPengujian}
+        hasilAkhir={data.hasilAkhir}
         onClose={() => setReviewDialog(null)}
-        onSubmit={async (text) => {
-          if (await state.review(reviewDialog!, text || undefined)) setReviewDialog(null);
-        }}
+        onSubmit={state.review}
       />
     </>
   );

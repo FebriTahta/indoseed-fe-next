@@ -3,6 +3,7 @@
 import React, { useCallback, useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { formatDateTime } from "@/app/lib/format";
+import { useFileDownload } from "@/app/hooks/useFileDownload";
 
 export interface LightboxImage {
   id?: string;
@@ -23,6 +24,7 @@ interface QcImageLightboxProps {
 /** Pratinjau gambar layar penuh dengan navigasi (← →) dan tombol unduh. */
 export default function QcImageLightbox({ images, index, onClose, onIndexChange }: QcImageLightboxProps) {
   const open = index !== null && !!images[index];
+  const { download, pendingUrl } = useFileDownload();
   const go = useCallback(
     (delta: number) => {
       if (index === null || images.length < 2) return;
@@ -65,16 +67,15 @@ export default function QcImageLightbox({ images, index, onClose, onIndexChange 
               {index! + 1} / {images.length}
             </span>
           )}
-          <a
-            href={img.fileUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            download={img.namaFile}
+          <button
+            type="button"
+            onClick={() => download(img.fileUrl, img.namaFile)}
+            disabled={pendingUrl === img.fileUrl}
             title="Unduh"
             className="w-9 h-9 inline-flex items-center justify-center rounded-md bg-white/10 hover:bg-white/20 text-white transition-colors"
           >
-            <i className="ri-download-2-line text-lg"></i>
-          </a>
+            <i className={`${pendingUrl === img.fileUrl ? "ri-loader-4-line animate-spin" : "ri-download-2-line"} text-lg`}></i>
+          </button>
           <button type="button" onClick={onClose} title="Tutup (Esc)" className="w-9 h-9 inline-flex items-center justify-center rounded-md bg-white/10 hover:bg-white/20 text-white transition-colors">
             <i className="ri-close-line text-xl"></i>
           </button>

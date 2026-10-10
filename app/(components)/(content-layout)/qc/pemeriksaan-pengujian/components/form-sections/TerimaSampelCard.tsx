@@ -5,7 +5,8 @@ import React, { useEffect, useState } from "react";
 import { toast } from "react-toastify";
 import QcCard from "../../../shared/QcCard";
 import QcSelect from "../../../shared/QcSelect";
-import { useLaboratoriumOptions, usePengujiOptions, useQcLookups } from "@/app/hooks/useQcReference";
+import { useLaboratoriumOptions, useQcLookups } from "@/app/hooks/useQcReference";
+import { useCurrentUser } from "@/app/hooks/useCurrentUser";
 import { TerimaSampelPayload } from "@/app/services/pemeriksaanPengujianService";
 import { PermintaanPengujian } from "@/app/types/qc";
 import { toDateInputValue } from "@/app/lib/format";
@@ -18,12 +19,12 @@ interface TerimaSampelCardProps {
 
 /** Tahap Sampling: lab menerima sampel, menetapkan petugas QC, lalu pengujian dimulai. */
 export default function TerimaSampelCard({ data, busy, onSubmit }: TerimaSampelCardProps) {
-  const { penguji, options: pengujiOptions, loading: loadingPenguji } = usePengujiOptions();
+  // Kartu ini hanya untuk penguji; sampel selalu diterima atas nama penguji yang login (ditegakkan di backend).
+  const self = useCurrentUser().profile?.penguji;
   const { options: labOptions, loading: loadingLab } = useLaboratoriumOptions();
   const { options: lookupOptions, loading: loadingLookup } = useQcLookups(["KONDISI_SAMPEL"]);
 
   const [form, setForm] = useState({
-    petugasQcId: data.pengambilSampelId || "",
     laboratoriumId: "",
     tanggalSampling: toDateInputValue(),
     kondisiSampel: "",
@@ -35,18 +36,17 @@ export default function TerimaSampelCard({ data, busy, onSubmit }: TerimaSampelC
     if (!loadingLookup) setForm((f) => ({ ...f, kondisiSampel: f.kondisiSampel || lookupOptions("KONDISI_SAMPEL")[0]?.value || "" }));
   }, [loadingLookup, lookupOptions]);
 
+  // Laboratorium default mengikuti laboratorium penguji.
   useEffect(() => {
-    const labId = penguji.find((p) => p.id === form.petugasQcId)?.laboratoriumId;
-    if (labId) setForm((f) => ({ ...f, laboratoriumId: labId }));
-  }, [form.petugasQcId, penguji]);
+    if (self?.laboratoriumId) setForm((f) => ({ ...f, laboratoriumId: f.laboratoriumId || self.laboratoriumId || "" }));
+  }, [self]);
 
   const handleSubmit = async () => {
-    if (!form.petugasQcId || !form.tanggalSampling || !form.kondisiSampel) {
-      toast.warning("Lengkapi petugas QC, tanggal sampling, dan kondisi sampel");
+    if (!form.tanggalSampling || !form.kondisiSampel) {
+      toast.warning("Lengkapi tanggal sampling dan kondisi sampel");
       return;
     }
     await onSubmit({
-      petugasQcId: form.petugasQcId,
       laboratoriumId: form.laboratoriumId || null,
       tanggalSampling: form.tanggalSampling,
       kondisiSampel: form.kondisiSampel,
@@ -66,13 +66,9 @@ export default function TerimaSampelCard({ data, busy, onSubmit }: TerimaSampelC
           <label htmlFor="select-petugas-qc" className="block text-xs font-medium text-gray-700 mb-1">
             Petugas QC <span className="text-rose-500">*</span>
           </label>
-          <QcSelect
-            id="select-petugas-qc"
-            options={pengujiOptions}
-            value={form.petugasQcId}
-            onChange={(v) => setForm((f) => ({ ...f, petugasQcId: v || "" }))}
-            isLoading={loadingPenguji}
-          />
+          <div id="select-petugas-qc" className="h-[38px] px-3 border border-gray-200 bg-gray-50 rounded-md text-sm text-gray-700 flex items-center truncate">
+            {self?.nama || "Memuat..."}
+          </div>
         </div>
         <div>
           <label htmlFor="select-laboratorium" className="block text-xs font-medium text-gray-700 mb-1">

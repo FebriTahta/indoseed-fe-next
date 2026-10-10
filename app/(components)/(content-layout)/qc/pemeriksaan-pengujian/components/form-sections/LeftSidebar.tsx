@@ -39,15 +39,18 @@ const KONDISI_CLASS: Record<string, string> = {
 };
 
 const LeftSidebar = ({ data, onLihatDokumentasi }: LeftSidebarProps) => {
-  // Lampiran permintaan + dokumen SOP metode uji tiap parameter (tanpa duplikat).
-  const dokumenTerkait = useMemo<QcDocumentItem[]>(() => {
-    const permintaanDocs = (data.dokumen || []).filter((d) => d.kategori !== "Dokumentasi");
-    const sopDocs = (data.parameters || [])
-      .filter((p) => p.checked)
-      .flatMap((p) => (p.metodeRef?.dokumen || []).map((d) => ({ ...d, keterangan: `SOP ${p.metodeRef?.kode}` })));
-    const seen = new Set<string>();
-    return [...permintaanDocs, ...sopDocs].filter((d) => !seen.has(d.fileUrl) && !!seen.add(d.fileUrl));
+  // Dokumen terkait = dokumen milik metode uji yang dipakai parameter pengujian, dikelompokkan per metode.
+  const dokumenPerMetode = useMemo(() => {
+    const groups = new Map<string, { label: string; docs: QcDocumentItem[] }>();
+    (data.parameters || [])
+      .filter((p) => p.checked && p.metodeRef)
+      .forEach((p) => {
+        const m = p.metodeRef!;
+        if (!groups.has(m.id)) groups.set(m.id, { label: `${m.kode} · ${m.nama}`, docs: (m.dokumen || []) as QcDocumentItem[] });
+      });
+    return [...groups.values()];
   }, [data]);
+  const totalDokumen = dokumenPerMetode.reduce((a, g) => a + g.docs.length, 0);
 
   const lokasi = data.lokasiAsal;
   const posisi = lokasi?.posisi;
@@ -120,8 +123,26 @@ const LeftSidebar = ({ data, onLihatDokumentasi }: LeftSidebarProps) => {
         )}
       </QcCard>
 
-      <QcCard title="Dokumen Terkait" icon="ri-folder-open-line">
-        <QcDocumentList documents={dokumenTerkait} emptyMessage="Tidak ada lampiran atau SOP metode uji." />
+      <QcCard
+        title="Dokumen Terkait"
+        icon="ri-folder-open-line"
+        action={<span className="text-[10px] text-gray-400">Dari metode uji</span>}
+        bodyClassName="space-y-3"
+      >
+        {!dokumenPerMetode.length ? (
+          <p className="text-xs text-gray-400 italic">Parameter pengujian belum terhubung dengan metode uji.</p>
+        ) : totalDokumen === 0 ? (
+          <p className="text-xs text-gray-400 italic">Metode uji yang digunakan belum memiliki dokumen.</p>
+        ) : (
+          dokumenPerMetode
+            .filter((g) => g.docs.length)
+            .map((g) => (
+              <div key={g.label}>
+                <p className="text-[11px] font-semibold text-gray-600 mb-1">{g.label}</p>
+                <QcDocumentList documents={g.docs} />
+              </div>
+            ))
+        )}
       </QcCard>
     </div>
   );

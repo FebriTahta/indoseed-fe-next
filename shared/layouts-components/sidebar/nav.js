@@ -43,14 +43,15 @@ export const MENUITEMS = [
   { path: "/qc/permintaan-pengujian", icon: <i className="bx bx-file side-menu__icon"></i>, type: "link", active: false, selected: false, title: "Permintaan Pengujian" },
   { path: "/qc/pemeriksaan-pengujian", icon: <i className="bx bx-search-alt side-menu__icon"></i>, type: "link", active: false, selected: false, title: "Pemeriksaan / Pengujian" },
   { path: "/qc/hasil-pengujian", icon: <i className="bx bx-check-shield side-menu__icon"></i>, type: "link", active: false, selected: false, title: "Hasil Pengujian" },
-  { path: "/qc/temuan-qc", icon: <i className="bx bx-error-circle side-menu__icon"></i>, type: "link", active: false, selected: false, title: "Temuan QC" },
-  { path: "/qc/tindakan-koreksi", icon: <i className="bx bx-wrench side-menu__icon"></i>, type: "link", active: false, selected: false, title: "Tindakan Koreksi" },
-  { path: "/qc/standar-mutu", icon: <i className="bx bx-badge-check side-menu__icon"></i>, type: "link", active: false, selected: false, title: "Standar Mutu" },
+  // { path: "/qc/temuan-qc", icon: <i className="bx bx-error-circle side-menu__icon"></i>, type: "link", active: false, selected: false, title: "Temuan QC" },
+  // { path: "/qc/tindakan-koreksi", icon: <i className="bx bx-wrench side-menu__icon"></i>, type: "link", active: false, selected: false, title: "Tindakan Koreksi" },
+  // { path: "/qc/standar-mutu", icon: <i className="bx bx-badge-check side-menu__icon"></i>, type: "link", active: false, selected: false, title: "Standar Mutu" },
   { path: "/qc/standar-metode-uji", icon: <i className="bx bx-list-check side-menu__icon"></i>, type: "link", active: false, selected: false, title: "Metode Uji" },
-  { path: "/master/laboratorium", icon: <i className="bx bx-cog side-menu__icon"></i>, type: "link", active: false, selected: false, title: "Peralatan Laboratorium" },
-  { path: "/qc/sampel", icon: <i className="bx bx-test-tube side-menu__icon"></i>, type: "link", active: false, selected: false, title: "Sampel" },
-  { path: "/qc/sertifikat-qc", icon: <i className="bx bx-certification side-menu__icon"></i>, type: "link", active: false, selected: false, title: "Sertifikat / COA" },
-  { path: "/qc/audit-trail", icon: <i className="bx bx-history side-menu__icon"></i>, type: "link", active: false, selected: false, title: "Riwayat QC" },
+  { path: "/qc/penguji", icon: <i className="bx bx-user-check side-menu__icon"></i>, type: "link", active: false, selected: false, title: "Penguji" },
+  // { path: "/master/laboratorium", icon: <i className="bx bx-cog side-menu__icon"></i>, type: "link", active: false, selected: false, title: "Peralatan Laboratorium" },
+  // { path: "/qc/sampel", icon: <i className="bx bx-test-tube side-menu__icon"></i>, type: "link", active: false, selected: false, title: "Sampel" },
+  // { path: "/qc/sertifikat-qc", icon: <i className="bx bx-certification side-menu__icon"></i>, type: "link", active: false, selected: false, title: "Sertifikat / COA" },
+  { path: "/qc/audit-trail", icon: <i className="bx bx-history side-menu__icon"></i>, type: "link", active: false, selected: false, title: "Audit Trail" },
   
   { menutitle: "INVENTORY" },
   { path: "/gudang/stok-benih", icon: <i className="bx bx-box side-menu__icon"></i>, type: "link", active: false, selected: false, title: "Stok Benih" },
@@ -67,22 +68,41 @@ export const MENUITEMS = [
 
 
 /**
- * Akses menu per role (prefix path yang boleh tampil).
- * Role yang tidak terdaftar di sini (mis. superadmin) melihat seluruh menu.
+ * Akses menu per role (prefix path yang boleh tampil & dibuka).
+ * Role yang tidak terdaftar di sini (mis. superadmin, admin) melihat seluruh menu.
+ * Harus selaras dengan RESTRICTED_ROLE_ACCESS di backend (constants/roles.constants.ts).
  */
 export const ROLE_MENU_ACCESS = {
-  // User QC / analis laboratorium
-  penguji: ["/dashboard/qc", "/qc/", "/master/laboratorium"],
+  // Penguji hanya mengelola pengujian miliknya.
+  penguji: ["/qc/pemeriksaan-pengujian/", "/qc/hasil-pengujian/"],
 };
+
+/** Halaman awal per role terbatas setelah login / saat membuka halaman yang tidak diizinkan. */
+const ROLE_HOME = {
+  penguji: "/qc/pemeriksaan-pengujian",
+};
+const DEFAULT_HOME = "/dashboard/qc";
 
 const isAllowed = (path, prefixes) =>
   prefixes.some((prefix) => (prefix.endsWith("/") ? `${path}/`.startsWith(prefix) : path === prefix));
 
+const restrictedPrefixes = (roles = []) => {
+  const unrestricted = roles.length === 0 || roles.some((r) => !ROLE_MENU_ACCESS[r]);
+  return unrestricted ? null : roles.flatMap((r) => ROLE_MENU_ACCESS[r]);
+};
+
+/** Apakah path boleh dibuka oleh user dengan role tersebut. */
+export const canAccessPath = (path, roles = []) => {
+  const prefixes = restrictedPrefixes(roles);
+  return !prefixes || isAllowed(path.replace(/\/+$/, "") || "/", prefixes);
+};
+
+export const getHomePath = (roles = []) => roles.map((r) => ROLE_HOME[r]).find(Boolean) || DEFAULT_HOME;
+
 /** Filter MENUITEMS sesuai role; judul grup hanya tampil bila ada menu di bawahnya. */
 export const filterMenuByRoles = (items, roles = []) => {
-  const prefixes = roles.filter((r) => ROLE_MENU_ACCESS[r]).flatMap((r) => ROLE_MENU_ACCESS[r]);
-  const unrestricted = roles.length === 0 || roles.some((r) => !ROLE_MENU_ACCESS[r]);
-  if (unrestricted) return items;
+  const prefixes = restrictedPrefixes(roles);
+  if (!prefixes) return items;
 
   const result = [];
   let pendingTitle = null;

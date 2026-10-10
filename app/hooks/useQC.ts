@@ -2,8 +2,17 @@ import { useState, useEffect, useMemo } from 'react';
 import { qcService } from '../services/qcService';
 import { ReferenceStandard, TestMethod, TestParameter } from '../types/qc';
 import { toast } from 'react-toastify';
+import { useConfirm } from '@/app/(components)/(content-layout)/shared/ConfirmDialog';
+
+const DELETE_LABEL: Record<string, string> = {
+  parameter: 'parameter uji',
+  method: 'metode uji',
+  standard: 'standar acuan',
+  document: 'dokumen',
+};
 
 export const useQC = () => {
+  const confirm = useConfirm();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -224,28 +233,35 @@ export const useQC = () => {
   };
 
   const handleDelete = async (id: string, type: string) => {
-    if (confirm('Apakah Anda yakin ingin menghapus data ini?')) {
-      try {
-        setLoading(true);
-        if (type === 'parameter') {
-          await qcService.deleteParameter(id);
-          fetchParameters();
-        } else if (type === 'method') {
-          await qcService.deleteMethod(id);
-          fetchMethods();
-        } else if (type === 'standard') {
-          await qcService.deleteStandard(id);
-          fetchStandards();
-        } else if (type === 'document') {
-          await qcService.deleteDocument(id);
-          fetchDocuments();
-        }
-        toast.success('Data berhasil dihapus');
-      } catch (err: any) {
-        toast.error(err.response?.data?.message || 'Gagal menghapus data');
-      } finally {
-        setLoading(false);
+    const label = DELETE_LABEL[type] || 'data';
+    const ok = await confirm({
+      title: `Hapus ${label}?`,
+      message: `${label.charAt(0).toUpperCase()}${label.slice(1)} yang dihapus tidak dapat dikembalikan.`,
+      tone: 'danger',
+      confirmText: 'Ya, Hapus',
+    });
+    if (!ok) return;
+
+    try {
+      setLoading(true);
+      if (type === 'parameter') {
+        await qcService.deleteParameter(id);
+        fetchParameters();
+      } else if (type === 'method') {
+        await qcService.deleteMethod(id);
+        fetchMethods();
+      } else if (type === 'standard') {
+        await qcService.deleteStandard(id);
+        fetchStandards();
+      } else if (type === 'document') {
+        await qcService.deleteDocument(id);
+        fetchDocuments();
       }
+      toast.success('Data berhasil dihapus');
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || 'Gagal menghapus data');
+    } finally {
+      setLoading(false);
     }
   };
 

@@ -1,5 +1,7 @@
 "use client"
 import Image from "next/image";
+import { clearSession, getUserRoles } from '@/app/lib/auth';
+import { getHomePath } from '@/shared/layouts-components/sidebar/nav';
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, Fragment } from "react";
@@ -23,12 +25,9 @@ export default function SignIn() {
     };
 
     const router = useRouter();
-    const RouteChange = (role?: string) => {
-        let path = "/dashboard/qc";
-        if (role === 'superadmin' || role === 'admin') {
-            path = "/dashboard/qc";
-        }
-        router.push(path);
+    /** Arahkan ke halaman awal sesuai role (mis. penguji → Pemeriksaan / Pengujian). */
+    const RouteChange = () => {
+        router.push(getHomePath(getUserRoles()));
     };
 
     const handleLogin = async (e: any) => {
@@ -58,35 +57,13 @@ export default function SignIn() {
 
             const result = await response.json();
             if (result && result.token) {
+                clearSession(); // buang sisa sesi "login sebagai" sebelumnya
                 localStorage.setItem('token', result.token);
-            }
-
-            let userRole = "";
-            try {
-                if (result.token) {
-                    const base64Url = result.token.split('.')[1];
-                    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-                    const jsonPayload = decodeURIComponent(atob(base64).split('').map(function (c) {
-                        return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
-                    }).join(''));
-                    const payload = JSON.parse(jsonPayload);
-
-                    const firstRole = payload.roles && payload.roles.length > 0 ? payload.roles[0] : null;
-                    userRole = payload.role || payload.activeRole?.name || (firstRole ? (typeof firstRole === 'object' ? firstRole.name : firstRole) : "");
-                }
-            } catch (e) {}
-
-            if (!userRole) {
-                userRole = result.user?.activeRole?.name ||
-                    result.data?.activeRole?.name ||
-                    result.role ||
-                    (result.user?.roles && result.user.roles.length > 0 ? (result.user.roles[0].role?.name || result.user.roles[0].name) : "") ||
-                    "";
             }
 
             toast.success('Login berhasil', { position: 'top-right', autoClose: 1500 });
             setTimeout(() => {
-                RouteChange(userRole);
+                RouteChange();
             }, 1200);
 
         } catch (error: any) {

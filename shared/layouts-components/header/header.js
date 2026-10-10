@@ -1,5 +1,6 @@
 "use client"
 import Link from "next/link";
+import { clearSession } from '@/app/lib/auth';
 import { useRouter } from "next/navigation";
 import React, { Fragment, useEffect, useRef, useState } from "react";
 import { ThemeChanger, removeFromCart } from "@/shared/redux/action";
@@ -34,7 +35,7 @@ const Header = () => {
     } catch (error) {
       console.error("Logout error:", error);
     } finally {
-      localStorage.removeItem('token');
+      clearSession();
       router.push('/');
     }
   };

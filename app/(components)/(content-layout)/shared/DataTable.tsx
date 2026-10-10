@@ -1,4 +1,7 @@
 import React from 'react';
+import { getPageItems } from './pagination';
+
+const formatCount = (n: number) => n.toLocaleString('id-ID');
 
 interface DataTableProps<T> {
   headers: React.ReactNode[];
@@ -18,6 +21,7 @@ interface DataTableProps<T> {
   bodyClassName?: string;
   headerTextSize?: string | number;
   bodyTextSize?: string | number;
+  pageSizeOptions?: number[];
 }
 
 export default function DataTable({
@@ -37,7 +41,8 @@ export default function DataTable({
   thClassName = "p-4",
   bodyClassName = "text-sm text-gray-600",
   headerTextSize,
-  bodyTextSize
+  bodyTextSize,
+  pageSizeOptions = [5, 10, 20],
 }: DataTableProps<any>) {
   return (
     <div className="box border border-defaultborder/60 bg-white shadow-sm rounded-md overflow-hidden">
@@ -82,11 +87,13 @@ export default function DataTable({
       {!isLoading && totalRecords > 0 && (
         <div className="box-footer p-4 border-t border-defaultborder flex flex-col sm:flex-row items-center justify-between gap-4 bg-gray-50/50">
           <span className="text-xs text-textmuted">
-            Menampilkan {(currentPage - 1) * pageSize + 1} - {Math.min(currentPage * pageSize, totalRecords)} dari {totalRecords} data
+            Menampilkan {formatCount((currentPage - 1) * pageSize + 1)} - {formatCount(Math.min(currentPage * pageSize, totalRecords))} dari{' '}
+            {formatCount(totalRecords)} data
           </span>
 
           <div className="flex items-center gap-1.5">
             <button
+              aria-label="Halaman sebelumnya"
               disabled={currentPage === 1}
               onClick={() => onPageChange(Math.max(currentPage - 1, 1))}
               className="w-8 h-8 flex items-center justify-center rounded border bg-white hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed text-sm text-gray-600 font-bold"
@@ -94,20 +101,28 @@ export default function DataTable({
               <i className="ri-arrow-left-s-line"></i>
             </button>
 
-            {Array.from({ length: totalPages }, (_, i) => i + 1).map(num => (
+            {getPageItems(currentPage, totalPages).map((num) =>
+              typeof num !== 'number' ? (
+                <span key={num} className="w-8 h-8 flex items-center justify-center text-sm text-gray-400" aria-hidden="true">
+                  …
+                </span>
+              ) : (
               <button
                 key={num}
                 onClick={() => onPageChange(num)}
-                className={`w-8 h-8 flex items-center justify-center rounded border font-medium text-sm transition-colors ${currentPage === num
+                aria-current={currentPage === num ? 'page' : undefined}
+                className={`min-w-8 h-8 px-1.5 flex items-center justify-center rounded border font-medium text-sm transition-colors ${currentPage === num
                     ? 'bg-emerald-600 text-white border-emerald-600'
                     : 'bg-white text-gray-700 hover:bg-gray-100'
                   }`}
               >
-                {num}
+                {formatCount(num)}
               </button>
-            ))}
+              )
+            )}
 
             <button
+              aria-label="Halaman berikutnya"
               disabled={currentPage === totalPages}
               onClick={() => onPageChange(Math.min(currentPage + 1, totalPages))}
               className="w-8 h-8 flex items-center justify-center rounded border bg-white hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed text-sm text-gray-600 font-bold"
@@ -123,9 +138,11 @@ export default function DataTable({
               onChange={(e) => onPageSizeChange(Number(e.target.value))}
               className="form-select border border-defaultborder rounded p-1 text-xs bg-white text-gray-700 font-medium cursor-pointer"
             >
-              <option value={5}>5 / halaman</option>
-              <option value={10}>10 / halaman</option>
-              <option value={20}>20 / halaman</option>
+              {pageSizeOptions.map((size) => (
+                <option key={size} value={size}>
+                  {size} / halaman
+                </option>
+              ))}
             </select>
           </div>
         </div>

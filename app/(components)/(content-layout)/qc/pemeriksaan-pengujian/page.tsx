@@ -6,9 +6,12 @@ import Pageheader from "@/shared/layouts-components/page-header/pageheader";
 import PemeriksaanList from "./components/PemeriksaanList";
 import { useRouter } from "next/navigation";
 import { AddButton, ExportButton } from "../../shared/ActionButtons";
+import { useCurrentUser } from "@/app/hooks/useCurrentUser";
 
 const PemeriksaanPengujianPage = () => {
   const router = useRouter();
+  // Penguji tidak membuat permintaan pengujian (menu Permintaan tidak termasuk aksesnya).
+  const { isPenguji } = useCurrentUser();
 
   return (
     <>
@@ -30,10 +33,9 @@ const PemeriksaanPengujianPage = () => {
             </div>
           </div>
           <div className="flex gap-2">
-            <AddButton 
-              label="Permintaan Pengujian" 
-              onClick={() => router.push("/qc/permintaan-pengujian/create")} 
-            />
+            {!isPenguji && (
+              <AddButton label="Permintaan Pengujian" onClick={() => router.push("/qc/permintaan-pengujian/create")} />
+            )}
             <ExportButton label="Laporan" onClick={() => {}} />
             <button type="button" title="Lainnya" className={iconButtonClass("gray", "!w-9 !h-9")}>
               <i className="ri-more-2-fill"></i>

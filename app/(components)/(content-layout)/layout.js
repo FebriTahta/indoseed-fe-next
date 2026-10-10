@@ -1,5 +1,5 @@
 "use client"
-import React, { Fragment, useEffect } from 'react'
+import React, { useEffect } from 'react'
 import { connect } from "react-redux"
 import { ThemeChanger, setSettings } from "../../../shared/redux/action"
 import PrelineScript from "../../PrelineScript"
@@ -10,6 +10,9 @@ import Footer from '@/shared/layouts-components/footer/footer';
 import Loader from '@/shared/layouts-components/loader/loader';
 import Switcher from '@/shared/layouts-components/switcher/switcher';
 import api from '@/app/lib/axios';
+import { ConfirmProvider } from './shared/ConfirmDialog';
+import RoleGuard from './shared/RoleGuard';
+import ImpersonationBanner from './shared/ImpersonationBanner';
 
 const Layout = ({ children, local_varaiable, ThemeChanger, setSettings }) => {
     
@@ -35,7 +38,7 @@ const Layout = ({ children, local_varaiable, ThemeChanger, setSettings }) => {
     }, [local_varaiable?.settings?.titleWebsite]);
 
     return (
-        <Fragment>
+        <ConfirmProvider>
             <Switcher />
             {/*<Loader/>*/}
             <div className='page'>
@@ -43,14 +46,15 @@ const Layout = ({ children, local_varaiable, ThemeChanger, setSettings }) => {
                 <Sidebar />
                 <div className='main-content app-content'>
                     <div className='container-fluid'>
-                        {children}
+                        <ImpersonationBanner />
+                        <RoleGuard>{children}</RoleGuard>
                     </div>
                 </div>
                 <Footer />
             </div>
             <Backtotop />
             <PrelineScript/>
-        </Fragment>
+        </ConfirmProvider>
     )
 
 }

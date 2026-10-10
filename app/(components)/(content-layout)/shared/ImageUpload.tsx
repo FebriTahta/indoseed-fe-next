@@ -1,5 +1,6 @@
 import React, { useRef, useState, useEffect } from 'react';
 import Image from 'next/image';
+import { toast } from 'react-toastify';
 
 interface ImageUploadProps {
   label?: string;
@@ -7,6 +8,11 @@ interface ImageUploadProps {
   onImageChange: (file: File | null) => void;
   disabled?: boolean;
   className?: string;
+  /** Nilai atribut accept, mis. "image/jpeg,image/png". */
+  accept?: string;
+  /** Batas ukuran file (MB); file yang melebihi ditolak sebelum dipratinjau. */
+  maxSizeMb?: number;
+  hint?: string;
 }
 
 export default function ImageUpload({
@@ -14,7 +20,10 @@ export default function ImageUpload({
   imageUrl,
   onImageChange,
   disabled = false,
-  className = ''
+  className = '',
+  accept = 'image/*',
+  maxSizeMb,
+  hint,
 }: ImageUploadProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [preview, setPreview] = useState<string | null>(imageUrl || null);
@@ -26,6 +35,18 @@ export default function ImageUpload({
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
+    const allowed = accept.split(',').map((t) => t.trim()).filter(Boolean);
+    const typeOk = (f: File) => allowed.some((t) => (t.endsWith('/*') ? f.type.startsWith(t.slice(0, -1)) : f.type === t));
+    if (file && !typeOk(file)) {
+      toast.error('Format file tidak didukung');
+      e.target.value = '';
+      return;
+    }
+    if (file && maxSizeMb && file.size > maxSizeMb * 1024 * 1024) {
+      toast.error(`Ukuran file maksimal ${maxSizeMb} MB`);
+      e.target.value = '';
+      return;
+    }
     if (file) {
       const objectUrl = URL.createObjectURL(file);
       setPreview(objectUrl);
@@ -72,7 +93,7 @@ export default function ImageUpload({
           type="file"
           ref={fileInputRef}
           className="hidden"
-          accept="image/*"
+          accept={accept}
           onChange={handleFileChange}
           disabled={disabled}
         />
@@ -105,7 +126,7 @@ export default function ImageUpload({
           <div className="flex flex-col items-center text-gray-500">
             <i className="ri-upload-cloud-2-line text-3xl mb-2 text-[#1B4E3B]"></i>
             <span className="text-sm font-medium">Klik untuk upload gambar</span>
-            <span className="text-xs text-gray-400 mt-1">PNG, JPG, JPEG (Max. 5MB)</span>
+            <span className="text-xs text-gray-400 mt-1">{hint || `PNG, JPG, JPEG (Max. ${maxSizeMb ?? 5}MB)`}</span>
           </div>
         )}
       </div>

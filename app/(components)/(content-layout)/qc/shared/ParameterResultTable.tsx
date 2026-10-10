@@ -4,6 +4,7 @@ import { PermintaanPengujianParameter } from "@/app/types/qc";
 import { isNumericBatas } from "@/app/lib/batasAcuan";
 import { formatNumber } from "@/app/lib/format";
 import type { ParamDraft } from "@/app/hooks/usePemeriksaanDetail";
+import { hitungDayaBerkecambah, toRincianPayload } from "@/app/lib/perkecambahan";
 
 interface ParameterResultTableProps {
   parameters: PermintaanPengujianParameter[];
@@ -18,6 +19,8 @@ interface ParameterResultTableProps {
   /** Klik baris untuk memilih parameter (mis. membuka detail). */
   selectedId?: string | null;
   onSelect?: (paramId: string) => void;
+  /** Batasi baris yang bisa dipilih (default: semua baris). */
+  isSelectable?: (p: PermintaanPengujianParameter) => boolean;
 }
 
 const satuanOf = (p: PermintaanPengujianParameter) => (p.satuan && p.satuan !== "-" ? p.satuan : "-");
@@ -43,6 +46,7 @@ export default function ParameterResultTable({
   compact,
   selectedId,
   onSelect,
+  isSelectable = () => true,
 }: ParameterResultTableProps) {
   const rows = parameters.filter((p) => p.checked);
   if (!rows.length) return <p className="text-xs text-gray-400 italic">Tidak ada parameter pengujian.</p>;
@@ -65,9 +69,12 @@ export default function ParameterResultTable({
         <tbody className="divide-y divide-gray-100 text-gray-700">
           {rows.map((p, idx) => {
             const draft = drafts[p.id];
+            const select = onSelect && isSelectable(p) ? () => onSelect(p.id) : undefined;
             const status = statusOf(p);
             const gagal = status === "Tidak Lulus";
             const numeric = isNumericBatas(p.batasAcuan ?? p.standar);
+            // Nilai daya berkecambah dihitung dari rincian hasil, bukan diketik langsung.
+            const dariRincian = hitungDayaBerkecambah(toRincianPayload(draft?.rincian)) !== null;
             const inputClass = `w-16 border rounded-md px-2 py-1.5 text-center text-xs focus:outline-none focus:ring-1 ${
               gagal
                 ? "border-amber-300 text-rose-600 focus:ring-rose-400"
@@ -77,8 +84,8 @@ export default function ParameterResultTable({
             return (
               <tr
                 key={p.id}
-                onClick={onSelect ? () => onSelect(p.id) : undefined}
-                className={`${onSelect ? "cursor-pointer" : ""} ${
+                onClick={select}
+                className={`${select ? "cursor-pointer" : ""} ${
                   selectedId === p.id ? "bg-emerald-50/70" : gagal ? "bg-rose-50/30" : "hover:bg-gray-50/60"
                 }`}
               >
@@ -88,14 +95,14 @@ export default function ParameterResultTable({
                 {!compact && <td className={td}>{p.metodeRef?.standar?.kode || "-"}</td>}
                 <td className={`${td} whitespace-nowrap`}>{standarOf(p)}</td>
                 <td className={`${td} text-center`}>
-                  {editable && draft && onChangeDraft ? (
+                  {editable && draft && onChangeDraft && !dariRincian ? (
                     numeric ? (
                       <input
                         type="number"
                         step="any"
                         value={draft.nilaiHasil}
                         onChange={(e) => onChangeDraft(p.id, { nilaiHasil: e.target.value })}
-                        onFocus={() => onSelect?.(p.id)}
+                        onFocus={select}
                         aria-label={`Hasil ${p.nama}`}
                         className={inputClass}
                       />
@@ -110,8 +117,15 @@ export default function ParameterResultTable({
                       />
                     )
                   ) : (
-                    <span className={`font-semibold ${gagal ? "text-rose-600" : "text-gray-800"}`}>
-                      {p.nilaiHasil !== null && p.nilaiHasil !== undefined ? formatNumber(p.nilaiHasil) : p.hasilTeks || "-"}
+                    <span
+                      className={`font-semibold ${gagal ? "text-rose-600" : "text-gray-800"}`}
+                      title={dariRincian ? "Dihitung dari rincian hasil" : undefined}
+                    >
+                      {dariRincian && draft
+                        ? formatNumber(Number(draft.nilaiHasil))
+                        : p.nilaiHasil !== null && p.nilaiHasil !== undefined
+                          ? formatNumber(p.nilaiHasil)
+                          : p.hasilTeks || "-"}
                     </span>
                   )}
                 </td>

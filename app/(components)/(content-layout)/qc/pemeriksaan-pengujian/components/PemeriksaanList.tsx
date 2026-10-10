@@ -10,16 +10,24 @@ import QcStatusBadge from "../../shared/QcStatusBadge";
 import { pemeriksaanPengujianService } from "@/app/services/pemeriksaanPengujianService";
 import { usePaginatedList } from "@/app/hooks/usePaginatedList";
 import { useKomoditasOptions, usePengujiOptions, useQcMeta } from "@/app/hooks/useQcReference";
-import { PemeriksaanSummary, PermintaanPengujian, QC_STATUS, QcListParams } from "@/app/types/qc";
+import { useCurrentUser } from "@/app/hooks/useCurrentUser";
+import { HASIL_TIDAK_VALID, PemeriksaanSummary, PermintaanPengujian, QC_STATUS, QcListParams } from "@/app/types/qc";
 import { formatDate } from "@/app/lib/format";
+import { sudahDiuji } from "@/app/lib/validitasHasil";
 
 /** Label & gaya tombol aksi sesuai tahap pemeriksaan. */
-const ACTION_BY_STATUS: Record<string, { label: string; icon: string; variant: ButtonVariant }> = {
+type RowAction = { label: string; icon: string; variant: ButtonVariant };
+
+/** Aksi pelaksanaan pengujian (khusus penguji). */
+const PENGUJI_ACTIONS: Record<string, RowAction> = {
   [QC_STATUS.SAMPLING]: { label: "Terima Sampel", icon: "ri-play-circle-line", variant: "outline" },
   [QC_STATUS.DALAM_PENGUJIAN]: { label: "Input Hasil", icon: "ri-edit-box-line", variant: "primary" },
+};
+/** Aksi keputusan hasil (khusus reviewer). */
+const REVIEWER_ACTIONS: Record<string, RowAction> = {
   [QC_STATUS.MENUNGGU_REVIEW]: { label: "Review", icon: "ri-search-eye-line", variant: "warning" },
 };
-const DEFAULT_ACTION = { label: "Lihat", icon: "ri-eye-line", variant: "secondary" as ButtonVariant };
+const DEFAULT_ACTION: RowAction = { label: "Lihat", icon: "ri-eye-line", variant: "secondary" };
 
 const toOption = (options: { value: string; label: string }[], value?: string) =>
   value ? options.find((o) => o.value === value) || { value, label: value } : null;
@@ -28,7 +36,9 @@ const PemeriksaanList = () => {
   const router = useRouter();
   const { meta } = useQcMeta();
   const { options: komoditasOptions } = useKomoditasOptions();
-  const { options: petugasOptions } = usePengujiOptions();
+  // Penguji hanya melihat pengujian miliknya, sehingga filter petugas tidak relevan.
+  const { ready, isPenguji, canReview } = useCurrentUser();
+  const { options: petugasOptions } = usePengujiOptions(ready && !isPenguji);
   const [summary, setSummary] = useState<PemeriksaanSummary | null>(null);
 
   const list = usePaginatedList<PermintaanPengujian, QcListParams>(
@@ -75,13 +85,17 @@ const PemeriksaanList = () => {
       placeholder: "Komoditas",
       widthClass: "sm:w-36",
     },
-    {
-      value: toOption(petugasOptions, filters.petugasQcId),
-      onChange: (val: any) => setFilters({ petugasQcId: val?.value || "" }),
-      options: petugasOptions,
-      placeholder: "Petugas QC",
-      widthClass: "sm:w-48",
-    },
+    ...(isPenguji
+      ? []
+      : [
+          {
+            value: toOption(petugasOptions, filters.petugasQcId),
+            onChange: (val: any) => setFilters({ petugasQcId: val?.value || "" }),
+            options: petugasOptions,
+            placeholder: "Petugas QC",
+            widthClass: "sm:w-48",
+          },
+        ]),
   ];
 
   const headers = [
@@ -99,9 +113,9 @@ const PemeriksaanList = () => {
   ];
 
   const renderRow = (item: PermintaanPengujian, index: number) => {
-    const action = ACTION_BY_STATUS[item.status] || DEFAULT_ACTION;
+    const action = (isPenguji && PENGUJI_ACTIONS[item.status]) || (canReview && REVIEWER_ACTIONS[item.status]) || DEFAULT_ACTION;
     const params = (item.parameters || []).filter((p) => p.checked);
-    const terisi = params.filter((p) => p.statusHasil).length;
+    const terisi = params.filter((p) => sudahDiuji({ nilai: p.nilaiHasil, teks: p.hasilTeks, status: p.statusHasil })).length;
     return (
       <tr key={item.id} className="hover:bg-gray-50 border-b border-defaultborder transition-colors text-xs">
         <td className="p-3 text-center text-gray-500">{(list.page - 1) * list.pageSize + index + 1}</td>
@@ -117,7 +131,10 @@ const PemeriksaanList = () => {
           {terisi}/{params.length} terisi
         </td>
         <td className="p-3">
-          <QcStatusBadge status={item.status} />
+          <div className="flex flex-wrap gap-1">
+            <QcStatusBadge status={item.status} />
+            {item.hasilTidakValid && <QcStatusBadge status={HASIL_TIDAK_VALID} />}
+          </div>
         </td>
         <td className="p-3 whitespace-nowrap">{item.petugasQc?.nama || "-"}</td>
         <td className="p-3">

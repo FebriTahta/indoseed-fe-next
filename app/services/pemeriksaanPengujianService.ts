@@ -7,12 +7,14 @@ import {
   PermintaanPengujian,
   PermintaanPengujianDokumen,
   QcListParams,
+  RincianHasil,
 } from '@/app/types/qc';
 
 type ApiData<T> = { success: boolean; data: T; message?: string };
 
 export interface TerimaSampelPayload {
-  petugasQcId: string;
+  /** Diabaikan backend: petugas selalu penguji yang login. */
+  petugasQcId?: string;
   laboratoriumId?: string | null;
   tanggalSampling: string;
   kondisiSampel: string;
@@ -25,6 +27,7 @@ export interface HasilParameterPayload {
   hasilTeks?: string | null;
   statusHasil?: string | null;
   catatanHasil?: string | null;
+  rincianHasil?: RincianHasil | null;
 }
 
 export interface SimpanHasilPayload {
@@ -55,6 +58,10 @@ export const pemeriksaanPengujianService = {
 
   review: async (id: string, keputusan: 'setujui' | 'revisi', catatan?: string) =>
     (await axiosInstance.post<ApiData<PermintaanPengujian>>(`${PEMERIKSAAN_URL}/${id}/review`, { keputusan, catatan })).data,
+
+  /** Hasil tidak valid (ada parameter belum diuji) → kembali ke Dalam Pengujian. */
+  ujiUlang: async (id: string, alasan: string) =>
+    (await axiosInstance.post<ApiData<PermintaanPengujian>>(`${PEMERIKSAAN_URL}/${id}/uji-ulang`, { alasan })).data,
 
   uploadDokumentasi: async (id: string, file: File, keterangan?: string) => {
     const form = new FormData();

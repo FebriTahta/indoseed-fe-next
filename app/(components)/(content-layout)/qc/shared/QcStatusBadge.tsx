@@ -13,6 +13,7 @@ const STATUS_STYLE: Record<string, { className: string; icon: string }> = {
   Ditolak: { className: 'bg-rose-50 text-rose-700 border-rose-200', icon: 'ri-close-circle-line' },
   Lulus: { className: 'bg-emerald-50 text-emerald-700 border-emerald-200', icon: 'ri-checkbox-circle-fill' },
   'Tidak Lulus': { className: 'bg-rose-50 text-rose-700 border-rose-200', icon: 'ri-close-circle-fill' },
+  'Tidak Valid': { className: 'bg-red-100 text-red-800 border-red-300', icon: 'ri-error-warning-fill' },
   Aktif: { className: 'bg-emerald-50 text-emerald-700 border-emerald-200', icon: 'ri-checkbox-circle-line' },
   Nonaktif: { className: 'bg-rose-50 text-rose-700 border-rose-200', icon: 'ri-close-circle-line' },
 };
@@ -30,7 +31,8 @@ export default function QcStatusBadge({ status, size = 'xs', emptyLabel = '-' }:
   const style = STATUS_STYLE[status] || DEFAULT_STYLE;
   const sizeClass = size === 'xs' ? 'text-[10px] px-2 py-0.5' : 'text-xs px-2.5 py-1';
   return (
-    <span className={`inline-flex items-center gap-1 rounded-full border font-medium whitespace-nowrap ${sizeClass} ${style.className}`}>
+    // self-start + shrink-0: badge tidak ikut meregang setinggi/selebar isi baris flex di sebelahnya.
+    <span className={`inline-flex self-start shrink-0 items-center gap-1 rounded-full border font-medium leading-tight whitespace-nowrap ${sizeClass} ${style.className}`}>
       <i className={style.icon}></i> {status}
     </span>
   );
