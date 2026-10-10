@@ -1,5 +1,5 @@
 import axiosInstance from '@/app/lib/axios';
-import { ReferenceStandard, TestMethod, TestParameter } from '@/app/types/qc';
+import { LaboratoriumRef, ReferenceStandard, TestMethod, TestMethodRiwayat, TestParameter } from '@/app/types/qc';
 import { ApiResponse } from '@/app/types/api';
 
 const API_URL = '/qc';
@@ -50,6 +50,10 @@ export const qcService = {
     const response = await axiosInstance.get<ApiResponse<TestMethod[]>>(url);
     return response.data;
   },
+  getMethodRiwayat: async (limit = 10) => {
+    const response = await axiosInstance.get<ApiResponse<TestMethodRiwayat[]>>(`${API_URL}/methods/riwayat`, { params: { limit } });
+    return response.data;
+  },
   getMethodById: async (id: string) => {
     const response = await axiosInstance.get<ApiResponse<TestMethod>>(`${API_URL}/methods/${id}`);
     return response.data;
@@ -64,6 +68,12 @@ export const qcService = {
   },
   deleteMethod: async (id: string) => {
     const response = await axiosInstance.delete<ApiResponse<any>>(`${API_URL}/methods/${id}`);
+    return response.data;
+  },
+
+  // Laboratorium aktif
+  getLaboratoriums: async () => {
+    const response = await axiosInstance.get<ApiResponse<LaboratoriumRef[]>>(`${API_URL}/laboratoriums`);
     return response.data;
   },
 
@@ -138,45 +148,6 @@ export const qcService = {
   },
   deleteDocument: async (id: string) => {
     const response = await axiosInstance.delete<ApiResponse<any>>(`${API_URL}/documents/${id}`);
-    return response.data;
-  },
-
-  // Permintaan Pengujian
-  getPermintaanList: async (params?: any) => {
-    const query = new URLSearchParams();
-    if (params?.search) query.append('search', params.search);
-    if (params?.status) query.append('status', params.status);
-    if (params?.periode) query.append('periode', params.periode);
-    if (params?.page) query.append('page', params.page.toString());
-    if (params?.pageSize) query.append('pageSize', params.pageSize.toString());
-    const qs = query.toString();
-    const response = await axiosInstance.get(`${API_URL}/permintaan${qs ? `?${qs}` : ''}`);
-    return response.data;
-  },
-  getPermintaanById: async (id: string) => {
-    const response = await axiosInstance.get(`${API_URL}/permintaan/${id}`);
-    return response.data;
-  },
-  getPermintaanSummary: async (params?: any) => {
-    const response = await axiosInstance.get(`${API_URL}/permintaan/summary`, { params });
-    return response.data;
-  },
-  createPermintaan: async (data: any) => {
-    const isFormData = data instanceof FormData;
-    const response = await axiosInstance.post(`${API_URL}/permintaan`, data, {
-      headers: isFormData ? { 'Content-Type': 'multipart/form-data' } : undefined,
-    });
-    return response.data;
-  },
-  updatePermintaan: async (id: string, data: any) => {
-    const isFormData = data instanceof FormData;
-    const response = await axiosInstance.put(`${API_URL}/permintaan/${id}`, data, {
-      headers: isFormData ? { 'Content-Type': 'multipart/form-data' } : undefined,
-    });
-    return response.data;
-  },
-  deletePermintaan: async (id: string) => {
-    const response = await axiosInstance.delete(`${API_URL}/permintaan/${id}`);
     return response.data;
   },
 };

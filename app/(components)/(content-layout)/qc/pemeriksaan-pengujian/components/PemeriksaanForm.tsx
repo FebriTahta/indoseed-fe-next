@@ -1,126 +1,224 @@
 "use client";
 
+import { buttonClass } from "@/app/(components)/(content-layout)/shared/buttonStyles";
 import React, { useState } from "react";
-import Pageheader from "@/shared/layouts-components/page-header/pageheader";
 import { useRouter } from "next/navigation";
+import Pageheader from "@/shared/layouts-components/page-header/pageheader";
+import { CancelButton } from "../../../shared/ActionButtons";
 import HeaderInfo from "./form-sections/HeaderInfo";
 import LeftSidebar from "./form-sections/LeftSidebar";
 import ParameterTab from "./form-sections/ParameterTab";
+import HasilTab from "./form-sections/HasilTab";
 import RightSidebar from "./form-sections/RightSidebar";
 import DokumentasiTab from "./form-sections/DokumentasiTab";
-import { SaveButton, CancelButton, ManageButton } from "../../../shared/ActionButtons";
+import TerimaSampelCard from "./form-sections/TerimaSampelCard";
+import QcTabs from "../../shared/QcTabs";
+import QcCard, { QcInfoList } from "../../shared/QcCard";
+import QcTimeline from "../../shared/QcTimeline";
+import QcStatusBadge from "../../shared/QcStatusBadge";
+import QcReasonModal from "../../shared/QcReasonModal";
+import { usePemeriksaanDetail } from "@/app/hooks/usePemeriksaanDetail";
+import { useQcMeta } from "@/app/hooks/useQcReference";
+import { QC_STATUS } from "@/app/types/qc";
+import { formatDateTime } from "@/app/lib/format";
 
-interface PemeriksaanFormProps {
-  id?: string;
-}
+type TabKey = "parameter" | "hasil" | "dokumentasi" | "catatan" | "audit";
+type ReviewDialog = "setujui" | "revisi" | null;
 
-const PemeriksaanForm: React.FC<PemeriksaanFormProps> = ({ id }) => {
+
+const PemeriksaanForm: React.FC<{ id: string }> = ({ id }) => {
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState("Parameter Pengujian");
+  const state = usePemeriksaanDetail(id);
+  const { data, loading, busy, dirty, canInput } = state;
+  const { meta } = useQcMeta();
+    const [activeTab, setActiveTab] = useState<TabKey>("parameter");
+  const [reviewDialog, setReviewDialog] = useState<ReviewDialog>(null);
 
-  const tabs = [
-    "Parameter Pengujian",
-    "Hasil Pengujian",
-    "Dokumentasi",
-    "Catatan",
-    "Audit Trail",
-  ];
+  const goBack = () => {
+    if (dirty && !window.confirm("Ada perubahan hasil yang belum disimpan. Tinggalkan halaman?")) return;
+    router.push("/qc/pemeriksaan-pengujian");
+  };
+
+  if (loading && !data) {
+    return (
+      <div className="bg-white p-8 rounded-xl shadow-sm border border-gray-100 flex flex-col items-center justify-center min-h-[300px]">
+        <i className="ri-loader-4-line text-3xl animate-spin text-emerald-600 mb-2"></i>
+        <p className="text-xs text-gray-500">Memuat data pemeriksaan...</p>
+      </div>
+    );
+  }
+
+  if (!data) {
+    return (
+      <div className="bg-white p-8 rounded-xl border border-gray-100 text-center space-y-3">
+        <p className="text-xs text-gray-600">Data pemeriksaan tidak ditemukan.</p>
+        <CancelButton label="Kembali" onClick={() => router.push("/qc/pemeriksaan-pengujian")} />
+      </div>
+    );
+  }
+
+  const belumDisetujui = data.status === QC_STATUS.MENUNGGU_PERSETUJUAN || data.status === QC_STATUS.DITOLAK;
 
   return (
     <>
-      <div className="flex items-center justify-between mb-4">
+      <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
         <div className="flex gap-4 items-center">
-          <div className="w-14 h-14 bg-emerald-50 text-emerald-600 rounded-xl flex items-center justify-center text-3xl shrink-0 shadow-sm border border-emerald-100">
-            <i className="ri-flask-line"></i>
+          <div className="w-14 h-14 text-emerald-600 flex items-center justify-center text-5xl shrink-0">
+            <i className="ri-flask-fill"></i>
           </div>
           <Pageheader
             title="QC & LAB"
             subtitle="Pemeriksaan / Pengujian"
-            currentpage={id || "TST-QC-2026-00125"}
+            currentpage={data.noPengujian || data.noPermintaan}
             activepage="Pemeriksaan / Pengujian"
-            description="Lakukan pemeriksaan dan pengujian sampel sesuai dengan metode dan standar mutu yang berlaku."
+            description="Lakukan pemeriksaan dan pengujian sampel sesuai metode dan standar mutu yang berlaku."
           />
         </div>
-        <div className="flex items-center gap-3 mt-4 md:mt-0">
-          <div className="flex flex-col items-center">
-            <span className="text-[10px] text-gray-500 font-medium mb-0.5">Status</span>
-            <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-blue-50 text-blue-600 border border-blue-200 rounded-md text-xs font-medium">
-              <i className="ri-loader-4-line animate-spin"></i> Dalam Pengujian
-            </span>
+        <div className="flex flex-wrap items-end gap-2">
+          <button type="button" onClick={goBack} className={buttonClass("secondary")}>
+            <i className="ri-arrow-left-line"></i> Kembali
+          </button>
+          <div className="flex flex-col items-start">
+            <span className="text-[10px] text-gray-500 mb-0.5">Status</span>
+            <QcStatusBadge status={data.status} size="sm" />
           </div>
-          <CancelButton label="Kembali" onClick={() => router.push("/qc/pemeriksaan-pengujian")} className="!px-3 !py-1.5 !text-xs !bg-white !text-emerald-600 !border-emerald-600 hover:!bg-emerald-50" />
-          <SaveButton label="Submit untuk Review" onClick={() => { }} className="!px-3 !py-1.5 !text-xs !bg-emerald-600 !text-white hover:!bg-emerald-700" />
+          {data.status === QC_STATUS.SAMPLING && (
+            <button
+              type="button"
+              onClick={() => router.push(`/qc/permintaan-pengujian/edit/${data.id}`)}
+              className={buttonClass("secondary")}
+            >
+              <i className="ri-edit-line"></i> Edit Permintaan
+            </button>
+          )}
+          {canInput && (
+            <>
+              <button type="button" disabled={busy} onClick={state.saveDraft} className={buttonClass("outline")}>
+                <i className="ri-save-line"></i> Simpan Draft
+              </button>
+              <button
+                type="button"
+                disabled={busy}
+                onClick={() => window.confirm("Kirim hasil pengujian untuk direview?") && state.submitReview()}
+                className={buttonClass("primary")}
+              >
+                <i className="ri-send-plane-line"></i> Submit untuk Review
+              </button>
+            </>
+          )}
+          {data.status === QC_STATUS.MENUNGGU_REVIEW && (
+            <>
+              <button type="button" disabled={busy} onClick={() => setReviewDialog("revisi")} className={buttonClass("warning")}>
+                <i className="ri-arrow-go-back-line"></i> Kembalikan (Revisi)
+              </button>
+              <button type="button" disabled={busy} onClick={() => setReviewDialog("setujui")} className={buttonClass("primary")}>
+                <i className="ri-check-double-line"></i> Setujui Hasil
+              </button>
+            </>
+          )}
         </div>
       </div>
 
       <div className="space-y-4">
-        {/* Header Info */}
-        <HeaderInfo />
+        {belumDisetujui && (
+          <div className="p-3 rounded-xl border border-amber-200 bg-amber-50 text-xs text-amber-800">
+            <i className="ri-information-line"></i> Permintaan ini belum disetujui sehingga belum dapat diperiksa.
+          </div>
+        )}
+        {data.status === QC_STATUS.SAMPLING && <TerimaSampelCard data={data} busy={busy} onSubmit={state.terimaSampel} />}
 
-        {/* Main Content Layout (12 columns) */}
-        <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
+        <HeaderInfo data={data} />
 
-          {/* Left Column: Sample Info, Location, Docs */}
-          <div className="md:col-span-3 space-y-4">
-            <LeftSidebar />
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-start">
+          <div className="lg:col-span-4 xl:col-span-3">
+            <LeftSidebar data={data} onLihatDokumentasi={() => setActiveTab("dokumentasi")} />
           </div>
 
-          {/* Middle & Right Column Wrapper */}
-          <div className="md:col-span-9">
+          <div className="lg:col-span-8 xl:col-span-6">
+            <QcTabs<TabKey>
+              tabs={[
+                { key: "parameter", label: "Parameter Pengujian" },
+                { key: "hasil", label: "Hasil Pengujian" },
+                { key: "dokumentasi", label: "Dokumentasi" },
+                { key: "catatan", label: "Catatan" },
+                { key: "audit", label: "Audit Trail" },
+              ]}
+              active={activeTab}
+              onChange={setActiveTab}
+            />
 
-            {/* Tabs */}
-            <div className="border-b border-gray-200 mb-4 bg-white rounded-t-xl px-4 pt-2 shadow-sm">
-              <nav className="-mb-px flex space-x-8 overflow-x-auto" aria-label="Tabs">
-                {tabs.map((tab) => (
-                  <button
-                    key={tab}
-                    onClick={() => setActiveTab(tab)}
-                    className={`
-                      whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm transition-colors
-                      ${activeTab === tab
-                        ? "border-emerald-500 text-emerald-600"
-                        : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
-                      }
-                    `}
-                  >
-                    {tab}
-                  </button>
-                ))}
-              </nav>
-            </div>
+            {activeTab === "parameter" && (
+              <ParameterTab
+                state={state}
+                hasilAkhirOptions={meta.hasilAkhir}
+                onLihatDokumentasi={() => setActiveTab("dokumentasi")}
+              />
+            )}
 
-            {/* Tab Content Layout */}
-            {activeTab === "Parameter Pengujian" && (
-              <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
-                {/* Parameter Table Area */}
-                <div className="md:col-span-8 space-y-4">
-                  <ParameterTab />
-                </div>
+            {activeTab === "hasil" && <HasilTab state={state} />}
 
-                {/* Status & Approval Area */}
-                <div className="md:col-span-4 space-y-4">
-                  <RightSidebar />
-                </div>
+            {activeTab === "dokumentasi" && <DokumentasiTab state={state} />}
+
+            {activeTab === "catatan" && (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <QcCard title="Catatan Pengujian" icon="ri-edit-2-line">
+                  {canInput ? (
+                    <textarea
+                      rows={6}
+                      value={state.catatanPengujian}
+                      onChange={(e) => state.setCatatanPengujian(e.target.value)}
+                      placeholder="Catatan analis terkait proses pengujian..."
+                      className="w-full border border-gray-200 rounded-lg p-3 text-xs focus:ring-emerald-500 focus:border-emerald-500 outline-none"
+                    />
+                  ) : (
+                    <p className="text-xs text-gray-700 whitespace-pre-line">{data.catatanPengujian || "-"}</p>
+                  )}
+                </QcCard>
+                <QcCard title="Informasi Permintaan & Review" icon="ri-information-line">
+                  <QcInfoList
+                    items={[
+                      { label: "Catatan Permintaan", value: data.catatan },
+                      { label: "Disetujui Oleh", value: data.disetujuiOleh },
+                      { label: "Tanggal Disetujui", value: formatDateTime(data.tanggalDisetujui) },
+                      { label: "Mulai Uji", value: formatDateTime(data.tanggalMulaiUji) },
+                      { label: "Selesai Uji", value: formatDateTime(data.tanggalSelesaiUji) },
+                      { label: "Direview Oleh", value: data.direviewOleh },
+                      { label: "Catatan Review", value: data.catatanReview },
+                    ]}
+                  />
+                </QcCard>
               </div>
             )}
 
-            {activeTab === "Dokumentasi" && (
-              <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
-                <div className="md:col-span-12 space-y-4">
-                  <DokumentasiTab />
-                </div>
-              </div>
+            {activeTab === "audit" && (
+              <QcCard title="Audit Trail" icon="ri-history-line">
+                <QcTimeline items={data.riwayat || []} />
+              </QcCard>
             )}
+          </div>
 
-            {activeTab !== "Parameter Pengujian" && activeTab !== "Dokumentasi" && (
-              <div className="bg-white p-8 rounded-xl border border-gray-100 shadow-sm text-center text-gray-500">
-                Konten untuk tab "{activeTab}" belum tersedia (Placeholder)
-              </div>
-            )}
-
+          <div className="lg:col-span-12 xl:col-span-3">
+            <RightSidebar state={state} rekomendasiDefault={meta.rekomendasiDefault} />
           </div>
         </div>
       </div>
+
+      <QcReasonModal
+        isOpen={!!reviewDialog}
+        title={reviewDialog === "setujui" ? "Setujui Hasil Pengujian" : "Kembalikan untuk Revisi"}
+        description={
+          <>
+            Kesimpulan: <QcStatusBadge status={data.hasilAkhir} /> — {data.noPengujian}
+          </>
+        }
+        label={reviewDialog === "setujui" ? "Catatan review (opsional)" : "Catatan revisi"}
+        submitText={reviewDialog === "setujui" ? "Setujui" : "Kembalikan"}
+        required={reviewDialog === "revisi"}
+        onClose={() => setReviewDialog(null)}
+        onSubmit={async (text) => {
+          if (await state.review(reviewDialog!, text || undefined)) setReviewDialog(null);
+        }}
+      />
     </>
   );
 };

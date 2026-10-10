@@ -1,369 +1,236 @@
 "use client";
 
-import React, { useState, useEffect, useCallback, useMemo } from "react";
+import { iconButtonClass } from "@/app/(components)/(content-layout)/shared/buttonStyles";
+import React, { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import { toast } from "react-toastify";
 import DataTable from "@/app/(components)/(content-layout)/shared/DataTable";
 import StatsWidgets, { StatItem } from "@/app/(components)/(content-layout)/shared/StatsWidgets";
 import FilterRow, { FilterSelectConfig } from "@/app/(components)/(content-layout)/shared/FilterRow";
 import {
   EditIconButton,
   DeleteIconButton,
+  ViewIconButton,
 } from "@/app/(components)/(content-layout)/shared/ActionButtons";
-import { toast } from "react-toastify";
+import QcStatusBadge from "../../shared/QcStatusBadge";
+import QcReasonModal from "../../shared/QcReasonModal";
 import { permintaanPengujianService } from "@/app/services/permintaanPengujianService";
-import { PermintaanPengujian, PermintaanSummary } from "@/app/types/qc";
+import { usePaginatedList } from "@/app/hooks/usePaginatedList";
+import { useKomoditasOptions, useQcLookups, useQcMeta } from "@/app/hooks/useQcReference";
+import { PermintaanPengujian, PermintaanSummary, QC_STATUS, QcListParams } from "@/app/types/qc";
+import { formatDate, formatNumber, getErrorMessage } from "@/app/lib/format";
+
+const PERIODE_OPTIONS = [
+  { value: "today", label: "Hari Ini" },
+  { value: "week", label: "7 Hari Terakhir" },
+  { value: "month", label: "Bulan Ini" },
+];
+
+const EMPTY_SUMMARY: PermintaanSummary = {
+  total: 0,
+  menungguPersetujuan: 0,
+  sampling: 0,
+  dalamPengujian: 0,
+  menungguReview: 0,
+  selesai: 0,
+  ditolak: 0,
+};
+
+type DialogState = { type: "approve" | "reject"; item: PermintaanPengujian } | null;
+
+const toOption = (options: { value: string; label: string }[], value?: string) =>
+  value ? options.find((o) => o.value === value) || { value, label: value } : null;
 
 const PermintaanList = () => {
   const router = useRouter();
-  const [searchTerm, setSearchTerm] = useState("");
-  const [filterPeriode, setFilterPeriode] = useState("");
-  const [filterStatus, setFilterStatus] = useState("");
-  const [filterKomoditas, setFilterKomoditas] = useState("");
-  const [currentPage, setCurrentPage] = useState(1);
-  const [pageSize, setPageSize] = useState(10);
+  const { meta } = useQcMeta();
+  const { options: komoditasOptions } = useKomoditasOptions();
+  const { options: lookupOptions, labelOf } = useQcLookups(["PEMOHON", "PRIORITAS"]);
+  const [summary, setSummary] = useState<PermintaanSummary>(EMPTY_SUMMARY);
+  const [dialog, setDialog] = useState<DialogState>(null);
 
-  const [data, setData] = useState<PermintaanPengujian[]>([]);
-  const [totalRecords, setTotalRecords] = useState(0);
-  const [totalPages, setTotalPages] = useState(1);
-  const [isLoading, setIsLoading] = useState(true);
-  const [summary, setSummary] = useState<PermintaanSummary>({
-    total: 0,
-    menungguPersetujuan: 0,
-    sampling: 0,
-    dalamPengujian: 0,
-    menungguReview: 0,
-    selesai: 0,
-    ditolak: 0,
-  });
+  const list = usePaginatedList<PermintaanPengujian, QcListParams>(
+    (params) => permintaanPengujianService.getPermintaanList({ ...params, sortBy: "updatedAt", sortOrder: "desc" }),
+    { search: "", periode: "", status: "", komoditas: "", prioritas: "" }
+  );
 
-  const fetchSummary = useCallback(async () => {
-    try {
-      const res = await permintaanPengujianService.getPermintaanSummary();
-      if (res && res.data) {
-        setSummary(res.data);
-      }
-    } catch (err) {
-      console.error("Error fetching summary:", err);
-    }
-  }, []);
-
-  const fetchData = useCallback(async () => {
-    setIsLoading(true);
-    try {
-      const res = await permintaanPengujianService.getPermintaanList({
-        search: searchTerm,
-        periode: filterPeriode,
-        status: filterStatus,
-        komoditas: filterKomoditas,
-        sortBy: "updatedAt",
-        sortOrder: "desc",
-        page: currentPage,
-        pageSize,
-      });
-      if (res && res.data) {
-        // Ensure sorting descending by updatedAt
-        const sorted = (res.data || []).slice().sort((a: any, b: any) => {
-          const timeA = new Date(a.updatedAt || a.tanggal || 0).getTime();
-          const timeB = new Date(b.updatedAt || b.tanggal || 0).getTime();
-          return timeB - timeA;
-        });
-        setData(sorted);
-        setTotalRecords(res.total || 0);
-        setTotalPages(res.totalPages || 1);
-      }
-    } catch (err) {
-      console.error("Error fetching permintaan pengujian:", err);
-      toast.error("Gagal memuat data permintaan pengujian");
-    } finally {
-      setIsLoading(false);
-    }
-  }, [searchTerm, filterPeriode, filterStatus, filterKomoditas, currentPage, pageSize]);
+  const fetchSummary = () =>
+    permintaanPengujianService
+      .getPermintaanSummary()
+      .then((res) => setSummary(res.data))
+      .catch((err) => console.error("Gagal memuat ringkasan:", err));
 
   useEffect(() => {
     fetchSummary();
-  }, [fetchSummary]);
+  }, []);
 
-  useEffect(() => {
-    fetchData();
-  }, [fetchData]);
-
-  const handleResetFilter = () => {
-    setSearchTerm("");
-    setFilterPeriode("");
-    setFilterStatus("");
-    setFilterKomoditas("");
-    setCurrentPage(1);
+  const refresh = () => {
+    list.reload();
+    fetchSummary();
   };
 
-  const handleDelete = async (id: string, noPermintaan: string) => {
-    if (window.confirm(`Hapus permintaan pengujian ${noPermintaan}?`)) {
-      try {
-        await permintaanPengujianService.deletePermintaan(id);
-        toast.success(`Permintaan ${noPermintaan} berhasil dihapus`);
-        fetchData();
-        fetchSummary();
-      } catch (err: any) {
-        toast.error(err.response?.data?.message || "Gagal menghapus permintaan pengujian");
-      }
+  const isEditable = (status: string) => meta.editableStatuses.includes(status);
+
+  const handleDelete = async (item: PermintaanPengujian) => {
+    if (!window.confirm(`Hapus permintaan pengujian ${item.noPermintaan}?`)) return;
+    try {
+      await permintaanPengujianService.deletePermintaan(item.id);
+      toast.success(`Permintaan ${item.noPermintaan} berhasil dihapus`);
+      refresh();
+    } catch (err) {
+      toast.error(getErrorMessage(err, "Gagal menghapus permintaan pengujian"));
     }
   };
 
-  // Reusable Stat Items
+  const handleDialogSubmit = async (text: string) => {
+    if (!dialog) return;
+    try {
+      if (dialog.type === "approve") {
+        await permintaanPengujianService.approvePermintaan(dialog.item.id, text || undefined);
+        toast.success(`Permintaan ${dialog.item.noPermintaan} disetujui, lanjut ke tahap sampling`);
+      } else {
+        await permintaanPengujianService.rejectPermintaan(dialog.item.id, text);
+        toast.success(`Permintaan ${dialog.item.noPermintaan} ditolak`);
+      }
+      setDialog(null);
+      refresh();
+    } catch (err) {
+      toast.error(getErrorMessage(err, "Gagal memproses permintaan"));
+    }
+  };
+
   const statItems: StatItem[] = useMemo(
     () => [
-      {
-        title: "Total Permintaan",
-        value: summary.total,
-        subtitle: "Keseluruhan batch",
-        icon: "ri-file-list-3-line",
-        bgColor: "bg-blue-50",
-        textColor: "text-blue-600",
-      },
-      {
-        title: "Menunggu Persetujuan",
-        value: summary.menungguPersetujuan,
-        subtitle: "Perlu diproses",
-        icon: "ri-time-line",
-        bgColor: "bg-amber-50",
-        textColor: "text-amber-600",
-      },
-      {
-        title: "Sampling",
-        value: summary.sampling,
-        subtitle: "Pengambilan sampel",
-        icon: "ri-test-tube-line",
-        bgColor: "bg-indigo-50",
-        textColor: "text-indigo-600",
-      },
-      {
-        title: "Dalam Pengujian",
-        value: summary.dalamPengujian,
-        subtitle: "Proses analisa lab",
-        icon: "ri-settings-4-line",
-        bgColor: "bg-purple-50",
-        textColor: "text-purple-600",
-      },
-      {
-        title: "Selesai",
-        value: summary.selesai,
-        subtitle: "Hasil terbit",
-        icon: "ri-checkbox-circle-line",
-        bgColor: "bg-emerald-50",
-        textColor: "text-emerald-600",
-      },
+      { title: "Total Permintaan", value: summary.total, subtitle: "Keseluruhan batch", icon: "ri-file-list-3-line", bgColor: "bg-blue-50", textColor: "text-blue-600" },
+      { title: "Menunggu Persetujuan", value: summary.menungguPersetujuan, subtitle: "Perlu diproses", icon: "ri-time-line", bgColor: "bg-amber-50", textColor: "text-amber-600" },
+      { title: "Sampling", value: summary.sampling, subtitle: "Pengambilan sampel", icon: "ri-test-tube-line", bgColor: "bg-indigo-50", textColor: "text-indigo-600" },
+      { title: "Dalam Pengujian", value: summary.dalamPengujian + summary.menungguReview, subtitle: "Analisa & review lab", icon: "ri-settings-4-line", bgColor: "bg-purple-50", textColor: "text-purple-600" },
+      { title: "Selesai", value: summary.selesai, subtitle: `${summary.ditolak} ditolak`, icon: "ri-checkbox-circle-line", bgColor: "bg-emerald-50", textColor: "text-emerald-600" },
     ],
     [summary]
   );
 
-  // Reusable Select Filter Config
-  const filterConfig: FilterSelectConfig[] = useMemo(
-    () => [
-      {
-        value: filterPeriode
-          ? {
-              value: filterPeriode,
-              label:
-                filterPeriode === "today"
-                  ? "Hari Ini"
-                  : filterPeriode === "week"
-                  ? "Minggu Ini"
-                  : "Bulan Ini",
-            }
-          : null,
-        onChange: (val: any) => {
-          setFilterPeriode(val?.value || "");
-          setCurrentPage(1);
-        },
-        options: [
-          { value: "today", label: "Hari Ini" },
-          { value: "week", label: "Minggu Ini" },
-          { value: "month", label: "Bulan Ini" },
-        ],
-        placeholder: "Semua Periode",
-        widthClass: "sm:w-36",
-      },
-      {
-        value: filterStatus
-          ? { value: filterStatus, label: filterStatus }
-          : null,
-        onChange: (val: any) => {
-          setFilterStatus(val?.value || "");
-          setCurrentPage(1);
-        },
-        options: [
-          { value: "Menunggu Persetujuan", label: "Menunggu Persetujuan" },
-          { value: "Sampling", label: "Sampling" },
-          { value: "Dalam Pengujian", label: "Dalam Pengujian" },
-          { value: "Menunggu Review", label: "Menunggu Review" },
-          { value: "Selesai", label: "Selesai" },
-          { value: "Ditolak", label: "Ditolak" },
-        ],
-        placeholder: "Semua Status",
-        widthClass: "sm:w-44",
-      },
-      {
-        value: filterKomoditas
-          ? { value: filterKomoditas, label: filterKomoditas }
-          : null,
-        onChange: (val: any) => {
-          setFilterKomoditas(val?.value || "");
-          setCurrentPage(1);
-        },
-        options: [
-          { value: "Melon", label: "Melon" },
-          { value: "Cabai", label: "Cabai" },
-          { value: "Padi", label: "Padi" },
-          { value: "Kedelai", label: "Kedelai" },
-          { value: "Jagung", label: "Jagung" },
-        ],
-        placeholder: "Semua Komoditas",
-        widthClass: "sm:w-36",
-      },
-    ],
-    [filterPeriode, filterStatus, filterKomoditas]
-  );
+  const statusOptions = useMemo(() => meta.statuses.map((s) => ({ value: s, label: s })), [meta.statuses]);
+  const prioritasOptions = lookupOptions("PRIORITAS");
+  const { filters, setFilters } = list;
+
+  const filterConfig: FilterSelectConfig[] = [
+    {
+      value: toOption(PERIODE_OPTIONS, filters.periode),
+      onChange: (val: any) => setFilters({ periode: val?.value || "" }),
+      options: PERIODE_OPTIONS,
+      placeholder: "Periode",
+      widthClass: "sm:w-36",
+    },
+    {
+      value: toOption(statusOptions, filters.status),
+      onChange: (val: any) => setFilters({ status: val?.value || "" }),
+      options: statusOptions,
+      placeholder: "Status",
+      widthClass: "sm:w-44",
+    },
+    {
+      value: toOption(komoditasOptions, filters.komoditas),
+      onChange: (val: any) => setFilters({ komoditas: val?.value || "" }),
+      options: komoditasOptions,
+      placeholder: "Komoditas",
+      widthClass: "sm:w-36",
+    },
+    {
+      value: toOption(prioritasOptions, filters.prioritas),
+      onChange: (val: any) => setFilters({ prioritas: val?.value || "" }),
+      options: prioritasOptions,
+      placeholder: "Prioritas",
+      widthClass: "sm:w-32",
+    },
+  ];
 
   const headers = [
     "No.",
     "No. Permintaan",
-    "Tanggal Permintaan",
+    "Tanggal",
     "Batch",
     "Komoditas / Varietas",
-    "Tipe",
     "Jumlah Sampel",
-    "Jenis Pengujian",
+    "Parameter",
     "Pemohon",
     "Prioritas",
     "Status",
     "Aksi",
   ];
 
-  const renderStatusBadge = (status: string) => {
-    switch (status) {
-      case "Menunggu Persetujuan":
-        return (
-          <span className="px-2 py-1 bg-yellow-100 text-yellow-700 rounded-full text-xs font-small inline-flex items-center gap-1">
-            <i className="ri-time-line"></i> Menunggu Persetujuan
-          </span>
-        );
-      case "Sampling":
-        return (
-          <span className="px-2 py-1 bg-blue-100 text-blue-700 rounded-full text-xs font-small inline-flex items-center gap-1">
-            <i className="ri-test-tube-line"></i> Sampling
-          </span>
-        );
-      case "Dalam Pengujian":
-        return (
-          <span className="px-2 py-1 bg-purple-100 text-purple-700 rounded-full text-xs font-small inline-flex items-center gap-1">
-            <i className="ri-settings-4-line"></i> Dalam Pengujian
-          </span>
-        );
-      case "Menunggu Review":
-        return (
-          <span className="px-2 py-1 bg-orange-100 text-orange-700 rounded-full text-xs font-small inline-flex items-center gap-1">
-            <i className="ri-search-eye-line"></i> Menunggu Review
-          </span>
-        );
-      case "Selesai":
-        return (
-          <span className="px-2 py-1 bg-emerald-100 text-emerald-700 rounded-full text-xs font-small inline-flex items-center gap-1">
-            <i className="ri-checkbox-circle-line"></i> Selesai
-          </span>
-        );
-      case "Ditolak":
-        return (
-          <span className="px-2 py-1 bg-red-100 text-red-700 rounded-full text-xs font-small inline-flex items-center gap-1">
-            <i className="ri-close-circle-line"></i> Ditolak
-          </span>
-        );
-      default:
-        return (
-          <span className="px-2 py-1 bg-gray-100 text-gray-700 rounded-full text-xs font-small">
-            {status}
-          </span>
-        );
-    }
-  };
-
-  const renderPrioritas = (prioritas: string) => {
-    if (prioritas?.toLowerCase() === "urgent") {
-      return (
-        <span className="text-red-600 font-semibold inline-flex items-center gap-1">
-          <i className="ri-alarm-warning-line"></i> Urgent
-        </span>
-      );
-    }
-    return <span className="text-gray-600 font-medium">Normal</span>;
-  };
-
-  const formatDate = (dateVal: string | Date | undefined) => {
-    if (!dateVal) return "-";
-    try {
-      const d = new Date(dateVal);
-      return d.toLocaleDateString("id-ID", {
-        day: "2-digit",
-        month: "short",
-        year: "numeric",
-      });
-    } catch {
-      return String(dateVal);
-    }
-  };
-
   const renderRow = (item: PermintaanPengujian, index: number) => {
-    const paramCount = item.parameters?.length || 0;
-    const komoditasVarietas = `${item.komoditas || "-"} / ${item.varietas || "-"}`;
-    const pemohonLabel =
-      item.pemohon === "produksi"
-        ? "Produksi"
-        : item.pemohon === "gudang"
-        ? "Gudang"
-        : item.pemohon === "rnd"
-        ? "R & D"
-        : item.pemohon || "-";
+    const paramCount = item.parameters?.filter((p) => p.checked).length || 0;
+    const editable = isEditable(item.status);
+    const waitingApproval = item.status === QC_STATUS.MENUNGGU_PERSETUJUAN;
 
     return (
-      <tr
-        key={item.id}
-        className="hover:bg-gray-50 border-b border-defaultborder transition-colors text-xs"
-      >
-        <td className="p-3 text-center text-gray-500">
-          {(currentPage - 1) * pageSize + index + 1}
-        </td>
-        <td className="p-3 font-semibold text-emerald-700">
-          {item.noPermintaan}
-        </td>
+      <tr key={item.id} className="hover:bg-gray-50 border-b border-defaultborder transition-colors text-xs">
+        <td className="p-3 text-center text-gray-500">{(list.page - 1) * list.pageSize + index + 1}</td>
+        <td className="p-3 font-semibold text-emerald-700">{item.noPermintaan}</td>
         <td className="p-3 text-gray-600">{formatDate(item.tanggal)}</td>
         <td className="p-3">
-          <span className="font-medium text-gray-800 bg-gray-100 px-2 py-0.5 rounded">
-            {item.kodeBatch}
-          </span>
+          <span className="font-medium text-gray-800 bg-gray-100 px-2 py-0.5 rounded">{item.kodeBatch}</span>
         </td>
-        <td className="p-3 text-gray-700 font-medium">{komoditasVarietas}</td>
-        <td className="p-3 text-gray-500">{item.tipe || "QC / Benih"}</td>
+        <td className="p-3 text-gray-700 font-medium">
+          {item.komoditas || "-"} / {item.varietas || "-"}
+        </td>
         <td className="p-3 text-gray-700">
-          {item.jumlahSampel || 0} {item.satuanSampel || "gram"}
+          {formatNumber(item.jumlahSampel)} {item.satuanSampel || ""}
         </td>
         <td className="p-3">
           <span className="inline-flex items-center gap-1 text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded font-medium">
             <i className="ri-flask-line"></i> {paramCount} Parameter
           </span>
         </td>
-        <td className="p-3 text-gray-700">{pemohonLabel}</td>
-        <td className="p-3">{renderPrioritas(item.prioritas)}</td>
-        <td className="p-3">{renderStatusBadge(item.status)}</td>
+        <td className="p-3 text-gray-700">{labelOf("PEMOHON", item.pemohon)}</td>
+        <td className="p-3">
+          <span className={item.prioritas === "urgent" ? "text-red-600 font-semibold" : "text-gray-600"}>
+            {labelOf("PRIORITAS", item.prioritas)}
+          </span>
+        </td>
+        <td className="p-3">
+          <div title={item.alasanPenolakan || undefined}>
+            <QcStatusBadge status={item.status} />
+          </div>
+        </td>
         <td className="p-3">
           <div className="flex gap-1.5 justify-center">
-            <EditIconButton
-              title="Edit Permintaan"
-              onClick={() =>
-                router.push(`/qc/permintaan-pengujian/edit/${item.id}`)
-              }
-            />
-            <DeleteIconButton
-              title="Hapus"
-              onClick={() => handleDelete(item.id, item.noPermintaan)}
-            />
+            {waitingApproval && (
+              <>
+                <button
+                  type="button"
+                  title="Setujui permintaan"
+                  onClick={() => setDialog({ type: "approve", item })}
+                  className={iconButtonClass("emerald")}
+                >
+                  <i className="ri-check-line"></i>
+                </button>
+                <button
+                  type="button"
+                  title="Tolak permintaan"
+                  onClick={() => setDialog({ type: "reject", item })}
+                  className={iconButtonClass("rose")}
+                >
+                  <i className="ri-close-line"></i>
+                </button>
+              </>
+            )}
+            {meta.pemeriksaanStatuses.includes(item.status) && (
+              <ViewIconButton
+                title="Lihat pemeriksaan"
+                onClick={() => router.push(`/qc/pemeriksaan-pengujian/${item.id}`)}
+              />
+            )}
+            {editable && (
+              <>
+                <EditIconButton
+                  title={item.status === QC_STATUS.DITOLAK ? "Perbaiki & ajukan ulang" : "Edit Permintaan"}
+                  onClick={() => router.push(`/qc/permintaan-pengujian/edit/${item.id}`)}
+                />
+                <DeleteIconButton title="Hapus" onClick={() => handleDelete(item)} />
+              </>
+            )}
           </div>
         </td>
       </tr>
@@ -372,45 +239,54 @@ const PermintaanList = () => {
 
   return (
     <div className="space-y-6">
-      {/* Reusable Stats Widgets */}
       <StatsWidgets items={statItems} columns={5} />
 
-      {/* Reusable Filter Row Bar */}
       <FilterRow
-        search={searchTerm}
-        onSearchChange={(val) => {
-          setSearchTerm(val);
-          setCurrentPage(1);
-        }}
-        searchPlaceholder="Cari No. Permintaan, Batch, Komoditas..."
+        search={filters.search || ""}
+        onSearchChange={(val) => setFilters({ search: val })}
+        searchPlaceholder="Cari no. permintaan, batch, petani..."
         selectFilters={filterConfig}
-        onReset={handleResetFilter}
-        onExport={() => toast.info("Mengekspor data permintaan pengujian...")}
+        onReset={list.resetFilters}
         onAdd={() => router.push("/qc/permintaan-pengujian/create")}
         addLabel="Buat Permintaan"
       />
 
-      {/* Reusable Data Table */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
         <DataTable
           headers={headers}
-          items={data}
+          items={list.items}
           renderRow={renderRow}
-          currentPage={currentPage}
-          pageSize={pageSize}
-          totalPages={totalPages}
-          totalRecords={totalRecords}
-          onPageChange={setCurrentPage}
-          onPageSizeChange={(newSize) => {
-            setPageSize(newSize);
-            setCurrentPage(1);
-          }}
+          currentPage={list.page}
+          pageSize={list.pageSize}
+          totalPages={list.totalPages}
+          totalRecords={list.total}
+          onPageChange={list.setPage}
+          onPageSizeChange={list.setPageSize}
           headerTextSize="11px"
           bodyTextSize="11px"
-          isLoading={isLoading}
+          isLoading={list.loading}
           emptyMessage="Tidak ada permintaan pengujian yang sesuai dengan kriteria filter."
         />
       </div>
+
+      <QcReasonModal
+        isOpen={!!dialog}
+        title={dialog?.type === "approve" ? "Setujui Permintaan Pengujian" : "Tolak Permintaan Pengujian"}
+        description={
+          dialog && (
+            <>
+              <strong>{dialog.item.noPermintaan}</strong> — batch {dialog.item.kodeBatch} ({dialog.item.komoditas} /{" "}
+              {dialog.item.varietas})
+            </>
+          )
+        }
+        label={dialog?.type === "approve" ? "Catatan (opsional)" : "Alasan penolakan"}
+        placeholder={dialog?.type === "approve" ? "Catatan persetujuan..." : "Jelaskan alasan permintaan ditolak..."}
+        submitText={dialog?.type === "approve" ? "Setujui" : "Tolak Permintaan"}
+        required={dialog?.type === "reject"}
+        onClose={() => setDialog(null)}
+        onSubmit={handleDialogSubmit}
+      />
     </div>
   );
 };

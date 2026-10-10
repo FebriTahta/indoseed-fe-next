@@ -1,5 +1,6 @@
 "use client";
 
+import { buttonClass, iconButtonClass } from '@/app/(components)/(content-layout)/shared/buttonStyles';
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import dynamic from 'next/dynamic';
@@ -16,10 +17,12 @@ import { SaveButton, CancelButton } from '@/app/(components)/(content-layout)/sh
 import { Commodity } from '@/app/types/commodity';
 import { Variety } from '@/app/types/variety';
 import { TestMethodDocument } from '@/app/types/qc';
+import { useQcLookups } from '@/app/hooks/useQcReference';
 
 interface ParameterItem {
   id: string; // temp id for UI mapping
   parameter: string;
+  kategori?: string | null;
   satuan: string;
   operator: string; // '<=', '>=', '<', '>', '=', 'rentang'
   nilai: string;
@@ -87,7 +90,6 @@ export default function MetodeUjiForm({ mode, initialData }: { mode: 'create' | 
     varietas: 'Semua Varietas',
     tipe: '',
     status: 'Aktif',
-    metode: '',
     alatDigunakan: '',
     prosedur: '',
     versiMetode: '',
@@ -108,9 +110,22 @@ export default function MetodeUjiForm({ mode, initialData }: { mode: 'create' | 
   const [selectedVarietas, setSelectedVarietas] = useState<string[]>(['Semua Varietas']);
 
   // Reference data for dropdowns
+  const { options: lookupOptions } = useQcLookups(['JENIS_UJI', 'TIPE_BENIH', 'SATUAN_PARAMETER']);
+  const [masterParamNames, setMasterParamNames] = useState<string[]>([]);
   const [referenceStandards, setReferenceStandards] = useState<any[]>([]);
   const [commodities, setCommodities] = useState<Commodity[]>([]);
   const [varieties, setVarieties] = useState<Variety[]>([]);
+
+  useEffect(() => {
+    qcService
+      .getParameters()
+      .then((res) => setMasterParamNames([...new Set((res.data || []).map((p) => p.nama))].sort()))
+      .catch((err) => console.error('Error fetching parameter names', err));
+  }, []);
+
+  /** Opsi lookup + nilai lama yang tidak ada di master agar tetap tampil. */
+  const withCurrent = (opts: { value: string; label: string }[], current?: string) =>
+    current && !opts.some((o) => o.value === current) ? [...opts, { value: current, label: current }] : opts;
 
   useEffect(() => {
     fetchReferenceStandards();
@@ -148,7 +163,6 @@ export default function MetodeUjiForm({ mode, initialData }: { mode: 'create' | 
         varietas: initialData.varietas || 'Semua Varietas', // from detail if mapped
         tipe: initialData.tipe || '', // from detail if mapped
         status: initialData.status || 'Aktif',
-        metode: initialData.metode || '',
         alatDigunakan: initialData.alatDigunakan || '',
         prosedur: initialData.deskripsi || '', // map prosedur to deskripsi
         versiMetode: initialData.versiMetode || '',
@@ -162,6 +176,7 @@ export default function MetodeUjiForm({ mode, initialData }: { mode: 'create' | 
           return {
             id: p.id || Math.random().toString(),
             parameter: p.nama || '',
+            kategori: p.kategori || null,
             satuan: p.satuan || '',
             operator: parsed.operator,
             nilai: parsed.nilai,
@@ -194,7 +209,7 @@ export default function MetodeUjiForm({ mode, initialData }: { mode: 'create' | 
 
   const fetchCommodities = async () => {
     try {
-      const res = await commodityService.getCommodities({});
+      const res = await commodityService.getCommodities({ pageSize: 1000 });
       setCommodities(res.data || []);
     } catch (error) {
       console.error("Error fetching commodities", error);
@@ -203,7 +218,7 @@ export default function MetodeUjiForm({ mode, initialData }: { mode: 'create' | 
 
   const fetchVarieties = async () => {
     try {
-      const res = await varietyService.getVarieties({});
+      const res = await varietyService.getVarieties({ pageSize: 1000 });
       const data = res.data || [];
       setVarieties(data);
     } catch (error) {
@@ -520,6 +535,7 @@ export default function MetodeUjiForm({ mode, initialData }: { mode: 'create' | 
             return {
               id: p.id && !p.id.startsWith('temp-') && p.id.length > 10 ? p.id : undefined,
               nama: p.parameter.trim(),
+              kategori: p.kategori || null,
               satuan: p.satuan?.trim() || null,
               batasAcuan: batasAcuanStr || null,
               batasMin: p.operator === 'rentang' ? (p.batasMin?.trim() || null) : null,
@@ -648,11 +664,9 @@ export default function MetodeUjiForm({ mode, initialData }: { mode: 'create' | 
                     className={`form-select text-sm ${validationErrors.jenisUji ? '!border-danger focus:!border-danger' : ''}`}
                   >
                     <option value="">Pilih Jenis Uji</option>
-                    <option value="Fisik">Fisik</option>
-                    <option value="Visual">Visual</option>
-                    <option value="Fisiologi">Fisiologi</option>
-                    <option value="Biologis">Biologis</option>
-                    <option value="Kimia">Kimia</option>
+                    {withCurrent(lookupOptions('JENIS_UJI'), formData.jenisUji).map((o) => (
+                      <option key={o.value} value={o.value}>{o.label}</option>
+                    ))}
                   </select>
                   {validationErrors.jenisUji && (
                     <p className="text-danger text-xs mt-1">{validationErrors.jenisUji}</p>
@@ -733,8 +747,9 @@ export default function MetodeUjiForm({ mode, initialData }: { mode: 'create' | 
                   <label className="form-label text-sm font-semibold">Tipe <span className="text-danger">*</span></label>
                   <select name="tipe" value={formData.tipe} onChange={handleChange} className="form-select text-sm">
                     <option value="">Pilih Tipe</option>
-                    <option value="Inbred">Inbred</option>
-                    <option value="Hibrida">Hibrida</option>
+                    {withCurrent(lookupOptions('TIPE_BENIH'), formData.tipe).map((o) => (
+                      <option key={o.value} value={o.value}>{o.label}</option>
+                    ))}
                   </select>
                 </div>
                 <div>
@@ -779,21 +794,9 @@ export default function MetodeUjiForm({ mode, initialData }: { mode: 'create' | 
                           placeholder="Pilih / ketik nama parameter"
                         />
                         <datalist id={`param-suggestions-${index}`}>
-                          <option value="Kadar Air" />
-                          <option value="Daya Berkecambah" />
-                          <option value="Kemurnian Fisik" />
-                          <option value="Benih Murni" />
-                          <option value="Kotoran Benih" />
-                          <option value="Benih Tanaman Lain" />
-                          <option value="Vigor" />
-                          <option value="Kecambah Normal" />
-                          <option value="Kecambah Abnormal" />
-                          <option value="Benih Mati" />
-                          <option value="Berat 1000 Biji" />
-                          <option value="pH" />
-                          <option value="Kadar Abu" />
-                          <option value="Uji Patogen" />
-                          <option value="Logam Berat (Pb, Cd, Hg)" />
+                          {masterParamNames.map((nama) => (
+                            <option key={nama} value={nama} />
+                          ))}
                         </datalist>
                       </div>
 
@@ -808,18 +811,9 @@ export default function MetodeUjiForm({ mode, initialData }: { mode: 'create' | 
                           className="form-select text-sm h-[38px]"
                         >
                           <option value="">Pilih Satuan</option>
-                          <option value="%">%</option>
-                          <option value="gr">gr</option>
-                          <option value="gram">gram</option>
-                          <option value="kg">kg</option>
-                          <option value="mg/kg">mg/kg</option>
-                          <option value="butir">butir</option>
-                          <option value="buah">buah</option>
-                          <option value="hari">hari</option>
-                          <option value="-">- (Tanpa Satuan)</option>
-                          {param.satuan && !['%', 'gr', 'gram', 'kg', 'mg/kg', 'butir', 'buah', 'hari', '-'].includes(param.satuan) && (
-                            <option value={param.satuan}>{param.satuan}</option>
-                          )}
+                          {withCurrent(lookupOptions('SATUAN_PARAMETER'), param.satuan).map((o) => (
+                            <option key={o.value} value={o.value}>{o.label}</option>
+                          ))}
                         </select>
                       </div>
 
@@ -893,7 +887,7 @@ export default function MetodeUjiForm({ mode, initialData }: { mode: 'create' | 
                         <button
                           type="button"
                           onClick={() => removeParameter(index)}
-                          className="btn btn-icon btn-sm btn-danger-light rounded-full w-8 h-8 flex items-center justify-center hover:bg-rose-100 hover:text-rose-600 transition-colors"
+                          className={iconButtonClass("rose", "!w-[38px] !h-[38px]")}
                           title="Hapus parameter ini"
                         >
                           <i className="ri-delete-bin-line text-sm"></i>
@@ -918,7 +912,7 @@ export default function MetodeUjiForm({ mode, initialData }: { mode: 'create' | 
                 );
               })}
 
-              <button type="button" onClick={addParameter} className="btn btn-outline-primary btn-sm flex items-center gap-1 mt-2">
+              <button type="button" onClick={addParameter} className={buttonClass("outline", "md", "mt-2")}>
                 <i className="ri-add-line"></i> Tambah Parameter
               </button>
             </div>
@@ -933,14 +927,6 @@ export default function MetodeUjiForm({ mode, initialData }: { mode: 'create' | 
             <div className="box-body pt-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="md:col-span-1 flex flex-col gap-4">
-                  <div>
-                    <label className="form-label text-sm font-semibold">Metode <span className="text-danger">*</span></label>
-                    <select name="metode" value={formData.metode} onChange={handleChange} className="form-select text-sm h-[38px]">
-                      <option value="">Pilih Metode</option>
-                      <option value="Oven">Oven</option>
-                      <option value="Timbangan">Timbangan</option>
-                    </select>
-                  </div>
                   <div className="flex-1 flex flex-col">
                     <label className="form-label text-sm font-semibold">Prosedur / SOP <span className="text-danger">*</span></label>
                     <div className="relative flex-1">
@@ -1034,7 +1020,7 @@ export default function MetodeUjiForm({ mode, initialData }: { mode: 'create' | 
                     <div className="flex items-center justify-center gap-2">
                       <button
                         type="button"
-                        className="btn btn-outline-primary btn-sm px-3 py-1 text-xs"
+                        className={buttonClass("outline", "sm")}
                       >
                         Pilih File
                       </button>
@@ -1118,7 +1104,7 @@ export default function MetodeUjiForm({ mode, initialData }: { mode: 'create' | 
                                     href={doc.fileUrl}
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    className="w-7 h-7 flex items-center justify-center rounded-md bg-blue-50 text-blue-600 hover:bg-blue-100 transition-colors"
+                                    className={iconButtonClass("blue")}
                                     title="Buka / Unduh Berkas"
                                   >
                                     <i className="ri-external-link-line text-sm"></i>
@@ -1126,7 +1112,7 @@ export default function MetodeUjiForm({ mode, initialData }: { mode: 'create' | 
                                   <button
                                     type="button"
                                     onClick={() => handleRemoveDokumen(i)}
-                                    className="w-7 h-7 flex items-center justify-center rounded-md bg-rose-50 text-rose-600 hover:bg-rose-100 transition-colors"
+                                    className={iconButtonClass("rose")}
                                     title="Hapus Berkas"
                                   >
                                     <i className="ri-delete-bin-line text-sm"></i>

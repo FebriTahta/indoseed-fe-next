@@ -65,3 +65,39 @@ export const MENUITEMS = [
   { path: "/penjualan/traceability", icon: <i className="bx bx-barcode side-menu__icon"></i>, type: "link", active: false, selected: false, title: "Traceability Lot" },
 ];
 
+
+/**
+ * Akses menu per role (prefix path yang boleh tampil).
+ * Role yang tidak terdaftar di sini (mis. superadmin) melihat seluruh menu.
+ */
+export const ROLE_MENU_ACCESS = {
+  // User QC / analis laboratorium
+  penguji: ["/dashboard/qc", "/qc/", "/master/laboratorium"],
+};
+
+const isAllowed = (path, prefixes) =>
+  prefixes.some((prefix) => (prefix.endsWith("/") ? `${path}/`.startsWith(prefix) : path === prefix));
+
+/** Filter MENUITEMS sesuai role; judul grup hanya tampil bila ada menu di bawahnya. */
+export const filterMenuByRoles = (items, roles = []) => {
+  const prefixes = roles.filter((r) => ROLE_MENU_ACCESS[r]).flatMap((r) => ROLE_MENU_ACCESS[r]);
+  const unrestricted = roles.length === 0 || roles.some((r) => !ROLE_MENU_ACCESS[r]);
+  if (unrestricted) return items;
+
+  const result = [];
+  let pendingTitle = null;
+  items.forEach((item) => {
+    if (item.menutitle) {
+      pendingTitle = item;
+      return;
+    }
+    if (item.path && isAllowed(item.path, prefixes)) {
+      if (pendingTitle) {
+        result.push(pendingTitle);
+        pendingTitle = null;
+      }
+      result.push(item);
+    }
+  });
+  return result;
+};

@@ -1,5 +1,6 @@
 "use client";
 
+import { iconButtonClass } from "@/app/(components)/(content-layout)/shared/buttonStyles";
 import React from "react";
 import Pageheader from "@/shared/layouts-components/page-header/pageheader";
 import PemeriksaanList from "./components/PemeriksaanList";
@@ -34,7 +35,7 @@ const PemeriksaanPengujianPage = () => {
               onClick={() => router.push("/qc/permintaan-pengujian/create")} 
             />
             <ExportButton label="Laporan" onClick={() => {}} />
-            <button type="button" className="btn btn-outline-light">
+            <button type="button" title="Lainnya" className={iconButtonClass("gray", "!w-9 !h-9")}>
               <i className="ri-more-2-fill"></i>
             </button>
           </div>

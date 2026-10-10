@@ -1,112 +1,79 @@
 import axiosInstance from '@/app/lib/axios';
-import { PermintaanPengujian, PermintaanSummary } from '@/app/types/qc';
-import { ApiResponse } from '@/app/types/api';
+import {
+  BatchOption,
+  PaginatedResponse,
+  PermintaanPengujian,
+  PermintaanSummary,
+  QcListParams,
+} from '@/app/types/qc';
 
 const API_URL = '/qc/permintaan';
 
-export interface PermintaanListParams {
-  search?: string;
-  status?: string;
-  periode?: string;
-  startDate?: string;
-  endDate?: string;
-  komoditas?: string;
-  prioritas?: string;
-  sortBy?: string;
-  sortOrder?: 'asc' | 'desc';
-  page?: number;
-  pageSize?: number;
+type ApiData<T> = { success: boolean; data: T; message?: string };
+
+/** Hapus parameter kosong agar tidak terkirim sebagai `?status=`. */
+export const cleanParams = <T extends object>(params?: T) =>
+  Object.fromEntries(
+    Object.entries(params || {}).filter(([, v]) => v !== undefined && v !== null && v !== '')
+  ) as Partial<T>;
+
+export interface PermintaanPayload {
+  tanggal: string;
+  batchProduksiId: string;
+  jumlahSampel: number;
+  satuanSampel: string;
+  metodeSampling: string;
+  pengambilSampelId: string;
+  pemohon: string;
+  prioritas: string;
+  catatan?: string | null;
+  parameters: { parameterId: string; checked: boolean }[];
 }
 
-export interface PermintaanListResponse {
-  success: boolean;
-  data: PermintaanPengujian[];
-  total: number;
-  page: number;
-  pageSize: number;
-  totalPages: number;
-}
+/** Kirim sebagai multipart bila ada lampiran, selain itu JSON biasa. */
+const toRequestBody = (payload: PermintaanPayload, file?: File | null) => {
+  if (!file) return payload;
+  const form = new FormData();
+  Object.entries(payload).forEach(([key, value]) => {
+    if (value === undefined || value === null) return;
+    form.append(key, typeof value === 'object' ? JSON.stringify(value) : String(value));
+  });
+  form.append('file', file);
+  return form;
+};
 
 export const permintaanPengujianService = {
-  getPermintaanList: async (params?: PermintaanListParams): Promise<PermintaanListResponse> => {
-    const query = new URLSearchParams();
-    if (params?.search) query.append('search', params.search);
-    if (params?.status) query.append('status', params.status);
-    if (params?.periode) query.append('periode', params.periode);
-    if (params?.startDate) query.append('startDate', params.startDate);
-    if (params?.endDate) query.append('endDate', params.endDate);
-    if (params?.komoditas) query.append('komoditas', params.komoditas);
-    if (params?.prioritas) query.append('prioritas', params.prioritas);
-    if (params?.sortBy) query.append('sortBy', params.sortBy);
-    if (params?.sortOrder) query.append('sortOrder', params.sortOrder);
-    if (params?.page) query.append('page', params.page.toString());
-    if (params?.pageSize) query.append('pageSize', params.pageSize.toString());
+  getPermintaanList: async (params?: QcListParams) =>
+    (await axiosInstance.get<PaginatedResponse<PermintaanPengujian>>(API_URL, { params: cleanParams(params) })).data,
 
-    const qs = query.toString();
-    const url = qs ? `${API_URL}?${qs}` : API_URL;
-    const response = await axiosInstance.get<PermintaanListResponse>(url);
-    return response.data;
-  },
+  getPermintaanSummary: async (params?: { startDate?: string; endDate?: string }) =>
+    (await axiosInstance.get<ApiData<PermintaanSummary>>(`${API_URL}/summary`, { params: cleanParams(params) })).data,
 
-  getPermintaanSummary: async (params?: { startDate?: string; endDate?: string }) => {
-    const query = new URLSearchParams();
-    if (params?.startDate) query.append('startDate', params.startDate);
-    if (params?.endDate) query.append('endDate', params.endDate);
+  getNextNumber: async () =>
+    (await axiosInstance.get<ApiData<{ noPermintaan: string }>>(`${API_URL}/generate-number`)).data,
 
-    const qs = query.toString();
-    const url = qs ? `${API_URL}/summary?${qs}` : `${API_URL}/summary`;
-    const response = await axiosInstance.get<ApiResponse<PermintaanSummary>>(url);
-    return response.data;
-  },
+  getBatchOptions: async (excludePermintaanId?: string) =>
+    (
+      await axiosInstance.get<ApiData<BatchOption[]>>(`${API_URL}/batch-options`, {
+        params: cleanParams({ excludePermintaanId }),
+      })
+    ).data,
 
-  getNextNumber: async () => {
-    const response = await axiosInstance.get<ApiResponse<{ noPermintaan: string }>>(
-      `${API_URL}/generate-number`
-    );
-    return response.data;
-  },
+  getPermintaanById: async (id: string) =>
+    (await axiosInstance.get<ApiData<PermintaanPengujian>>(`${API_URL}/${id}`)).data,
 
-  getPermintaanById: async (id: string) => {
-    const response = await axiosInstance.get<ApiResponse<PermintaanPengujian>>(`${API_URL}/${id}`);
-    return response.data;
-  },
+  createPermintaan: async (payload: PermintaanPayload, file?: File | null) =>
+    (await axiosInstance.post<ApiData<PermintaanPengujian>>(API_URL, toRequestBody(payload, file))).data,
 
-  createPermintaan: async (data: any) => {
-    let payload = data;
-    const isFormData = data instanceof FormData;
-    const headers = isFormData ? { 'Content-Type': 'multipart/form-data' } : undefined;
+  updatePermintaan: async (id: string, payload: PermintaanPayload, file?: File | null) =>
+    (await axiosInstance.put<ApiData<PermintaanPengujian>>(`${API_URL}/${id}`, toRequestBody(payload, file))).data,
 
-    const response = await axiosInstance.post<ApiResponse<PermintaanPengujian>>(
-      API_URL,
-      payload,
-      { headers }
-    );
-    return response.data;
-  },
+  approvePermintaan: async (id: string, catatan?: string) =>
+    (await axiosInstance.post<ApiData<PermintaanPengujian>>(`${API_URL}/${id}/approve`, { catatan })).data,
 
-  updatePermintaan: async (id: string, data: any) => {
-    let payload = data;
-    const isFormData = data instanceof FormData;
-    const headers = isFormData ? { 'Content-Type': 'multipart/form-data' } : undefined;
+  rejectPermintaan: async (id: string, alasan: string) =>
+    (await axiosInstance.post<ApiData<PermintaanPengujian>>(`${API_URL}/${id}/reject`, { alasan })).data,
 
-    const response = await axiosInstance.put<ApiResponse<PermintaanPengujian>>(
-      `${API_URL}/${id}`,
-      payload,
-      { headers }
-    );
-    return response.data;
-  },
-
-  updatePermintaanStatus: async (id: string, status: string, diubahOleh?: string) => {
-    const response = await axiosInstance.patch<ApiResponse<PermintaanPengujian>>(
-      `${API_URL}/${id}/status`,
-      { status, diubahOleh }
-    );
-    return response.data;
-  },
-
-  deletePermintaan: async (id: string) => {
-    const response = await axiosInstance.delete<ApiResponse<any>>(`${API_URL}/${id}`);
-    return response.data;
-  },
+  deletePermintaan: async (id: string) =>
+    (await axiosInstance.delete<ApiData<null>>(`${API_URL}/${id}`)).data,
 };

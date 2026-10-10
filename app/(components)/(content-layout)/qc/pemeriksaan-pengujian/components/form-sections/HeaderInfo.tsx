@@ -1,75 +1,62 @@
 import React from "react";
+import { toast } from "react-toastify";
+import { PermintaanPengujian } from "@/app/types/qc";
+import { formatDate } from "@/app/lib/format";
 
-const HeaderInfo = () => {
-  return (
-    <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex items-center justify-between overflow-x-auto gap-8">
-      
-      {/* Group 1 */}
-      <div className="flex gap-8 min-w-max">
-        <div>
-          <p className="text-xs text-gray-500 font-medium mb-1 flex items-center gap-1">
-            <i className="ri-file-list-3-line"></i> No. Pengujian
-          </p>
-          <div className="font-semibold text-gray-800">TST-QC-2026-00125 <i className="ri-file-copy-line text-gray-400 cursor-pointer ml-1 hover:text-emerald-600"></i></div>
-        </div>
-        <div>
-          <p className="text-xs text-gray-500 font-medium mb-1">No. Permintaan</p>
-          <div className="font-semibold text-gray-800">RQ-QC-2026-00125</div>
-        </div>
-        <div>
-          <p className="text-xs text-gray-500 font-medium mb-1">Batch</p>
-          <div className="font-semibold text-gray-800">BTH-2026-00125</div>
-        </div>
+interface FieldProps {
+  label: string;
+  icon?: string;
+  children: React.ReactNode;
+  copyValue?: string | null;
+}
+
+const Field = ({ label, icon, children, copyValue }: FieldProps) => (
+  <div className="flex items-start gap-2">
+    {icon && <i className={`${icon} text-base text-emerald-600 mt-1.5 shrink-0`}></i>}
+    <div>
+      <p className="text-[10px] text-gray-500 mb-1 whitespace-nowrap">{label}</p>
+      <div className="flex items-center gap-2 text-xs font-medium text-gray-800">
+        <span className="whitespace-nowrap">{children || "-"}</span>
+        {copyValue && (
+          <button
+            type="button"
+            title="Salin"
+            onClick={() => navigator.clipboard?.writeText(copyValue).then(() => toast.success("Disalin"))}
+            className="text-gray-400 hover:text-emerald-600"
+          >
+            <i className="ri-file-copy-line"></i>
+          </button>
+        )}
       </div>
-
-      <div className="h-10 border-l border-gray-200 hidden lg:block"></div>
-
-      {/* Group 2 */}
-      <div className="flex gap-8 min-w-max">
-        <div>
-          <p className="text-xs text-gray-500 font-medium mb-1 flex items-center gap-1">Komoditas</p>
-          <div className="font-semibold text-gray-800 flex items-center gap-2">
-            <i className="ri-leaf-fill text-emerald-500"></i> Melon
-          </div>
-        </div>
-        <div>
-          <p className="text-xs text-gray-500 font-medium mb-1 flex items-center gap-1">Varietas</p>
-          <div className="font-semibold text-gray-800 flex items-center gap-2">
-            <i className="ri-seedling-line text-emerald-500"></i> Melon Tere F1
-          </div>
-        </div>
-        <div>
-          <p className="text-xs text-gray-500 font-medium mb-1">Tipe</p>
-          <div className="font-semibold text-gray-800">OC / Benih</div>
-        </div>
-      </div>
-
-      <div className="h-10 border-l border-gray-200 hidden lg:block"></div>
-
-      {/* Group 3 */}
-      <div className="flex gap-8 min-w-max">
-        <div>
-          <p className="text-xs text-gray-500 font-medium mb-1 flex items-center gap-1">
-            <i className="ri-calendar-event-line text-emerald-600"></i> Tanggal Sampling
-          </p>
-          <div className="font-semibold text-gray-800">16 Jun 2026</div>
-        </div>
-        <div>
-          <p className="text-xs text-gray-500 font-medium mb-1 flex items-center gap-1">
-            <i className="ri-team-line text-emerald-600"></i> Petani Mitra
-          </p>
-          <div className="font-semibold text-gray-800">Suryadi</div>
-        </div>
-        <div>
-          <p className="text-xs text-gray-500 font-medium mb-1 flex items-center gap-1">
-            <i className="ri-map-pin-line text-emerald-600"></i> Lahan
-          </p>
-          <div className="font-semibold text-gray-800">Lahan 01 / Blok A</div>
-        </div>
-      </div>
-
     </div>
-  );
-};
+  </div>
+);
+
+const Divider = () => <div className="hidden md:block w-px self-stretch bg-gray-100"></div>;
+
+/** Ringkasan identitas pengujian di bagian atas halaman. */
+const HeaderInfo = ({ data }: { data: PermintaanPengujian }) => (
+  <div className="bg-white px-5 py-4 rounded-xl shadow-sm border border-gray-100 flex flex-wrap items-start gap-x-5 gap-y-4">
+    <Field label="No. Pengujian" icon="ri-file-list-3-line" copyValue={data.noPengujian}>
+      <span className="font-semibold">{data.noPengujian || <span className="text-gray-400 italic font-normal">Belum terbit</span>}</span>
+    </Field>
+    <Divider />
+    <Field label="No. Permintaan">{data.noPermintaan}</Field>
+    <Divider />
+    <Field label="Batch">{data.kodeBatch}</Field>
+    <Divider />
+    <Field label="Komoditas" icon="ri-leaf-fill">{data.komoditas}</Field>
+    <Divider />
+    <Field label="Varietas" icon="ri-seedling-line">{data.varietas}</Field>
+    <Divider />
+    <Field label="Tipe">{data.tipe}</Field>
+    <Divider />
+    <Field label="Tanggal Sampling" icon="ri-calendar-event-line">{formatDate(data.tanggalSampling, "")}</Field>
+    <Divider />
+    <Field label="Petani Mitra" icon="ri-plant-line">{data.petani}</Field>
+    <Divider />
+    <Field label="Lahan" icon="ri-landscape-line">{data.lahan}</Field>
+  </div>
+);
 
 export default HeaderInfo;

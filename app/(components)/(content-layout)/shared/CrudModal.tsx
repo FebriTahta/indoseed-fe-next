@@ -1,4 +1,5 @@
 import React from 'react';
+import { buttonClass } from './buttonStyles';
 
 interface CrudModalProps {
   isOpen: boolean;
@@ -60,14 +61,14 @@ export default function CrudModal({
               <button
                 type="button"
                 onClick={onClose}
-                className="py-2 px-4 rounded border text-gray-600 hover:bg-gray-100 text-xs font-semibold transition-colors disabled:opacity-50 disabled:pointer-events-none"
+                className={buttonClass('secondary')}
                 disabled={isLoading}
               >
                 {cancelText}
               </button>
               <button
                 type="submit"
-                className="py-2 px-4 rounded text-white bg-emerald-600 hover:bg-emerald-700 text-xs font-semibold transition-colors flex items-center gap-1.5 disabled:opacity-80"
+                className={buttonClass('primary')}
                 disabled={isLoading}
               >
                 {isLoading && (

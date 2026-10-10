@@ -13,6 +13,8 @@ export const batchProduksiService = {
     sumberBahan?: string;
     status?: string;
     lokasi?: string;
+    withoutPermintaan?: boolean;
+    excludePermintaanId?: string;
   }) => {
     const response = await api.get(`${baseUrl}/produksi/batch-produksi`, { params });
     return response.data;

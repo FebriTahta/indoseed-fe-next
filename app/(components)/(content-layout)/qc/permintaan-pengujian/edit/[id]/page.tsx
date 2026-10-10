@@ -25,7 +25,7 @@ export default function EditPermintaanPage() {
           </div>
           <div>
             <h1 className="text-xl font-bold text-gray-800">Edit Permintaan Pengujian</h1>
-            <p className="text-sm text-gray-500">Perbarui data permintaan pengujian {id ? `ID #${id}` : ""}.</p>
+            <p className="text-sm text-gray-500">Perbarui data permintaan pengujian selama sampel belum diterima laboratorium.</p>
           </div>
         </div>
       </div>

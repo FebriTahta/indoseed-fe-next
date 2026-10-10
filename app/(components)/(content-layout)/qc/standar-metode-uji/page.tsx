@@ -1,4 +1,5 @@
 "use client";
+import { buttonClass, iconButtonClass } from '@/app/(components)/(content-layout)/shared/buttonStyles';
 import React, { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import Pageheader from '@/shared/layouts-components/page-header/pageheader';
@@ -14,6 +15,23 @@ import QcPageHeader from '../shared/QcPageHeader';
 import AddStandardMethodModal from './AddStandardMethodModal';
 import { qcService } from '@/app/services/qcService';
 import { useQC } from '@/app/hooks/useQC';
+import { useKomoditasOptions, useQcLookups } from '@/app/hooks/useQcReference';
+import { TestMethodRiwayat, TestParameter } from '@/app/types/qc';
+import { parseBatasAcuan } from '@/app/lib/batasAcuan';
+
+const OPERATOR_LABEL: Record<string, string> = {
+  '=': 'samadengan (=)',
+  '<': 'lebih kecil (<)',
+  '>': 'lebih besar (>)',
+  '<=': 'lebih kecil daripada samadengan (≤)',
+  '>=': 'lebih besar daripada samadengan (≥)',
+  range: 'rentang (min - maks)',
+};
+
+const describeOperator = (batas?: string | null) => {
+  const parsed = parseBatasAcuan(batas);
+  return parsed ? OPERATOR_LABEL[parsed.operator] : batas ? 'kualitatif' : '-';
+};
 
 export default function StandarMetodeUjiPage() {
   const router = useRouter();
@@ -39,6 +57,9 @@ export default function StandarMetodeUjiPage() {
   useEffect(() => {
     setActiveTab('method');
   }, [setActiveTab]);
+
+  const { options: lookupOptions } = useQcLookups(['JENIS_UJI']);
+  const { options: komoditasOptions } = useKomoditasOptions();
 
   // Filter Inputs State
   const [searchInput, setSearchInput] = useState<string>('');
@@ -128,276 +149,39 @@ export default function StandarMetodeUjiPage() {
     return `${day} ${month} ${year} ${hours}:${minutes}`;
   };
 
-  // 3 data riwayat terbaru sesuai desain gambar
-  const recentHistory = useMemo(() => {
-    const defaultMock = [
-      {
-        id: 'mock-1',
-        tanggal: '16 Jun 2026 10:24',
-        user: 'Admin',
-        aktivitas: 'Tambah Data',
-        keterangan: 'Metode uji baru ditambahkan',
-      },
-      {
-        id: 'mock-2',
-        tanggal: '17 Jun 2026 14:30',
-        user: 'Manager QC',
-        aktivitas: 'Update Data',
-        keterangan: 'Revisi standar acuan dari ISTA 2-001 ke ISTA 2-003',
-      },
-      {
-        id: 'mock-3',
-        tanggal: '20 Jun 2026 09:15',
-        user: 'Admin',
-        aktivitas: 'Nonaktifkan',
-        keterangan: 'Metode uji tidak digunakan lagi',
-      },
-    ];
-
-    const sorted = [...methods]
-      .filter((m) => m.updatedAt || m.createdAt)
-      .sort((a, b) => {
-        const timeA = new Date(a.updatedAt || a.createdAt || 0).getTime();
-        const timeB = new Date(b.updatedAt || b.createdAt || 0).getTime();
-        return timeB - timeA;
-      })
-      .slice(0, 3);
-
-    if (sorted.length === 0) return defaultMock;
-
-    return sorted.map((item, idx) => {
-      const createdTime = item.createdAt ? new Date(item.createdAt).getTime() : 0;
-      const updatedTime = item.updatedAt ? new Date(item.updatedAt).getTime() : 0;
-      const isCreatedOnly = !item.updatedAt || Math.abs(updatedTime - createdTime) < 5000;
-
-      let aktivitas = 'Update Data';
-      const user = idx === 1 ? 'Manager QC' : 'Admin';
-
-      if (item.status === 'Nonaktif') {
-        aktivitas = 'Nonaktifkan';
-      } else if (isCreatedOnly) {
-        aktivitas = 'Tambah Data';
-      }
-
-      let keterangan = '';
-      if (item.status === 'Nonaktif') {
-        keterangan = `Metode uji tidak digunakan lagi`;
-      } else if (isCreatedOnly) {
-        keterangan = `Metode uji baru ditambahkan`;
-      } else {
-        keterangan = `Revisi standar acuan dari ${item.standar?.kode || 'ISTA 2-001'} ke ISTA 2-003`;
-      }
-
-      return {
-        id: item.id,
-        rawItem: item,
-        tanggal: item.updatedAt || item.createdAt,
-        user,
-        aktivitas,
-        keterangan,
-      };
-    });
+  // Riwayat perubahan terbaru dari tabel test_method_riwayat
+  const [recentHistory, setRecentHistory] = useState<TestMethodRiwayat[]>([]);
+  useEffect(() => {
+    qcService
+      .getMethodRiwayat(5)
+      .then((res) => setRecentHistory(res.data || []))
+      .catch((err) => console.error('Gagal memuat riwayat metode uji:', err));
   }, [methods]);
 
-  // Parameter pengujian yang serasi dengan desain gambar dan patokan operator
-  const paramsToRender = useMemo(() => {
-    if (selectedItem?.testParameters && selectedItem.testParameters.length > 0) {
-      return selectedItem.testParameters.map((p: any, pIdx: number) => {
-        let min = '-';
-        let max = '-';
-        let operatorValue = '<=';
-        let operatorSymbol = '≤';
-        let operatorLabel = 'lebih kecil daripada samadengan (≤)';
-        let patokan = '-';
-        let rawVal = '';
+  // Parameter metode beserta label operator batas acuan (baca saja; ubah lewat form edit)
+  const paramsToRender = useMemo(
+    () =>
+      (selectedItem?.testParameters || []).map((p: TestParameter) => ({
+        id: p.id,
+        nama: p.nama,
+        satuan: p.satuan || '-',
+        operatorLabel: describeOperator(p.batasAcuan),
+        patokan: p.batasAcuan ? `${p.batasAcuan} ${p.satuan && p.satuan !== '-' ? p.satuan : ''}`.trim() : '-',
+      })),
+    [selectedItem]
+  );
 
-        if (p.batasAcuan) {
-          const str = p.batasAcuan.trim();
-          if (str.includes(' - ')) {
-            const parts = str.split(' - ');
-            min = parts[0]?.trim() || '-';
-            max = parts[1]?.trim() || '-';
-            operatorValue = 'rentang';
-            operatorSymbol = '↔';
-            operatorLabel = 'rentang (min - maks)';
-            patokan = `${min} - ${max} ${p.satuan || ''}`.trim();
-          } else if (str.startsWith('≤') || str.startsWith('<=')) {
-            const val = str.replace(/^[≤<=]+/, '').trim();
-            rawVal = val;
-            min = '-';
-            max = `≤ ${val}`;
-            operatorValue = '<=';
-            operatorSymbol = '≤';
-            operatorLabel = 'lebih kecil daripada samadengan (≤)';
-            patokan = `≤ ${val} ${p.satuan || ''}`.trim();
-          } else if (str.startsWith('≥') || str.startsWith('>=')) {
-            const val = str.replace(/^[≥>=]+/, '').trim();
-            rawVal = val;
-            min = `≥ ${val}`;
-            max = '-';
-            operatorValue = '>=';
-            operatorSymbol = '≥';
-            operatorLabel = 'lebih besar daripada samadengan (≥)';
-            patokan = `≥ ${val} ${p.satuan || ''}`.trim();
-          } else if (str.startsWith('<')) {
-            const val = str.replace(/^<+/, '').trim();
-            rawVal = val;
-            min = '-';
-            max = `< ${val}`;
-            operatorValue = '<';
-            operatorSymbol = '<';
-            operatorLabel = 'lebih kecil (<)';
-            patokan = `< ${val} ${p.satuan || ''}`.trim();
-          } else if (str.startsWith('>')) {
-            const val = str.replace(/^>+/, '').trim();
-            rawVal = val;
-            min = `> ${val}`;
-            max = '-';
-            operatorValue = '>';
-            operatorSymbol = '>';
-            operatorLabel = 'lebih besar (>)';
-            patokan = `> ${val} ${p.satuan || ''}`.trim();
-          } else if (str.startsWith('=')) {
-            const val = str.replace(/^=+/, '').trim();
-            rawVal = val;
-            min = val;
-            max = val;
-            operatorValue = '=';
-            operatorSymbol = '=';
-            operatorLabel = 'samadengan (=)';
-            patokan = `= ${val} ${p.satuan || ''}`.trim();
-          } else {
-            rawVal = str;
-            max = str;
-            operatorValue = '<=';
-            operatorSymbol = '≤';
-            operatorLabel = 'lebih kecil daripada samadengan (≤)';
-            patokan = `≤ ${str} ${p.satuan || ''}`.trim();
-          }
-        }
-        return {
-          id: p.id,
-          index: pIdx,
-          nama: p.nama,
-          satuan: p.satuan || '-',
-          operatorValue,
-          operatorSymbol,
-          operatorLabel,
-          patokan,
-          rawVal,
-          min,
-          max,
-        };
-      });
-    }
+  const alatList: string[] = useMemo(
+    () =>
+      (selectedItem?.alatDigunakan || '')
+        .split(/[,\n]/)
+        .map((s: string) => s.trim())
+        .filter(Boolean),
+    [selectedItem]
+  );
 
-    return [
-      {
-        id: 'default-1',
-        index: 0,
-        nama: 'Kadar Air',
-        satuan: '%',
-        operatorValue: '<=',
-        operatorSymbol: '≤',
-        operatorLabel: 'lebih kecil daripada samadengan (≤)',
-        patokan: '≤ 8.0 %',
-        rawVal: '8.0',
-        min: '-',
-        max: '≤ 8.0',
-      },
-    ];
-  }, [selectedItem]);
-
-  const handleUpdateParameterOperator = async (paramIndex: number, newOperator: string) => {
-    if (!selectedItem) return;
-
-    try {
-      const rawParams = selectedItem.testParameters || [];
-      const currentParam = paramsToRender[paramIndex];
-      const val = (currentParam?.rawVal || '8.0').replace(/^[=<>≤≥\s]+/, '').trim() || '8.0';
-
-      let newBatasAcuan = '';
-      if (newOperator === 'rentang') {
-        newBatasAcuan = `1.0 - ${val}`;
-      } else {
-        const sym = newOperator === '<=' ? '≤' : newOperator === '>=' ? '≥' : newOperator;
-        newBatasAcuan = `${sym} ${val}`;
-      }
-
-      let updatedTestParams = [];
-      if (rawParams.length > 0) {
-        updatedTestParams = rawParams.map((p: any, idx: number) => {
-          if (idx === paramIndex) {
-            return { ...p, batasAcuan: newBatasAcuan };
-          }
-          return p;
-        });
-      } else {
-        updatedTestParams = [
-          {
-            nama: currentParam.nama,
-            satuan: currentParam.satuan,
-            batasAcuan: newBatasAcuan,
-          },
-        ];
-      }
-
-      const payload = {
-        ...selectedItem,
-        testParameters: updatedTestParams.map((p: any) => ({
-          id: p.id && !p.id.startsWith('temp-') && p.id.length > 10 ? p.id : undefined,
-          nama: p.nama,
-          satuan: p.satuan,
-          batasAcuan: p.batasAcuan,
-        })),
-      };
-
-      await qcService.updateMethod(selectedItem.id, payload);
-      setSelectedItem({
-        ...selectedItem,
-        testParameters: updatedTestParams,
-      });
-      toast.success(`Operator parameter "${currentParam.nama}" diubah ke "${newOperator}"`);
-      fetchMethods();
-    } catch (err: any) {
-      console.error('Error updating parameter operator:', err);
-      toast.error('Gagal memperbarui operator parameter');
-    }
-  };
-
-  // Daftar alat yang digunakan sesuai gambar desain
-  const alatList = useMemo(() => {
-    if (!selectedItem?.alatDigunakan) {
-      return ['Oven', 'Timbangan analitik', 'Desikator'];
-    }
-    if (Array.isArray(selectedItem.alatDigunakan)) {
-      return selectedItem.alatDigunakan;
-    }
-    return selectedItem.alatDigunakan
-      .split(',')
-      .map((s: string) => s.trim())
-      .filter(Boolean);
-  }, [selectedItem]);
-
-  // Dokumen terkait fallback ke mockup jika belum ada dokumen yang diunggah
-  const docsToRender = useMemo(() => {
-    const defaultDocs = [
-      { id: '1', namaFile: 'SOP_Kadar_Air.pdf', ukuran: '1.2 MB', fileUrl: '#' },
-      { id: '2', namaFile: 'ISTA_2-001.pdf', ukuran: '856 KB', fileUrl: '#' },
-      { id: '3', namaFile: 'Formulir_Hasil_Uji_Kadar_Air.xlsx', ukuran: '320 KB', fileUrl: '#' },
-    ];
-    if (selectedItem?.dokumen && selectedItem.dokumen.length > 0) {
-      const list = [...selectedItem.dokumen];
-      return list.sort((a, b) => {
-        if (a.namaFile?.toLowerCase().includes('sop')) return -1;
-        if (b.namaFile?.toLowerCase().includes('sop')) return 1;
-        if (a.namaFile?.toLowerCase().includes('ista')) return -1;
-        if (b.namaFile?.toLowerCase().includes('ista')) return 1;
-        return 0;
-      });
-    }
-    return defaultDocs;
-  }, [selectedItem]);
+  const docsToRender = selectedItem?.dokumen || [];
+  const sopDoc = docsToRender.find((d: any) => d.namaFile?.toLowerCase().includes('sop')) || docsToRender[0];
 
   return (
     <>
@@ -454,11 +238,9 @@ export default function StandarMetodeUjiPage() {
                     onChange={(e) => setJenisUjiInput(e.target.value)}
                   >
                     <option value="">Semua Jenis</option>
-                    <option value="Fisik">Fisik</option>
-                    <option value="Visual">Visual</option>
-                    <option value="Fisiologi">Fisiologi</option>
-                    <option value="Biologis">Biologis</option>
-                    <option value="Kimia">Kimia</option>
+                    {lookupOptions('JENIS_UJI').map((o) => (
+                      <option key={o.value} value={o.value}>{o.label}</option>
+                    ))}
                   </select>
                 </div>
 
@@ -470,12 +252,9 @@ export default function StandarMetodeUjiPage() {
                     onChange={(e) => setKomoditasInput(e.target.value)}
                   >
                     <option value="">Semua Komoditas</option>
-                    <option value="Padi">Padi</option>
-                    <option value="Jagung">Jagung</option>
-                    <option value="Kedelai">Kedelai</option>
-                    <option value="Cabai">Cabai</option>
-                    <option value="Tomat">Tomat</option>
-                    <option value="Sayuran">Sayuran</option>
+                    {komoditasOptions.map((o) => (
+                      <option key={o.value} value={o.value}>{o.label}</option>
+                    ))}
                   </select>
                 </div>
 
@@ -568,29 +347,30 @@ export default function StandarMetodeUjiPage() {
                   </thead>
                   <tbody className="divide-y divide-defaultborder text-xs text-gray-700">
                     {recentHistory.length > 0 ? (
-                      recentHistory.map((item, idx) => {
+                      recentHistory.map((item) => {
                         let activityColor = 'text-primary';
-                        if (item.aktivitas === 'Tambah Data') activityColor = 'text-emerald-600';
-                        else if (item.aktivitas === 'Nonaktifkan') activityColor = 'text-amber-600';
+                        if (item.aksi === 'Tambah Data') activityColor = 'text-emerald-600';
+                        else if (item.aksi === 'Nonaktifkan') activityColor = 'text-amber-600';
+                        const method = methods.find((m) => m.id === item.testMethodId);
 
                         return (
                           <tr
-                            key={item.id || idx}
-                            onClick={() => item.rawItem && setSelectedItem(item.rawItem)}
+                            key={item.id}
+                            onClick={() => method && setSelectedItem(method)}
                             className="border-b border-defaultborder hover:bg-gray-50 cursor-pointer transition-colors"
                             title="Klik untuk melihat detail metode ini"
                           >
                             <td className="py-2.5 px-3.5 text-xs text-gray-700">
-                              {formatDateTime(item.tanggal)}
+                              {formatDateTime(item.createdAt)}
                             </td>
                             <td className="py-2.5 px-3.5 text-xs font-medium text-gray-800">
-                              {item.user}
+                              {item.oleh || '-'}
                             </td>
                             <td className={`py-2.5 px-3.5 text-xs font-medium ${activityColor}`}>
-                              {item.aktivitas}
+                              {item.aksi}
                             </td>
                             <td className="py-2.5 px-3.5 text-xs text-gray-700">
-                              {item.keterangan}
+                              <span className="font-semibold">{item.testMethod?.kode}</span> {item.keterangan || ''}
                             </td>
                           </tr>
                         );
@@ -620,7 +400,7 @@ export default function StandarMetodeUjiPage() {
                 <button
                   type="button"
                   onClick={() => router.push(`/qc/standar-metode-uji/edit/${selectedItem.id}`)}
-                  className="px-3 py-1 text-xs font-medium text-emerald-600 border border-emerald-500 rounded bg-white hover:bg-emerald-50 transition-colors flex items-center gap-1.5"
+                  className={buttonClass("outline", "sm")}
                 >
                   <i className="ri-edit-line text-xs"></i> Edit
                 </button>
@@ -638,17 +418,17 @@ export default function StandarMetodeUjiPage() {
                     </div>
                     <div>
                       <span className="text-[11px] text-gray-400 block mb-0.5">Jenis Uji</span>
-                      <span className="text-xs font-semibold text-gray-800">{selectedItem.jenisUji || 'Fisik'}</span>
+                      <span className="text-xs font-semibold text-gray-800">{selectedItem.jenisUji || '-'}</span>
                     </div>
                     <div>
                       <span className="text-[11px] text-gray-400 block mb-0.5">Standar Acuan</span>
                       <span className="text-xs font-semibold text-gray-800">
-                        {selectedItem.standar?.kode || selectedItem.standarAcuan || 'ISTA 2-001'}
+                        {selectedItem.standar ? `${selectedItem.standar.kode} - ${selectedItem.standar.nama}` : '-'}
                       </span>
                     </div>
                     <div>
                       <span className="text-[11px] text-gray-400 block mb-0.5">Versi Metode</span>
-                      <span className="text-xs font-semibold text-gray-800">{selectedItem.versiMetode || '1.0'}</span>
+                      <span className="text-xs font-semibold text-gray-800">{selectedItem.versiMetode || '-'}</span>
                     </div>
                     <div>
                       <span className="text-[11px] text-gray-400 block mb-1">Status</span>
@@ -679,6 +459,7 @@ export default function StandarMetodeUjiPage() {
                     <div>
                       <span className="text-[11px] text-gray-400 block mb-1">Alat yang Digunakan</span>
                       <ul className="text-xs text-gray-700 space-y-1">
+                        {alatList.length === 0 && <li>-</li>}
                         {alatList.map((al: string, i: number) => (
                           <li key={i}>• {al}</li>
                         ))}
@@ -686,12 +467,18 @@ export default function StandarMetodeUjiPage() {
                     </div>
                     <div>
                       <span className="text-[11px] text-gray-400 block mb-1">Prosedur / SOP</span>
-                      <button
-                        type="button"
-                        className="px-3 py-1.5 text-xs font-medium text-emerald-600 border border-emerald-500 rounded bg-white hover:bg-emerald-50 transition-colors flex items-center gap-1.5 w-fit"
-                      >
-                        <i className="ri-file-text-line text-xs"></i> Lihat SOP
-                      </button>
+                      {sopDoc ? (
+                        <a
+                          href={sopDoc.fileUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className={buttonClass("outline", "sm", "w-fit")}
+                        >
+                          <i className="ri-file-text-line text-xs"></i> Lihat SOP
+                        </a>
+                      ) : (
+                        <span className="text-xs text-gray-400">Belum ada dokumen SOP</span>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -705,7 +492,7 @@ export default function StandarMetodeUjiPage() {
                     <button
                       type="button"
                       onClick={() => router.push(`/qc/standar-metode-uji/edit/${selectedItem.id}`)}
-                      className="text-[11px] text-emerald-600 hover:text-emerald-700 font-semibold flex items-center gap-1 hover:underline"
+                      className={buttonClass("ghost", "sm")}
                       title="Edit parameter & nilai patokan"
                     >
                       <i className="ri-edit-line text-xs"></i> Kelola Parameter
@@ -723,24 +510,12 @@ export default function StandarMetodeUjiPage() {
                       </thead>
                       <tbody className="divide-y divide-defaultborder text-xs text-gray-700">
                         {paramsToRender.length > 0 ? (
-                          paramsToRender.map((p, i) => (
-                            <tr key={i} className="border-b border-defaultborder hover:bg-gray-50/50">
+                          paramsToRender.map((p: any) => (
+                            <tr key={p.id} className="border-b border-defaultborder hover:bg-gray-50/50">
                               <td className="py-2.5 px-3 text-xs font-medium text-gray-800">{p.nama}</td>
                               <td className="py-2.5 px-2 text-xs text-center text-gray-600 font-mono">{p.satuan}</td>
                               <td className="py-2 px-2 text-xs">
-                                <select
-                                  value={p.operatorValue}
-                                  onChange={(e) => handleUpdateParameterOperator(i, e.target.value)}
-                                  className="form-select form-select-sm text-xs py-1 px-2 border-emerald-300 rounded font-medium text-gray-800 bg-emerald-50/40 hover:bg-emerald-50 focus:ring-1 focus:ring-emerald-500 cursor-pointer w-full"
-                                  title="Pilih opsi operator patokan"
-                                >
-                                  <option value="=">samadengan (=)</option>
-                                  <option value="<">lebih kecil (&lt;)</option>
-                                  <option value=">">lebih besar (&gt;)</option>
-                                  <option value="<=">lebih kecil daripada samadengan (≤)</option>
-                                  <option value=">=">lebih besar daripada samadengan (≥)</option>
-                                  <option value="rentang">rentang (min - maks)</option>
-                                </select>
+                                {p.operatorLabel}
                               </td>
                               <td className="py-2.5 px-3 text-xs font-semibold text-gray-800">
                                 {p.patokan}
@@ -765,8 +540,7 @@ export default function StandarMetodeUjiPage() {
                     <h4 className="text-xs font-bold text-gray-800">Deskripsi Metode</h4>
                   </div>
                   <p className="text-xs text-gray-600 leading-relaxed">
-                    {selectedItem.deskripsi ||
-                      'Penentuan kadar air dilakukan dengan metode oven (103 ± 2°C) selama 17 ± 1 jam atau hingga berat konstan.'}
+                    {selectedItem.deskripsi || '-'}
                   </p>
                 </div>
 
@@ -776,6 +550,7 @@ export default function StandarMetodeUjiPage() {
                     <h4 className="text-xs font-bold text-gray-800">Dokumen Terkait</h4>
                   </div>
                   <div className="space-y-2.5">
+                    {docsToRender.length === 0 && <p className="text-xs text-gray-400">Belum ada dokumen terkait.</p>}
                     {docsToRender.map((doc: any, idx: number) => (
                       <div key={doc.id || idx} className="flex items-center justify-between py-1">
                         <div className="flex items-center gap-2.5 min-w-0">
@@ -793,7 +568,7 @@ export default function StandarMetodeUjiPage() {
                           href={doc.fileUrl || '#'}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="text-gray-400 hover:text-emerald-600 transition-colors shrink-0 p-1"
+                          className={iconButtonClass("emerald")}
                           title="Unduh Berkas"
                         >
                           <i className="ri-download-2-line text-base"></i>
@@ -810,7 +585,7 @@ export default function StandarMetodeUjiPage() {
                   <div>
                     <h5 className="text-xs font-bold text-emerald-800 mb-0.5">Catatan</h5>
                     <p className="text-xs text-gray-600 leading-relaxed">
-                      {selectedItem.catatan || 'Metode ini dapat digunakan untuk semua komoditas benih.'}
+                      {selectedItem.catatan || '-'}
                     </p>
                   </div>
                 </div>

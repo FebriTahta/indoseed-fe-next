@@ -1,28 +1,37 @@
 "use client";
 
+import { buttonClass, iconButtonClass } from "@/app/(components)/(content-layout)/shared/buttonStyles";
 import React, { useState, useEffect, useMemo } from 'react';
 import { toast } from 'react-toastify';
 import { qcService } from '@/app/services/qcService';
 import { TestParameter, TestMethod } from '@/app/types/qc';
 
+/** Parameter terpilih pada form permintaan; selalu bersumber dari master `test_parameters`. */
 export interface FormParameterItem {
-  id: string; // db id or unique identifier
-  parameterId?: string;
+  parameterId: string;
   kode: string;
-  parameter: string;
-  nama?: string;
-  kategori?: string;
-  metodeId?: string;
-  metode: string;
-  metodeKode?: string;
-  metodeNama?: string;
-  standar: string;
-  satuan?: string;
+  nama: string;
+  kategori?: string | null;
+  metodeId?: string | null;
+  metode?: string | null;
+  standar?: string | null;
+  satuan?: string | null;
+  definisi?: string | null;
   checked: boolean;
-  definisi?: string;
-  keterangan?: string;
-  isCustom?: boolean;
 }
+
+export const toFormParameter = (p: TestParameter, checked = true): FormParameterItem => ({
+  parameterId: p.id,
+  kode: p.kode,
+  nama: p.nama,
+  kategori: p.kategori,
+  metodeId: p.metode?.id ?? p.metodeId ?? null,
+  metode: p.metode ? `${p.metode.kode} - ${p.metode.nama}` : null,
+  standar: p.batasAcuan ? `${p.batasAcuan} ${p.satuan || ''}`.trim() : null,
+  satuan: p.satuan,
+  definisi: p.definisi,
+  checked,
+});
 
 interface ManageParameterUjiModalProps {
   isOpen: boolean;
@@ -128,10 +137,7 @@ export default function ManageParameterUjiModal({
     if (isOpen) {
       // Sinkronisasi pilihan yang sedang aktif dari parent form
       const currentIds = new Set<string>();
-      selectedParameters.forEach((p) => {
-        const idKey = p.parameterId || p.id || p.kode;
-        currentIds.add(idKey);
-      });
+      selectedParameters.forEach((p) => currentIds.add(p.parameterId));
       setSelectedIds(currentIds);
       setSearch('');
       setSelectedCategory('Semua');
@@ -146,8 +152,8 @@ export default function ManageParameterUjiModal({
 
   // Parameter yang relevan berdasarkan komoditas/varietas permintaan atau metode uji global
   const applicableParameters = useMemo(() => {
-    return dbParameters.filter((p) =>
-      isMethodMatchingCommodityOrVariety(p.metode, komoditas, varietas)
+    return dbParameters.filter(
+      (p) => p.status !== 'Nonaktif' && isMethodMatchingCommodityOrVariety(p.metode, komoditas, varietas)
     );
   }, [dbParameters, komoditas, varietas]);
 
@@ -180,7 +186,7 @@ export default function ManageParameterUjiModal({
   }, [applicableParameters, search, selectedCategory]);
 
   const toggleSelect = (param: TestParameter) => {
-    const idKey = param.id || param.kode;
+    const idKey = param.id;
     setSelectedIds((prev) => {
       const next = new Set(prev);
       if (next.has(idKey)) {
@@ -196,7 +202,7 @@ export default function ManageParameterUjiModal({
     setSelectedIds((prev) => {
       const next = new Set(prev);
       filteredParameters.forEach((p) => {
-        const idKey = p.id || p.kode;
+        const idKey = p.id;
         next.add(idKey);
       });
       return next;
@@ -207,74 +213,19 @@ export default function ManageParameterUjiModal({
     setSelectedIds((prev) => {
       const next = new Set(prev);
       filteredParameters.forEach((p) => {
-        const idKey = p.id || p.kode;
+        const idKey = p.id;
         next.delete(idKey);
       });
       return next;
     });
   };
 
-  // Pilih parameter standar mutu utama (Daya Tumbuh, Kadar Air, Kemurnian, Vigor) yang tersedia
-  const handleSelectCoreStandards = () => {
-    const coreCodes = ['P001', 'P002', 'P003', 'P004', 'P007', 'P010'];
-    const next = new Set(selectedIds);
-    applicableParameters.forEach((p) => {
-      if (
-        coreCodes.includes(p.kode) ||
-        ['Daya Tumbuh', 'Kadar Air', 'Kemurnian', 'Vigor'].some((k) =>
-          p.nama.toLowerCase().includes(k.toLowerCase())
-        )
-      ) {
-        next.add(p.id || p.kode);
-      }
-    });
-    setSelectedIds(next);
-    toast.info('Parameter standar mutu utama terpilih');
-  };
-
   // Terapkan parameter yang dipilih ke form permintaan pengujian
   const handleApply = () => {
-    const updatedList: FormParameterItem[] = [];
-
-    // Prioritaskan parameter dari database master
-    dbParameters.forEach((dbP) => {
-      const idKey = dbP.id || dbP.kode;
-      if (selectedIds.has(idKey)) {
-        const existing = selectedParameters.find(
-          (sp) => sp.parameterId === dbP.id || sp.kode === dbP.kode || sp.id === dbP.id
-        );
-
-        const standardDisplay = dbP.batasAcuan
-          ? `${dbP.batasAcuan} ${dbP.satuan || ''}`.trim()
-          : '-';
-        const metodeDisplay = dbP.metode
-          ? `${dbP.metode.kode ? `${dbP.metode.kode} - ` : ''}${dbP.metode.nama}`
-          : '-';
-
-        updatedList.push({
-          id: dbP.id || `param-${dbP.kode}`,
-          parameterId: dbP.id,
-          kode: dbP.kode,
-          parameter: dbP.nama,
-          kategori: dbP.kategori || 'Umum',
-          metode: metodeDisplay,
-          metodeKode: dbP.metode?.kode,
-          metodeNama: dbP.metode?.nama,
-          standar: standardDisplay,
-          satuan: dbP.satuan,
-          checked: existing !== undefined ? existing.checked : true,
-          definisi: dbP.definisi,
-          keterangan: dbP.keterangan,
-        });
-      }
-    });
-
-    // Pertahankan parameter custom jika sebelumnya ada dan tetap dipilih
-    selectedParameters.forEach((sp) => {
-      if (sp.isCustom && selectedIds.has(sp.id)) {
-        updatedList.push(sp);
-      }
-    });
+    const checkedMap = new Map(selectedParameters.map((sp) => [sp.parameterId, sp.checked]));
+    const updatedList = dbParameters
+      .filter((p) => selectedIds.has(p.id))
+      .map((p) => toFormParameter(p, checkedMap.get(p.id) ?? true));
 
     onApply(updatedList);
     toast.success(`${updatedList.length} parameter pengujian berhasil diterapkan`);
@@ -317,9 +268,9 @@ export default function ManageParameterUjiModal({
             <button
               type="button"
               onClick={onClose}
-              className="w-8 h-8 rounded-lg flex items-center justify-center text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition-colors"
+              className={iconButtonClass("gray")}
             >
-              <i className="ri-close-line text-2xl" />
+              <i className="ri-close-line" />
             </button>
           </div>
 
@@ -373,26 +324,18 @@ export default function ManageParameterUjiModal({
                 </div>
 
                 <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
-                  <button
-                    type="button"
-                    onClick={handleSelectCoreStandards}
-                    className="px-3 py-1.5 text-xs font-medium rounded-lg bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200 transition-colors flex items-center gap-1"
-                    title="Pilih parameter penting seperti Daya Tumbuh, Kadar Air, Kemurnian, Vigor"
-                  >
-                    <i className="ri-star-line text-emerald-600"></i>
-                    Standar Utama
-                  </button>
+
                   <button
                     type="button"
                     onClick={handleSelectAllVisible}
-                    className="px-3 py-1.5 text-xs font-medium rounded-lg bg-gray-100 text-gray-700 hover:bg-gray-200 transition-colors"
+                    className={buttonClass("secondary")}
                   >
                     Pilih Semua
                   </button>
                   <button
                     type="button"
                     onClick={handleDeselectAllVisible}
-                    className="px-3 py-1.5 text-xs font-medium rounded-lg bg-gray-100 text-gray-700 hover:bg-gray-200 transition-colors"
+                    className={buttonClass("secondary")}
                   >
                     Batal Pilih
                   </button>
@@ -403,7 +346,7 @@ export default function ManageParameterUjiModal({
                       if (onRefreshDb) await onRefreshDb();
                     }}
                     disabled={isLoading}
-                    className="p-2 text-gray-500 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg border border-gray-200 transition-colors"
+                    className={iconButtonClass("gray", "!w-9 !h-9")}
                     title="Segarkan data dari database"
                   >
                     <i className={`ri-refresh-line ${isLoading ? 'animate-spin' : ''}`}></i>
@@ -419,11 +362,7 @@ export default function ManageParameterUjiModal({
                     key={cat}
                     type="button"
                     onClick={() => setSelectedCategory(cat)}
-                    className={`px-2.5 py-1 rounded-full font-medium transition-all ${
-                      selectedCategory === cat
-                        ? 'bg-emerald-600 text-white shadow-xs'
-                        : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                    }`}
+                    className={buttonClass(selectedCategory === cat ? 'primary' : 'secondary', 'sm')}
                   >
                     {cat}
                   </button>
@@ -469,7 +408,7 @@ export default function ManageParameterUjiModal({
                       </tr>
                     ) : (
                       filteredParameters.map((p) => {
-                        const idKey = p.id || p.kode;
+                        const idKey = p.id;
                         const isSelected = selectedIds.has(idKey);
                         const categoryColor =
                           p.kategori === 'Fisiologis'
@@ -565,7 +504,7 @@ export default function ManageParameterUjiModal({
                                 <button
                                   type="button"
                                   onClick={() => toggleSelect(p)}
-                                  className="px-2.5 py-1 text-xs rounded-lg font-semibold bg-rose-50 text-rose-600 hover:bg-rose-100 transition-colors inline-flex items-center gap-1 border border-rose-200"
+                                  className={buttonClass("danger", "sm")}
                                   title="Batalkan pilihan parameter ini"
                                 >
                                   <i className="ri-close-line"></i> Batal
@@ -574,7 +513,7 @@ export default function ManageParameterUjiModal({
                                 <button
                                   type="button"
                                   onClick={() => toggleSelect(p)}
-                                  className="px-2.5 py-1 text-xs rounded-lg font-semibold bg-emerald-50 text-emerald-700 hover:bg-emerald-100 transition-colors inline-flex items-center gap-1 border border-emerald-200"
+                                  className={buttonClass("outline", "sm")}
                                   title="Tambahkan parameter ini"
                                 >
                                   <i className="ri-add-line"></i> Tambah
@@ -614,14 +553,14 @@ export default function ManageParameterUjiModal({
               <button
                 type="button"
                 onClick={onClose}
-                className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors shadow-xs"
+                className={buttonClass("secondary")}
               >
                 Batal
               </button>
               <button
                 type="button"
                 onClick={handleApply}
-                className="px-5 py-2 text-sm font-semibold text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl transition-all shadow-sm shadow-emerald-200 flex items-center gap-2"
+                className={buttonClass("primary")}
               >
                 <i className="ri-check-line text-lg"></i>
                 Terapkan Parameter ({selectedIds.size})

@@ -19,14 +19,15 @@ const Footer = () => {
 
   return (
     <Fragment>
-      <footer className="footer mt-auto py-4 bg-white dark:bg-bodybg  border-defaultborder dark:border-defaultborder/10 text-center">
+      <div className="mt-10"></div>
+      <footer className="footer mt-auto py-4 bg-white dark:bg-bodybg border-t border-defaultborder dark:border-defaultborder/10 text-center">
         <div className="container">
           {footerInfoText ? (
             <span className="text-textmuted dark:text-textmuted/50">{footerInfoText}</span>
           ) : (
-            <span className="text-textmuted dark:text-textmuted/50"> Copyright © <span className='text-textmuted dark:text-textmuted/50' id="year"> 2025 </span>
-              <Link href="#!" scroll={false} className="text-dark font-medium">Xintra</Link>. Designed with <span className="bi bi-heart-fill text-danger"></span> by <Link href="https://spruko.com/" scroll={false} target='_blank'>
-                <span className="font-medium text-primary">Spruko</span>
+            <span className="text-textmuted dark:text-textmuted/50"> Copyright © <span className='text-textmuted dark:text-textmuted/50' id="year"> {new Date().getFullYear()} </span>
+              <Link href="#!" scroll={false} className="text-dark font-medium">myiamseed.com</Link>. Designed with <span className="bi bi-heart-fill text-danger"></span> by <Link href="https://spruko.com/" scroll={false} target='_blank'>
+                <span className="font-medium text-primary">Andre Ade</span>
               </Link> All rights reserved </span>
           )}
         </div>

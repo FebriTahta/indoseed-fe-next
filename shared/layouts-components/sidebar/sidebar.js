@@ -2,7 +2,8 @@
 import Link from 'next/link';
 import React, { Fragment, useEffect, useRef, useState } from 'react'
 import SimpleBar from 'simplebar-react';
-import { MENUITEMS } from '../../layouts-components/sidebar/nav';
+import { MENUITEMS, filterMenuByRoles } from '../../layouts-components/sidebar/nav';
+import { getUserRoles } from '@/app/lib/auth';
 import Menuloop from './menuloop';
 import { data$, getState, setState } from '../services/switcherServices';
 import { usePathname } from 'next/navigation';
@@ -26,6 +27,12 @@ const Sidebar = () => {
 	const local_varaiable = variable;
 
 	const [openMenu, setOpenMenu] = useState(MENUITEMS || [])
+
+	// Menu yang tampil disesuaikan dengan role user login (dibaca setelah mount agar cocok dengan SSR).
+	const [visibleMenu, setVisibleMenu] = useState(MENUITEMS);
+	useEffect(() => {
+		setVisibleMenu(filterMenuByRoles(MENUITEMS, getUserRoles()));
+	}, []);
 
 	const slidesArrow = (selector) => document.querySelector(selector);
 	const sidebarQuerySelectorAll = (selector) => document.querySelectorAll(selector);
@@ -859,7 +866,7 @@ const Sidebar = () => {
 						<div className="slide-left" id="slide-left" onClick={() => { slideLeft(); }}> <svg xmlns="http://www.w3.org/2000/svg" fill="#7b8191" width="24" height="24" viewBox="0 0 24 24"> <path d="M13.293 6.293 7.586 12l5.707 5.707 1.414-1.414L10.414 12l4.293-4.293z"></path> </svg> </div>
 
 						<ul className="main-menu pb-28">
-							{MENUITEMS.map((levelone, index) => (
+							{visibleMenu.map((levelone, index) => (
 								<Fragment key={index}>
 									<li className={`${levelone.menutitle ? 'slide__category' : ''} ${levelone.type === 'link' ? 'slide' : ''}
                                                ${levelone.type === 'sub' ? 'slide has-sub' : ''} ${levelone?.active ? 'open' : ''} ${levelone?.selected ? 'active' : ''}`}>

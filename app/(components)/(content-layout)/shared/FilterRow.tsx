@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import SpkButton from '@/shared/@spk-reusable-components/uielements/spk-button';
+import { Button } from './ActionButtons';
 import SpkSelect from '@/shared/@spk-reusable-components/spk-packages/spk-reactselect';
 
 export interface FilterSelectConfig {
@@ -96,40 +96,23 @@ export default function FilterRow({
           ))}
 
           {/* Reset Action */}
-          <button
-            onClick={onReset}
-            className="flex items-center gap-1 text-xs text-gray-500 hover:text-danger font-medium transition-all duration-200 px-3 py-2 rounded-md hover:bg-red-50"
-          >
-            <i className="ri-refresh-line text-sm"></i> Reset Filter
-          </button>
+          <Button variant="secondary" icon="ri-refresh-line" onClick={onReset}>
+            Reset Filter
+          </Button>
         </div>
 
         {/* Add & Export Actions */}
         <div className="flex items-center justify-between sm:justify-end gap-3 w-full md:w-auto border-t border-gray-200 md:border-t-0 pt-4 md:pt-0">
           {onExport && (
-            <SpkButton
-              {...({
-                onclickfunc: onExport,
-                style: { backgroundColor: '#1B4E3B', color: 'white' },
-                className: "hover:bg-[#1B4E3B]/80 shadow-sm hover:shadow text-xs font-semibold py-2 px-4 border-0 rounded-md flex items-center gap-1.5 transition-all duration-300",
-                customClass: "ti-btn"
-              } as any)}
-            >
-              <i className="ri-file-excel-2-line text-sm"></i> Export Data
-            </SpkButton>
+            <Button variant="secondary" icon="ri-file-excel-2-line" onClick={onExport}>
+              Export Data
+            </Button>
           )}
 
           {onAdd && (
-            <SpkButton
-              {...({
-                onclickfunc: onAdd,
-                style: { backgroundColor: '#1B4E3B', color: 'white' },
-                className: "hover:bg-[#1B4E3B]/80 shadow-sm hover:shadow text-xs font-semibold py-2 px-4 border-0 rounded-md flex items-center gap-1.5 transition-all duration-300",
-                customClass: "ti-btn"
-              } as any)}
-            >
-              <i className="ri-add-line text-sm"></i> {addLabel}
-            </SpkButton>
+            <Button variant="primary" icon="ri-add-line" onClick={onAdd}>
+              {addLabel}
+            </Button>
           )}
         </div>
       </div>
