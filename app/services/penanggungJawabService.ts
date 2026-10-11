@@ -4,16 +4,33 @@ import {
   PenanggungJawab,
   CreatePenanggungJawabPayload,
   UpdatePenanggungJawabPayload,
+  PenanggungJawabStats,
 } from '@/app/types/penanggungJawab';
 
 export const penanggungJawabService = {
   getPenanggungJawab: async (params?: {
     search?: string;
     status?: string;
+    peran?: string;
+    areaModul?: string;
+    lokasi?: string;
     page?: number;
     pageSize?: number;
   }) => {
-    const response = await api.get<ApiResponse<PenanggungJawab[]>>('/master/penanggung-jawab', { params });
+    const response = await api.get<ApiResponse<PenanggungJawab[]> & { stats?: PenanggungJawabStats }>(
+      '/master/penanggung-jawab',
+      { params }
+    );
+    return response.data;
+  },
+
+  getStats: async () => {
+    const response = await api.get<ApiResponse<PenanggungJawabStats>>('/master/penanggung-jawab/stats');
+    return response.data;
+  },
+
+  getNextKode: async () => {
+    const response = await api.get<ApiResponse<{ kodePersonel: string }>>('/master/penanggung-jawab/next-kode');
     return response.data;
   },
 

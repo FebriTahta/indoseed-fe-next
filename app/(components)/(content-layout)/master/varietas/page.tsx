@@ -595,7 +595,11 @@ export default function VarietasPage() {
             <DetailVarietasPanel
               variety={viewedVariety}
               onClose={() => setViewedVariety(null)}
-              onEdit={(v) => router.push(`/master/varietas/tambah?id=${v.id}`)}
+              onEdit={(v, targetTab) =>
+                router.push(
+                  `/master/varietas/tambah?id=${v.id}${targetTab ? `&tab=${targetTab}` : ''}`
+                )
+              }
               isLoading={isDetailLoading}
             />
           </div>

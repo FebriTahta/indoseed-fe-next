@@ -60,18 +60,34 @@ export default function ModalDetailPetani({
         lng = g.longitude;
       }
 
+      let dokumenUrl = '';
+      let dokumenNama = '';
+      if (g.keterangan) {
+        try {
+          const parsedKet = JSON.parse(g.keterangan);
+          if (parsedKet && parsedKet.dokumenUrl) {
+            dokumenUrl = parsedKet.dokumenUrl;
+            dokumenNama = parsedKet.dokumenNama || 'Dokumen Lahan';
+          }
+        } catch {}
+      }
+
       return {
         id: g.id || `lahan-${idx}`,
         namaLahan: g.namaLahan || `Lahan ${idx + 1}`,
+        jenisLahan: g.jenisLahan || 'Lahan Terbuka',
         luas: Number(g.luas || 0),
         komoditas: g.commodity?.namaKomoditas || g.komoditasUtama || g.komoditas || '',
         commodityId: g.commodityId || '',
-        varietas: g.varietas || '',
+        varietas: g.variety?.kodeVarietas || g.varietas || '',
         varietyId: g.varietyId || '',
         latitude: lat,
         longitude: lng,
         status: (g.status === 'Aktif' ? 'Aktif' : 'Non Aktif') as 'Aktif' | 'Non Aktif',
         detailLokasi: g.detailLokasi || g.lokasi || '',
+        fotoUrl: g.image || g.fotoUrl || '',
+        dokumenUrl: dokumenUrl || g.dokumenUrl || '',
+        dokumenNama: dokumenNama || g.dokumenNama || '',
       };
     });
   }, [partnerLands]);
@@ -273,8 +289,20 @@ export default function ModalDetailPetani({
                       </div>
                     </div>
 
-                    {/* Row 4: Kelompok Tani, Komoditas Utama, Status */}
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    {/* Row 4: Penanggung Jawab & Kelompok Tani */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div>
+                        <span className="block text-xs font-bold text-gray-700 mb-1.5">
+                          Penanggung Jawab
+                        </span>
+                        <div className="w-full border border-defaultborder p-2.5 rounded-lg text-xs bg-gray-50/80 text-emerald-800 font-semibold flex items-center gap-1.5 truncate">
+                          <i className="ri-user-star-line text-emerald-600"></i>
+                          <span>
+                            {partner.penanggungJawab?.nama || (typeof partner.penanggungJawab === 'string' ? partner.penanggungJawab : '-')}
+                          </span>
+                        </div>
+                      </div>
+
                       <div>
                         <span className="block text-xs font-bold text-gray-700 mb-1.5">
                           Kelompok Tani
@@ -283,7 +311,10 @@ export default function ModalDetailPetani({
                           {partner.kelompokTani || '-'}
                         </div>
                       </div>
+                    </div>
 
+                    {/* Row 5: Komoditas Utama & Status */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div>
                         <span className="block text-xs font-bold text-gray-700 mb-1.5">
                           Komoditas Utama
@@ -513,7 +544,66 @@ export default function ModalDetailPetani({
                           mappedLahanList.map((item, index) => (
                             <tr key={item.id || index} className="hover:bg-gray-50/60 transition">
                               <td className="py-3 px-3.5 font-medium">{index + 1}</td>
-                              <td className="py-3 px-3.5 font-bold text-gray-800">{item.namaLahan}</td>
+                              <td className="py-3 px-3.5 font-bold text-gray-800">
+                                <div className="flex items-center gap-2.5">
+                                  {item.fotoUrl && (
+                                    <img
+                                      src={item.fotoUrl}
+                                      alt="Foto Lahan"
+                                      className="w-8 h-8 object-cover rounded-lg border border-gray-200 shadow-2xs shrink-0"
+                                    />
+                                  )}
+                                  <div>
+                                    <div className="flex items-center gap-1.5 flex-wrap">
+                                      <span>{item.namaLahan}</span>
+                                      {item.jenisLahan && (
+                                        <span
+                                          className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold ${
+                                            item.jenisLahan === 'Greenhouse'
+                                              ? 'bg-indigo-50 text-indigo-700 border border-indigo-200'
+                                              : 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                                          }`}
+                                        >
+                                          <i
+                                            className={
+                                              item.jenisLahan === 'Greenhouse'
+                                                ? 'ri-building-line text-[9px]'
+                                                : 'ri-landscape-line text-[9px]'
+                                            }
+                                          ></i>
+                                          <span>{item.jenisLahan}</span>
+                                        </span>
+                                      )}
+                                    </div>
+                                    <div className="flex items-center gap-1.5 mt-0.5">
+                                      {item.dokumenUrl && (
+                                        <a
+                                          href={item.dokumenUrl}
+                                          target="_blank"
+                                          rel="noopener noreferrer"
+                                          className="inline-flex items-center gap-0.5 text-[10px] text-emerald-700 bg-emerald-50 hover:bg-emerald-100 px-1.5 py-0.5 rounded border border-emerald-200 transition"
+                                          title={item.dokumenNama || 'Lihat Dokumen'}
+                                        >
+                                          <i className="ri-file-text-line text-[10px]"></i>
+                                          <span>Dokumen</span>
+                                        </a>
+                                      )}
+                                      {item.fotoUrl && (
+                                        <a
+                                          href={item.fotoUrl}
+                                          target="_blank"
+                                          rel="noopener noreferrer"
+                                          className="inline-flex items-center gap-0.5 text-[10px] text-blue-700 bg-blue-50 hover:bg-blue-100 px-1.5 py-0.5 rounded border border-blue-200 transition"
+                                          title={item.fotoNama || 'Lihat Foto'}
+                                        >
+                                          <i className="ri-image-line text-[10px]"></i>
+                                          <span>Foto</span>
+                                        </a>
+                                      )}
+                                    </div>
+                                  </div>
+                                </div>
+                              </td>
                               <td className="py-3 px-3.5 font-semibold text-gray-700">
                                 {item.luas.toLocaleString('id-ID')} m²
                                 <span className="block text-[10px] text-gray-400 font-normal">
