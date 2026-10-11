@@ -11,6 +11,7 @@ import QcDocumentList from "../../shared/QcDocumentList";
 import ParameterResultTable from "../../shared/ParameterResultTable";
 import ReviewHasilModal, { ReviewKeputusan } from "../../shared/ReviewHasilModal";
 import ParameterBelumDiujiAlert from "../../shared/ParameterBelumDiujiAlert";
+import BukaUlangPengujianButton from "../../shared/BukaUlangPengujianButton";
 import HasilRing from "./HasilRing";
 import { summarizeParameters } from "../utils";
 import { pendingStepsFor } from "../../shared/qcFlow";
@@ -201,6 +202,7 @@ export default function HasilDetailPanel({ state, onClose }: HasilDetailPanelPro
               </button>
             </>
           )}
+          <BukaUlangPengujianButton data={data} onUjiUlang={ujiUlang} busy={busy} className="flex-1" />
         </div>
       </div>
 

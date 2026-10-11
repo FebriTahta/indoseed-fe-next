@@ -18,6 +18,7 @@ import QcTimeline from "../../shared/QcTimeline";
 import QcStatusBadge from "../../shared/QcStatusBadge";
 import ReviewHasilModal, { ReviewKeputusan } from "../../shared/ReviewHasilModal";
 import ParameterBelumDiujiAlert from "../../shared/ParameterBelumDiujiAlert";
+import BukaUlangPengujianButton from "../../shared/BukaUlangPengujianButton";
 import PengujiOnlyNotice from "../../shared/PengujiOnlyNotice";
 import { usePemeriksaanDetail } from "@/app/hooks/usePemeriksaanDetail";
 import { useQcMeta } from "@/app/hooks/useQcReference";
@@ -159,6 +160,7 @@ const PemeriksaanForm: React.FC<{ id: string }> = ({ id }) => {
               </button>
             </>
           )}
+          <BukaUlangPengujianButton data={data} onUjiUlang={state.ujiUlang} busy={busy} />
         </div>
       </div>
 

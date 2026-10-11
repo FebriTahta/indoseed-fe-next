@@ -84,6 +84,9 @@ export default function SampleInfoCard({
           placeholder="Pilih petugas penguji..."
           noOptionsMessage="Belum ada data penguji aktif"
         />
+        <p className="mt-1 text-[11px] text-gray-500">
+          Penguji ini yang akan menerima sampel dan melakukan pengujian, sehingga harus menguasai semua metode uji yang dipilih.
+        </p>
       </div>
     </QcCard>
   );
