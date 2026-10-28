@@ -20,27 +20,33 @@ export default function BatchProduksiDetailModal({
     switch (status) {
       case 'Selesai':
         return (
-          <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800 border border-emerald-300">
-            <i className="ri-checkbox-circle-fill mr-1"></i> Selesai
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+            Selesai
           </span>
         );
+      case 'Dalam Proses':
       case 'Proses':
         return (
-          <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-blue-100 text-blue-800 border border-blue-300">
-            <i className="ri-loader-4-line animate-spin mr-1"></i> Proses
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-200">
+            <span className="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
+            Dalam Proses
           </span>
         );
+      case 'Tertunda':
       case 'Reject':
         return (
-          <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-rose-100 text-rose-800 border border-rose-300">
-            <i className="ri-close-circle-fill mr-1"></i> Reject / Gagal
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-rose-50 text-rose-700 border border-rose-200">
+            <span className="w-1.5 h-1.5 rounded-full bg-rose-500"></span>
+            Tertunda
           </span>
         );
-      case 'Belum Mulai':
+      case 'Persiapan':
       default:
         return (
-          <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-gray-100 text-gray-700 border border-gray-300">
-            Belum Mulai
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-200">
+            <span className="w-1.5 h-1.5 rounded-full bg-blue-500"></span>
+            Persiapan
           </span>
         );
     }
@@ -53,7 +59,7 @@ export default function BatchProduksiDetailModal({
         <div className="px-5 py-4 border-b border-gray-200 flex items-center justify-between bg-slate-50">
           <div className="flex items-center gap-2">
             <div className="w-8 h-8 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center font-bold">
-              <i className="ri-eye-line text-lg"></i>
+              <i className="ri-flask-line text-lg"></i>
             </div>
             <div>
               <h4 className="font-bold text-sm text-gray-800">Detail Batch Produksi</h4>
@@ -77,64 +83,66 @@ export default function BatchProduksiDetailModal({
               <div className="mt-1">{renderStatusBadge(item.status)}</div>
             </div>
             <div className="text-right">
-              <span className="text-gray-500 text-[11px] block">Capaian Yield (%)</span>
-              <span className="inline-block mt-1 font-extrabold text-purple-700 text-sm bg-white px-2.5 py-0.5 rounded border border-purple-200">
-                {item.yieldPercent ? `${item.yieldPercent.toLocaleString('id-ID')}%` : '—'}
+              <span className="text-gray-500 text-[11px] block">Capaian Realisasi</span>
+              <span className="inline-block mt-1 font-extrabold text-emerald-700 text-sm bg-white px-2.5 py-0.5 rounded border border-emerald-200">
+                {item.hasilKg ? `${item.hasilKg.toLocaleString('id-ID')} Kg` : '—'}
               </span>
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div className="p-3 bg-gray-50/60 rounded-lg border border-gray-100">
-              <span className="text-gray-500 block mb-0.5">Komoditas</span>
-              <span className="font-bold text-gray-800">{item.komoditas}</span>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="p-3 bg-gray-50/70 rounded-lg border border-gray-100">
+              <span className="text-gray-400 block text-[10px]">Komoditas</span>
+              <span className="font-bold text-gray-800 text-xs">{item.komoditas}</span>
             </div>
 
-            <div className="p-3 bg-gray-50/60 rounded-lg border border-gray-100">
-              <span className="text-gray-500 block mb-0.5">Varietas</span>
-              <span className="font-bold text-gray-800">{item.varietas}</span>
+            <div className="p-3 bg-gray-50/70 rounded-lg border border-gray-100">
+              <span className="text-gray-400 block text-[10px]">Varietas</span>
+              <span className="font-bold text-gray-800 text-xs">{item.varietas}</span>
             </div>
 
-            <div className="p-3 bg-gray-50/60 rounded-lg border border-gray-100 col-span-2">
-              <span className="text-gray-500 block mb-0.5">Sumber Bahan / Lot Panen</span>
-              <span className="font-extrabold text-emerald-800">{item.sumberBahan}</span>
+            <div className="p-3 bg-gray-50/70 rounded-lg border border-gray-100">
+              <span className="text-gray-400 block text-[10px]">Lahan / Greenhouse</span>
+              <span className="font-bold text-gray-800 text-xs">{item.lokasi || item.lahan || 'GH-001'}</span>
             </div>
 
-            <div className="p-3 bg-gray-50/60 rounded-lg border border-gray-100">
-              <span className="text-gray-500 block mb-0.5">Tanggal Mulai</span>
-              <span className="font-bold text-gray-800">{item.tanggalMulai}</span>
+            <div className="p-3 bg-gray-50/70 rounded-lg border border-gray-100">
+              <span className="text-gray-400 block text-[10px]">Target Produksi</span>
+              <span className="font-bold text-gray-800 text-xs">
+                {item.targetKg ? `${item.targetKg.toLocaleString('id-ID')} Kg` : '-'}
+              </span>
             </div>
 
-            <div className="p-3 bg-gray-50/60 rounded-lg border border-gray-100">
-              <span className="text-gray-500 block mb-0.5">Tanggal Selesai</span>
-              <span className="font-bold text-gray-800">{item.tanggalSelesai}</span>
+            <div className="p-3 bg-gray-50/70 rounded-lg border border-gray-100">
+              <span className="text-gray-400 block text-[10px]">Tanggal Mulai</span>
+              <span className="font-semibold text-gray-800">{item.tanggalMulai}</span>
             </div>
 
-            <div className="p-3 bg-gray-50/60 rounded-lg border border-gray-100">
-              <span className="text-gray-500 block mb-0.5">Target Produksi (Kg)</span>
-              <span className="font-bold text-gray-800">{item.targetKg ? item.targetKg.toLocaleString('id-ID') : 0} Kg</span>
+            <div className="p-3 bg-gray-50/70 rounded-lg border border-gray-100">
+              <span className="text-gray-400 block text-[10px]">Tanggal Selesai</span>
+              <span className="font-semibold text-gray-800">{item.tanggalSelesai || '-'}</span>
             </div>
 
-            <div className="p-3 bg-gray-50/60 rounded-lg border border-gray-100">
-              <span className="text-gray-500 block mb-0.5">Hasil Realisasi (Kg)</span>
-              <span className="font-bold text-emerald-700">{item.hasilKg ? item.hasilKg.toLocaleString('id-ID') : '-'} Kg</span>
+            <div className="p-3 bg-gray-50/70 rounded-lg border border-gray-100 col-span-2">
+              <span className="text-gray-400 block text-[10px]">Referensi Gudang Bahan (Lot)</span>
+              <span className="font-bold text-emerald-800 text-xs">{item.sumberBahan || item.noLot || '-'}</span>
             </div>
           </div>
 
           {item.catatan && (
-            <div className="p-3 bg-amber-50/60 border border-amber-200/80 rounded-lg text-amber-900">
-              <span className="font-semibold block mb-0.5 text-amber-950">Catatan Batch:</span>
-              <p className="mb-0 text-gray-700 leading-relaxed">{item.catatan}</p>
+            <div className="p-3 bg-amber-50/60 rounded-lg border border-amber-200/80">
+              <span className="text-amber-800 font-bold block text-[10px] mb-0.5">Catatan:</span>
+              <p className="text-amber-900 text-xs leading-relaxed">{item.catatan}</p>
             </div>
           )}
         </div>
 
         {/* Footer */}
-        <div className="px-5 py-3 border-t border-gray-200 flex justify-end bg-slate-50">
+        <div className="px-5 py-3 border-t border-gray-100 bg-gray-50/50 flex justify-end">
           <button
             type="button"
             onClick={onClose}
-            className="px-4 py-2 bg-gray-800 hover:bg-gray-900 text-white rounded-md font-semibold text-xs transition-colors"
+            className="px-4 py-2 bg-white border border-gray-300 hover:bg-gray-100 text-gray-700 rounded-lg font-semibold text-xs transition-colors"
           >
             Tutup
           </button>

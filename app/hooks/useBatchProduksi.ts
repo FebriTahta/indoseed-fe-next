@@ -1,95 +1,58 @@
-import { useState, useCallback, useMemo, useEffect } from 'react';
-import { BatchProduksiItem, TahapanProduksiItem, DokumenTerbaruItem } from '../types/batchProduksi';
+import { useState, useCallback, useMemo, useEffect, useRef } from 'react';
+import { BatchProduksiItem, ReferensiGudangBahanItem, BatchProduksiStats } from '../types/batchProduksi';
 import { toast } from 'react-toastify';
-import useKomoditas from './useKomoditas';
-import useVarietas from './useVarietas';
-import { Commodity } from '../types/commodity';
-import { Variety } from '../types/variety';
 import { batchProduksiService } from '../services/batchProduksiService';
-import { treatmentService } from '../services/treatmentService';
-import { TreatmentBatchItem } from '../types/treatment';
 
-export const DEFAULT_TREATMENT_OPTIONS: TreatmentBatchItem[] = [
-  { id: 'tr-1', kodeBatch: 'TR-2606-0001', komoditas: 'Padi', varietas: 'Inpari 32', treatment: 'Fungisida + Insektisida', dosis: '2.5 ml/kg', operator: 'Slamet Riyadi', beratAwal: 9120, beratAkhir: 9050, loss: 0.77, tanggalSelesai: '11/06/2026', status: 'Selesai' },
-  { id: 'tr-2', kodeBatch: 'TR-2606-0002', komoditas: 'Jagung', varietas: 'Pioneer 21', treatment: 'Fungisida Systemic', dosis: '3.0 ml/kg', operator: 'Rina Agustina', beratAwal: 7250, beratAkhir: 7190, loss: 0.83, tanggalSelesai: '11/06/2026', status: 'Selesai' },
-  { id: 'tr-3', kodeBatch: 'TR-2606-0003', komoditas: 'Kedelai', varietas: 'Anjasmoro', treatment: 'Inokulan Rhizobium', dosis: '5.0 gram/kg', operator: 'Budi Santoso', beratAwal: 4720, beratAkhir: 4680, loss: 0.85, tanggalSelesai: '10/06/2026', status: 'Selesai' },
-  { id: 'tr-4', kodeBatch: 'TR-2606-0004', komoditas: 'Padi', varietas: 'Inpari 42', treatment: 'Fungisida + ZPT', dosis: '2.0 ml/kg', operator: 'Slamet Riyadi', beratAwal: 7550, beratAkhir: 7490, loss: 0.79, tanggalSelesai: '10/06/2026', status: 'Selesai' },
-  { id: 'tr-5', kodeBatch: 'TR-2606-0005', komoditas: 'Jagung', varietas: 'Bisi 18', treatment: 'Insektisida Kontak', dosis: '3.5 ml/kg', operator: 'Ahmad Dahlan', beratAwal: 5820, beratAkhir: 5770, loss: 0.86, tanggalSelesai: '09/06/2026', status: 'Selesai' },
-];
-
-export const INITIAL_BATCH_PRODUKSI_LIST: BatchProduksiItem[] = [
-  { no: 1, kodeBatch: 'BP-2606-0001', komoditas: 'Padi', varietas: 'Inpari 32', sumberBahan: 'PN-2605-0150', tanggalMulai: '01/06/2026', tanggalSelesai: '07/06/2026', targetKg: 10000, hasilKg: 8750, yieldPercent: 87.50, status: 'Selesai' },
-  { no: 2, kodeBatch: 'BP-2606-0002', komoditas: 'Jagung', varietas: 'Pioneer 21', sumberBahan: 'PN-2605-0145', tanggalMulai: '02/06/2026', tanggalSelesai: '08/06/2026', targetKg: 8000, hasilKg: 6920, yieldPercent: 86.50, status: 'Selesai' },
-  { no: 3, kodeBatch: 'BP-2606-0003', komoditas: 'Kedelai', varietas: 'Anjasmoro', sumberBahan: 'PN-2605-0148', tanggalMulai: '03/06/2026', tanggalSelesai: '09/06/2026', targetKg: 6000, hasilKg: 5050, yieldPercent: 84.17, status: 'Selesai' },
-  { no: 4, kodeBatch: 'BP-2606-0004', komoditas: 'Padi', varietas: 'Inpari 42', sumberBahan: 'PN-2605-0151', tanggalMulai: '04/06/2026', tanggalSelesai: '10/06/2026', targetKg: 9200, hasilKg: 7960, yieldPercent: 86.52, status: 'Selesai' },
-  { no: 5, kodeBatch: 'BP-2606-0005', komoditas: 'Jagung', varietas: 'Bisi 18', sumberBahan: 'PN-2605-0146', tanggalMulai: '05/06/2026', tanggalSelesai: '11/06/2026', targetKg: 7500, hasilKg: 6180, yieldPercent: 82.40, status: 'Selesai' },
-  { no: 6, kodeBatch: 'BP-2606-0006', komoditas: 'Kedelai', varietas: 'Dega 1', sumberBahan: 'PN-2605-0149', tanggalMulai: '06/06/2026', tanggalSelesai: '12/06/2026', targetKg: 5000, hasilKg: 4150, yieldPercent: 83.00, status: 'Selesai' },
-  { no: 7, kodeBatch: 'BP-2606-0007', komoditas: 'Padi', varietas: 'Ciherang', sumberBahan: 'PN-2605-0152', tanggalMulai: '07/06/2026', tanggalSelesai: '13/06/2026', targetKg: 11000, hasilKg: 9100, yieldPercent: 82.73, status: 'Proses' },
-  { no: 8, kodeBatch: 'BP-2606-0008', komoditas: 'Jagung', varietas: 'Pioneer 21', sumberBahan: 'PN-2605-0153', tanggalMulai: '08/06/2026', tanggalSelesai: '14/06/2026', targetKg: 7800, hasilKg: 0, yieldPercent: 0, status: 'Proses' },
-  { no: 9, kodeBatch: 'BP-2606-0009', komoditas: 'Padi', varietas: 'Inpari 32', sumberBahan: 'PN-2605-0154', tanggalMulai: '09/06/2026', tanggalSelesai: '15/06/2026', targetKg: 10000, hasilKg: 0, yieldPercent: 0, status: 'Proses' },
-  { no: 10, kodeBatch: 'BP-2606-0010', komoditas: 'Kedelai', varietas: 'Anjasmoro', sumberBahan: 'PN-2605-0155', tanggalMulai: '10/06/2026', tanggalSelesai: '16/06/2026', targetKg: 6500, hasilKg: 0, yieldPercent: 0, status: 'Proses' },
-  { no: 11, kodeBatch: 'BP-2606-0011', komoditas: 'Padi', varietas: 'Inpari 42', sumberBahan: 'PN-2605-0156', tanggalMulai: '02/06/2026', tanggalSelesai: '06/06/2026', targetKg: 8000, hasilKg: 6200, yieldPercent: 77.50, status: 'Reject' },
-  { no: 12, kodeBatch: 'BP-2606-0012', komoditas: 'Jagung', varietas: 'Bisi 18', sumberBahan: 'PN-2605-0157', tanggalMulai: '03/06/2026', tanggalSelesai: '07/06/2026', targetKg: 6000, hasilKg: 4500, yieldPercent: 75.00, status: 'Reject' },
-];
-
-export const INITIAL_TAHAPAN_PRODUKSI: TahapanProduksiItem[] = [
-  { namaTahap: 'Tanam', completedBatch: 56, totalBatch: 56, percentage: 100, icon: 'ri-plant-line' },
-  { namaTahap: 'Pemeliharaan', completedBatch: 56, totalBatch: 56, percentage: 100, icon: 'ri-hand-sanitizer-line' },
-  { namaTahap: 'Panen', completedBatch: 54, totalBatch: 56, percentage: 96, icon: 'ri-scissors-2-line' },
-  { namaTahap: 'Pengeringan', completedBatch: 40, totalBatch: 56, percentage: 71, icon: 'ri-temp-hot-line' },
-  { namaTahap: 'Sortasi', completedBatch: 38, totalBatch: 56, percentage: 68, icon: 'ri-filter-3-line' },
-  { namaTahap: 'Treatment', completedBatch: 20, totalBatch: 56, percentage: 36, icon: 'ri-flask-line' },
-  { namaTahap: 'QC', completedBatch: 14, totalBatch: 56, percentage: 25, icon: 'ri-shield-check-line' },
-  { namaTahap: 'Packing', completedBatch: 6, totalBatch: 56, percentage: 11, icon: 'ri-box-3-line' },
-];
-
-export const INITIAL_DOKUMEN_TERBARU: DokumenTerbaruItem[] = [
-  { id: '1', judul: 'Form Batch Produksi', waktu: '11/06/2026 14:25', tipe: 'pdf' },
-  { id: '2', judul: 'Rekap Produksi Harian', waktu: '11/06/2026 13:45', tipe: 'pdf' },
-  { id: '3', judul: 'Berita Acara Panen', waktu: '11/06/2026 13:10', tipe: 'pdf' },
-  { id: '4', judul: 'Berita Acara Sortasi', waktu: '11/06/2026 12:40', tipe: 'pdf' },
-  { id: '5', judul: 'Form Pengeringan', waktu: '11/06/2026 11:30', tipe: 'pdf' },
+export const INITIAL_28_BATCH_PRODUKSI: BatchProduksiItem[] = [
+  { no: 1, kodeBatch: 'BP-2026-06-001', komoditas: 'Melon', varietas: 'Melon Tere F1', lokasi: 'GH-001', sumberBahan: 'LOT-2026-00021', tanggalMulai: '01 Jun 2026', tanggalSelesai: '18 Jun 2026', targetKg: 500, hasilKg: 480, yieldPercent: 96.0, status: 'Selesai', catatan: 'Batch Melon Tere F1 greenhouse utama telah memenuhi standar sertifikasi.' },
+  { no: 2, kodeBatch: 'BP-2026-06-002', komoditas: 'Cabai', varietas: 'Cabai Keriting', lokasi: 'LH-002', sumberBahan: 'LOT-2026-00022', tanggalMulai: '03 Jun 2026', tanggalSelesai: '-', targetKg: 300, hasilKg: 120, yieldPercent: 40.0, status: 'Dalam Proses', catatan: 'Proses produksi benih cabai sedang berjalan di lahan terbuka.' },
+  { no: 3, kodeBatch: 'BP-2026-06-003', komoditas: 'Tomat', varietas: 'Grand Rapids', lokasi: 'GH-003', sumberBahan: 'LOT-2026-00023', tanggalMulai: '04 Jun 2026', tanggalSelesai: '20 Jun 2026', targetKg: 400, hasilKg: 380, yieldPercent: 95.0, status: 'Selesai', catatan: 'Produksi benih tomat selesai dengan kemurnian 99%.' },
+  { no: 4, kodeBatch: 'BP-2026-06-004', komoditas: 'Padi', varietas: 'Inpari 32', lokasi: 'LH-004', sumberBahan: 'LOT-2026-00024', tanggalMulai: '06 Jun 2026', tanggalSelesai: '-', targetKg: 600, hasilKg: 250, yieldPercent: 41.7, status: 'Dalam Proses', catatan: 'Padi Inpari 32 sedang dalam tahap pengolahan.' },
+  { no: 5, kodeBatch: 'BP-2026-06-005', komoditas: 'Selada', varietas: 'Grand Rapids', lokasi: 'GH-002', sumberBahan: 'LOT-2026-00029', tanggalMulai: '08 Jun 2026', tanggalSelesai: '24 Jun 2026', targetKg: 200, hasilKg: 180, yieldPercent: 90.0, status: 'Selesai', catatan: 'Benih selada siap untuk pengujian daya berkecambah.' },
+  { no: 6, kodeBatch: 'BP-2026-06-006', komoditas: 'Cabai', varietas: 'Rawit', lokasi: 'LH-005', sumberBahan: 'LOT-2026-00026', tanggalMulai: '10 Jun 2026', tanggalSelesai: '-', targetKg: 250, hasilKg: 0, yieldPercent: 0, status: 'Tertunda', catatan: 'Tertunda menunggu verifikasi hasil uji kadar air bahan.' },
+  { no: 7, kodeBatch: 'BP-2026-06-007', komoditas: 'Kangkung', varietas: 'Bima', lokasi: 'GH-001', sumberBahan: 'LOT-2026-00028', tanggalMulai: '12 Jun 2026', tanggalSelesai: '28 Jun 2026', targetKg: 300, hasilKg: 270, yieldPercent: 90.0, status: 'Selesai', catatan: 'Benih kangkung bima lulus uji fisik dan vigor.' },
+  { no: 8, kodeBatch: 'BP-2026-06-008', komoditas: 'Tomat', varietas: 'Tsw-009', lokasi: 'LH-006', sumberBahan: 'LOT-2026-00027', tanggalMulai: '14 Jun 2026', tanggalSelesai: '-', targetKg: 350, hasilKg: 200, yieldPercent: 57.1, status: 'Dalam Proses', catatan: 'Benih tomat Tsw-009 dalam proses formulasi.' },
+  { no: 9, kodeBatch: 'BP-2026-06-009', komoditas: 'Melon', varietas: 'Melon Tere F1', lokasi: 'GH-003', sumberBahan: 'LOT-2026-00025', tanggalMulai: '16 Jun 2026', tanggalSelesai: '02 Jul 2026', targetKg: 500, hasilKg: 0, yieldPercent: 0, status: 'Persiapan', catatan: 'Persiapan alokasi unit produksi dan wadah steril.' },
+  { no: 10, kodeBatch: 'BP-2026-06-010', komoditas: 'Cabai', varietas: 'Cabai Keriting', lokasi: 'LH-007', sumberBahan: 'LOT-2026-00030', tanggalMulai: '18 Jun 2026', tanggalSelesai: '-', targetKg: 400, hasilKg: 0, yieldPercent: 0, status: 'Persiapan', catatan: 'Pemeriksaan kelengkapan administrasi dan batch record.' },
+  { no: 11, kodeBatch: 'BP-2026-06-011', komoditas: 'Melon', varietas: 'Melon Tere F1', lokasi: 'GH-002', sumberBahan: 'LOT-2026-00021', tanggalMulai: '02 Jun 2026', tanggalSelesai: '19 Jun 2026', targetKg: 450, hasilKg: 440, yieldPercent: 97.8, status: 'Selesai', catatan: 'Selesai sertifikasi dan uji kemurnian.' },
+  { no: 12, kodeBatch: 'BP-2026-06-012', komoditas: 'Tomat', varietas: 'Grand Rapids', lokasi: 'GH-004', sumberBahan: 'LOT-2026-00023', tanggalMulai: '05 Jun 2026', tanggalSelesai: '-', targetKg: 350, hasilKg: 100, yieldPercent: 28.6, status: 'Dalam Proses', catatan: 'Dalam tahap pengujian internal.' },
+  { no: 13, kodeBatch: 'BP-2026-06-013', komoditas: 'Cabai', varietas: 'Cabai Keriting', lokasi: 'LH-003', sumberBahan: 'LOT-2026-00022', tanggalMulai: '07 Jun 2026', tanggalSelesai: '25 Jun 2026', targetKg: 320, hasilKg: 300, yieldPercent: 93.8, status: 'Selesai', catatan: 'Batch cabai SS lulus pengujian.' },
+  { no: 14, kodeBatch: 'BP-2026-06-014', komoditas: 'Cabai', varietas: 'Rawit', lokasi: 'LH-001', sumberBahan: 'LOT-2026-00026', tanggalMulai: '09 Jun 2026', tanggalSelesai: '-', targetKg: 280, hasilKg: 150, yieldPercent: 53.6, status: 'Dalam Proses', catatan: 'Proses sortasi akhir dan penimbangan.' },
+  { no: 15, kodeBatch: 'BP-2026-06-015', komoditas: 'Melon', varietas: 'Melon Tere F1', lokasi: 'GH-004', sumberBahan: 'LOT-2026-00025', tanggalMulai: '11 Jun 2026', tanggalSelesai: '26 Jun 2026', targetKg: 480, hasilKg: 460, yieldPercent: 95.8, status: 'Selesai', catatan: 'Batch produksi benih melon F1 super.' },
+  { no: 16, kodeBatch: 'BP-2026-06-016', komoditas: 'Padi', varietas: 'Inpari 32', lokasi: 'LH-005', sumberBahan: 'LOT-2026-00024', tanggalMulai: '13 Jun 2026', tanggalSelesai: '-', targetKg: 320, hasilKg: 0, yieldPercent: 0, status: 'Tertunda', catatan: 'Tertunda perbaikan mesin pembersih benih.' },
+  { no: 17, kodeBatch: 'BP-2026-06-017', komoditas: 'Padi', varietas: 'Inpari 32', lokasi: 'LH-002', sumberBahan: 'LOT-2026-00024', tanggalMulai: '15 Jun 2026', tanggalSelesai: '-', targetKg: 500, hasilKg: 220, yieldPercent: 44.0, status: 'Dalam Proses', catatan: 'Pengeringan lanjutan dan pembersihan gabah.' },
+  { no: 18, kodeBatch: 'BP-2026-06-018', komoditas: 'Cabai', varietas: 'Cabai Keriting', lokasi: 'LH-006', sumberBahan: 'LOT-2026-00022', tanggalMulai: '17 Jun 2026', tanggalSelesai: '03 Jul 2026', targetKg: 200, hasilKg: 200, yieldPercent: 100.0, status: 'Selesai', catatan: '100% target benih terwujud.' },
+  { no: 19, kodeBatch: 'BP-2026-06-019', komoditas: 'Tomat', varietas: 'Grand Rapids', lokasi: 'GH-001', sumberBahan: 'LOT-2026-00023', tanggalMulai: '19 Jun 2026', tanggalSelesai: '-', targetKg: 320, hasilKg: 140, yieldPercent: 43.8, status: 'Dalam Proses', catatan: 'Proses penanganan benih tomat steril.' },
+  { no: 20, kodeBatch: 'BP-2026-06-020', komoditas: 'Tomat', varietas: 'Tsw-009', lokasi: 'LH-002', sumberBahan: 'LOT-2026-00027', tanggalMulai: '21 Jun 2026', tanggalSelesai: '08 Jul 2026', targetKg: 380, hasilKg: 360, yieldPercent: 94.7, status: 'Selesai', catatan: 'Selesai evaluasi laboratorium QC.' },
+  { no: 21, kodeBatch: 'BP-2026-06-021', komoditas: 'Melon', varietas: 'Melon Tere F1', lokasi: 'GH-005', sumberBahan: 'LOT-2026-00021', tanggalMulai: '22 Jun 2026', tanggalSelesai: '-', targetKg: 450, hasilKg: 200, yieldPercent: 44.4, status: 'Dalam Proses', catatan: 'Sedang berjalan pemisahan benih berbobot.' },
+  { no: 22, kodeBatch: 'BP-2026-06-022', komoditas: 'Selada', varietas: 'Grand Rapids', lokasi: 'GH-005', sumberBahan: 'LOT-2026-00029', tanggalMulai: '23 Jun 2026', tanggalSelesai: '09 Jul 2026', targetKg: 180, hasilKg: 170, yieldPercent: 94.4, status: 'Selesai', catatan: 'Benih selada hidroponik siap rilis.' },
+  { no: 23, kodeBatch: 'BP-2026-06-023', komoditas: 'Padi', varietas: 'Inpari 32', lokasi: 'LH-008', sumberBahan: 'LOT-2026-00024', tanggalMulai: '24 Jun 2026', tanggalSelesai: '10 Jul 2026', targetKg: 520, hasilKg: 250, yieldPercent: 48.1, status: 'Selesai', catatan: 'Batch padi ES tersertifikasi BPSB.' },
+  { no: 24, kodeBatch: 'BP-2026-06-024', komoditas: 'Cabai', varietas: 'Rawit', lokasi: 'LH-004', sumberBahan: 'LOT-2026-00026', tanggalMulai: '25 Jun 2026', tanggalSelesai: '-', targetKg: 300, hasilKg: 110, yieldPercent: 36.7, status: 'Dalam Proses', catatan: 'Perlakuan benih protektif sedang berjalan.' },
+  { no: 25, kodeBatch: 'BP-2026-06-025', komoditas: 'Melon', varietas: 'Melon Tere F1', lokasi: 'GH-001', sumberBahan: 'LOT-2026-00021', tanggalMulai: '26 Jun 2026', tanggalSelesai: '12 Jul 2026', targetKg: 100, hasilKg: 80, yieldPercent: 80.0, status: 'Selesai', catatan: 'Cadangan batch varietas melon unggul.' },
+  { no: 26, kodeBatch: 'BP-2026-06-026', komoditas: 'Tomat', varietas: 'Grand Rapids', lokasi: 'GH-002', sumberBahan: 'LOT-2026-00023', tanggalMulai: '27 Jun 2026', tanggalSelesai: '-', targetKg: 260, hasilKg: 90, yieldPercent: 34.6, status: 'Dalam Proses', catatan: 'Monitoring suhu ruang produksi.' },
+  { no: 27, kodeBatch: 'BP-2026-06-027', komoditas: 'Cabai', varietas: 'Cabai Keriting', lokasi: 'LH-001', sumberBahan: 'LOT-2026-00022', tanggalMulai: '28 Jun 2026', tanggalSelesai: '14 Jul 2026', targetKg: 20, hasilKg: 20, yieldPercent: 100.0, status: 'Selesai', catatan: 'Rilis sertifikasi akhir.' },
+  { no: 28, kodeBatch: 'BP-2026-06-028', komoditas: 'Padi', varietas: 'Inpari 32', lokasi: 'LH-003', sumberBahan: 'LOT-2026-00024', tanggalMulai: '29 Jun 2026', tanggalSelesai: '-', targetKg: 350, hasilKg: 160, yieldPercent: 45.7, status: 'Dalam Proses', catatan: 'Penyusunan laporan akhir batch.' },
 ];
 
 export function useBatchProduksi() {
-  const { commodities } = useKomoditas();
-  const { varieties } = useVarietas();
-
-  const [batchList, setBatchList] = useState<BatchProduksiItem[]>(INITIAL_BATCH_PRODUKSI_LIST);
-  const [treatmentOptions, setTreatmentOptions] = useState<TreatmentBatchItem[]>(DEFAULT_TREATMENT_OPTIONS);
+  const [batchList, setBatchList] = useState<BatchProduksiItem[]>(INITIAL_28_BATCH_PRODUKSI);
+  const [selectedBatch, setSelectedBatch] = useState<BatchProduksiItem | null>(INITIAL_28_BATCH_PRODUKSI[0]);
+  const [referensiGudangBahanList, setReferensiGudangBahanList] = useState<ReferensiGudangBahanItem[]>([]);
   const [loading, setLoading] = useState(false);
-  const [apiStats, setApiStats] = useState<any>(null);
+  const [apiStats, setApiStats] = useState<BatchProduksiStats | null>(null);
 
-  // Fetch Treatment List for Reference Dropdown
-  const fetchTreatmentOptions = useCallback(async () => {
-    try {
-      const res = await treatmentService.getTreatmentList({ limit: 100 });
-      const list = res?.data || [];
-      if (list.length > 0) {
-        setTreatmentOptions(list);
-      }
-    } catch (err) {
-      console.error('Error fetching Treatment options:', err);
-    }
-  }, []);
-
-  useEffect(() => {
-    fetchTreatmentOptions();
-  }, [fetchTreatmentOptions]);
-
-  // Filter states
-  const [filterPeriode, setFilterPeriode] = useState('01/06/2026 - 30/06/2026');
-  const [filterKomoditas, setFilterKomoditas] = useState<any>(null);
-  const [filterVarietas, setFilterVarietas] = useState<any>(null);
-  const [filterSumber, setFilterSumber] = useState<any>(null);
-  const [filterStatus, setFilterStatus] = useState<any>(null);
-  const [filterLokasi, setFilterLokasi] = useState<any>(null);
+  // Filters
+  const [searchQuery, setSearchQuery] = useState('');
+  const [appliedSearch, setAppliedSearch] = useState('');
+  const [filterKomoditas, setFilterKomoditas] = useState<string>('');
+  const [filterVarietas, setFilterVarietas] = useState<string>('');
+  const [filterStatus, setFilterStatus] = useState<string>('');
 
   // Pagination states
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
-  const [totalRecords, setTotalRecords] = useState(56);
-  const [totalPages, setTotalPages] = useState(6);
+  const [totalRecords, setTotalRecords] = useState(28);
+  const [totalPages, setTotalPages] = useState(3);
 
   // Modal states
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -98,144 +61,161 @@ export function useBatchProduksi() {
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [selectedItem, setSelectedItem] = useState<BatchProduksiItem | null>(null);
 
-  const fetchBatchProduksi = useCallback(async () => {
+  // In-flight and deduplication refs
+  const isFetchingRef = useRef(false);
+  const prevParamsRef = useRef<string>('');
+  const hasFetchedRefGudang = useRef(false);
+
+  // Fetch Referensi Gudang Bahan Belum Diproses (Sudah Treatment)
+  const fetchReferensiGudangBahan = useCallback(async () => {
+    try {
+      const res = await batchProduksiService.getReferensiGudangBahan();
+      const list = res?.data || [];
+      if (list.length > 0) {
+        setReferensiGudangBahanList(list);
+      }
+    } catch (err) {
+      console.error('Error fetching referensi gudang bahan:', err);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (hasFetchedRefGudang.current) return;
+    hasFetchedRefGudang.current = true;
+    fetchReferensiGudangBahan();
+  }, [fetchReferensiGudangBahan]);
+
+  // Fetch Batch Produksi list with deduplication and in-flight guard
+  const fetchBatchProduksi = useCallback(async (force = false) => {
+    if (isFetchingRef.current && !force) return;
+    isFetchingRef.current = true;
     setLoading(true);
     try {
       const res = await batchProduksiService.getBatchProduksiList({
         page: currentPage,
         limit: pageSize,
-        komoditas: filterKomoditas?.value || undefined,
-        varietas: filterVarietas?.value || undefined,
-        sumberBahan: filterSumber?.value || undefined,
-        status: filterStatus?.value || undefined,
-        lokasi: filterLokasi?.value || undefined,
+        search: appliedSearch || undefined,
+        komoditas: filterKomoditas || undefined,
+        varietas: filterVarietas || undefined,
+        status: filterStatus || undefined,
       });
 
       const list = res?.data || [];
-      if (list.length > 0) {
-        setBatchList(list);
-        setTotalRecords(res?.meta?.total || 56);
-        setTotalPages(res?.meta?.totalPages || 6);
-        if (res?.stats) setApiStats(res.stats);
-      }
+      setBatchList(list);
+      setTotalRecords(res?.meta?.total ?? list.length);
+      setTotalPages(res?.meta?.totalPages || 1);
+      if (res?.stats) setApiStats(res.stats);
+
+      // Keep selectedBatch updated cleanly without re-triggering fetch
+      setSelectedBatch((prev) => {
+        if (list.length === 0) return null;
+        if (!prev) return list[0];
+        const found = list.find(
+          (b: BatchProduksiItem) =>
+            (prev.id && b.id === prev.id) || b.kodeBatch === prev.kodeBatch
+        );
+        return found || list[0];
+      });
     } catch (err: any) {
       console.error('Error fetching Batch Produksi:', err);
     } finally {
       setLoading(false);
+      isFetchingRef.current = false;
     }
-  }, [currentPage, pageSize, filterKomoditas, filterVarietas, filterSumber, filterStatus, filterLokasi]);
+  }, [currentPage, pageSize, appliedSearch, filterKomoditas, filterVarietas, filterStatus]);
 
+  // Strict deduplication: Only trigger fetch if parameters actually change
   useEffect(() => {
-    fetchBatchProduksi();
-  }, [fetchBatchProduksi]);
+    const currentParams = `${currentPage}_${pageSize}_${appliedSearch}_${filterKomoditas}_${filterVarietas}_${filterStatus}`;
+    if (prevParamsRef.current === currentParams) {
+      return;
+    }
+    prevParamsRef.current = currentParams;
 
-  // Options
+    fetchBatchProduksi();
+  }, [currentPage, pageSize, appliedSearch, filterKomoditas, filterVarietas, filterStatus, fetchBatchProduksi]);
+
+  // Filter handlers
+  const handleApplyFilters = () => {
+    setCurrentPage(1);
+    setAppliedSearch(searchQuery);
+  };
+
+  const handleResetFilters = () => {
+    setSearchQuery('');
+    setAppliedSearch('');
+    setFilterKomoditas('');
+    setFilterVarietas('');
+    setFilterStatus('');
+    setCurrentPage(1);
+  };
+
+  // Standard static options tailored to modules & records
   const komoditasOptions = useMemo(() => [
     { value: '', label: 'Semua Komoditas' },
-    ...commodities.map((item: Commodity) => ({
-      value: item.namaKomoditas,
-      label: item.namaKomoditas,
-    })),
-  ], [commodities]);
+    { value: 'Melon', label: 'Melon' },
+    { value: 'Cabai', label: 'Cabai' },
+    { value: 'Tomat', label: 'Tomat' },
+    { value: 'Padi', label: 'Padi' },
+    { value: 'Selada', label: 'Selada' },
+    { value: 'Kangkung', label: 'Kangkung' },
+  ], []);
 
   const varietasOptions = useMemo(() => [
     { value: '', label: 'Semua Varietas' },
-    ...varieties.map((item: Variety) => ({
-      value: item.namaVarietas,
-      label: item.namaVarietas,
-    })),
-  ], [varieties]);
-
-  const sumberBahanOptions = useMemo(() => [
-    { value: '', label: 'Semua Sumber' },
-    { value: 'PN-2605-0150', label: 'PN-2605-0150' },
-    { value: 'PN-2605-0145', label: 'PN-2605-0145' },
-    { value: 'PN-2605-0148', label: 'PN-2605-0148' },
-    { value: 'PN-2605-0151', label: 'PN-2605-0151' },
+    { value: 'Melon Tere F1', label: 'Melon Tere F1' },
+    { value: 'Cabai Keriting', label: 'Cabai Keriting' },
+    { value: 'Rawit', label: 'Rawit' },
+    { value: 'Grand Rapids', label: 'Grand Rapids' },
+    { value: 'Inpari 32', label: 'Inpari 32' },
+    { value: 'Tsw-009', label: 'Tsw-009' },
+    { value: 'Bima', label: 'Bima' },
   ], []);
 
   const statusOptions = useMemo(() => [
     { value: '', label: 'Semua Status' },
     { value: 'Selesai', label: 'Selesai' },
-    { value: 'Proses', label: 'Proses' },
-    { value: 'Reject', label: 'Reject / Gagal' },
-    { value: 'Belum Mulai', label: 'Belum Mulai' },
+    { value: 'Dalam Proses', label: 'Dalam Proses' },
+    { value: 'Tertunda', label: 'Tertunda' },
+    { value: 'Persiapan', label: 'Persiapan' },
   ], []);
 
-  const lokasiOptions = useMemo(() => [
-    { value: '', label: 'Semua Lokasi' },
-    { value: 'Blok A', label: 'Blok A' },
-    { value: 'Blok B', label: 'Blok B' },
-    { value: 'Blok C', label: 'Blok C' },
-  ], []);
+  // Stats matching screenshot
+  const stats: BatchProduksiStats = useMemo(() => {
+    return {
+      totalBatch: apiStats?.totalBatch ?? 28,
+      totalBatchDelta: apiStats?.totalBatchDelta ?? 3,
+      dalamProses: apiStats?.dalamProses ?? 12,
+      dalamProsesDelta: apiStats?.dalamProsesDelta ?? 2,
+      selesaiCount: apiStats?.selesaiCount ?? 14,
+      selesaiDelta: apiStats?.selesaiDelta ?? 4,
+      tertundaCount: apiStats?.tertundaCount ?? 2,
+      tertundaDelta: apiStats?.tertundaDelta ?? -1,
+      totalProduksiBenih: apiStats?.totalProduksiBenih ?? '2.480 kg',
+      totalProduksiDeltaPercent: apiStats?.totalProduksiDeltaPercent ?? 15,
+      komoditasBreakdown: apiStats?.komoditasBreakdown ?? [
+        { name: 'Melon', kg: 980, percent: 39.5, color: '#06b6d4' },
+        { name: 'Cabai', kg: 620, percent: 25.0, color: '#0ea5e9' },
+        { name: 'Tomat', kg: 480, percent: 19.4, color: '#f59e0b' },
+        { name: 'Padi', kg: 250, percent: 10.1, color: '#eab308' },
+        { name: 'Selada', kg: 150, percent: 6.0, color: '#ef4444' },
+      ],
+      trenProduksi: apiStats?.trenProduksi ?? [
+        { minggu: 'Minggu 1', target: 350, realisasi: 300 },
+        { minggu: 'Minggu 2', target: 450, realisasi: 420 },
+        { minggu: 'Minggu 3', target: 700, realisasi: 650 },
+        { minggu: 'Minggu 4', target: 750, realisasi: 680 },
+      ],
+      statusDistribution: apiStats?.statusDistribution ?? {
+        selesai: { count: 14, percent: 50 },
+        dalamProses: { count: 12, percent: 43 },
+        tertunda: { count: 2, percent: 7 },
+        persiapan: { count: 2, percent: 7 },
+      },
+    };
+  }, [apiStats]);
 
-  const handleApplyFilters = useCallback(() => {
-    setCurrentPage(1);
-    fetchBatchProduksi();
-  }, [fetchBatchProduksi]);
-
-  const handleResetFilters = () => {
-    setFilterKomoditas(null);
-    setFilterVarietas(null);
-    setFilterSumber(null);
-    setFilterStatus(null);
-    setFilterLokasi(null);
-    setCurrentPage(1);
-    toast.info('Filter berhasil direset');
-  };
-
-  const statItems = useMemo(() => [
-    {
-      title: 'Total Batch Produksi',
-      value: apiStats?.totalBatch !== undefined ? `${apiStats.totalBatch}` : '56',
-      subtitle: 'Batch',
-      icon: 'ri-seedling-line',
-      bgColor: 'bg-emerald-100/80',
-      textColor: 'text-emerald-700',
-    },
-    {
-      title: 'Total Benih Diproduksi',
-      value: apiStats?.totalBenihKg ? `${apiStats.totalBenihKg} Kg` : '286.450 Kg',
-      subtitle: 'Dari 56 Batch',
-      icon: 'ri-flask-line',
-      bgColor: 'bg-blue-100/80',
-      textColor: 'text-blue-700',
-    },
-    {
-      title: 'Sedang Berjalan',
-      value: apiStats?.sedangBerjalan !== undefined ? `${apiStats.sedangBerjalan}` : '18',
-      subtitle: 'Batch',
-      icon: 'ri-time-line',
-      bgColor: 'bg-amber-100/80',
-      textColor: 'text-amber-700',
-    },
-    {
-      title: 'Selesai',
-      value: apiStats?.selesaiCount !== undefined ? `${apiStats.selesaiCount}` : '32',
-      subtitle: 'Batch',
-      icon: 'ri-checkbox-circle-line',
-      bgColor: 'bg-emerald-100/80',
-      textColor: 'text-emerald-700',
-    },
-    {
-      title: 'Reject / Gagal',
-      value: apiStats?.rejectCount !== undefined ? `${apiStats.rejectCount}` : '2',
-      subtitle: 'Batch',
-      icon: 'ri-[#078836] ri-close-circle-line',
-      bgColor: 'bg-rose-100/80',
-      textColor: 'text-rose-700',
-    },
-    {
-      title: 'Rata-rata Yield',
-      value: apiStats?.avgYield || '87,46%',
-      subtitle: 'Dari Target',
-      icon: 'ri-scales-3-line',
-      bgColor: 'bg-purple-100/80',
-      textColor: 'text-purple-700',
-    },
-  ], [apiStats]);
-
-  // Modal Handlers
+  // Modal Open / Close Handlers
   const handleOpenAddModal = () => {
     setSelectedItem(null);
     setIsAddModalOpen(true);
@@ -248,6 +228,7 @@ export function useBatchProduksi() {
 
   const handleOpenDetailModal = (item: BatchProduksiItem) => {
     setSelectedItem(item);
+    setSelectedBatch(item);
     setIsDetailModalOpen(true);
   };
 
@@ -264,104 +245,80 @@ export function useBatchProduksi() {
     setSelectedItem(null);
   };
 
+  // CRUD Submissions
   const handleSubmitCreate = async (data: Partial<BatchProduksiItem>) => {
     try {
-      const res = await batchProduksiService.createBatchProduksi(data);
-      toast.success(res?.message || 'Data batch produksi berhasil ditambahkan');
-      fetchBatchProduksi();
+      await batchProduksiService.createBatchProduksi(data);
+      toast.success('Batch produksi berhasil ditambahkan!');
+      handleCloseModals();
+      prevParamsRef.current = '';
+      fetchBatchProduksi(true);
+      fetchReferensiGudangBahan();
     } catch (err: any) {
       console.error('Error creating batch produksi:', err);
-      toast.success('Berhasil menambahkan data batch produksi (mode lokal)');
-      const tKg = Number(data.targetKg) || 10000;
-      const hKg = Number(data.hasilKg) || 0;
-      const yPct = tKg > 0 && hKg > 0 ? Number(((hKg / tKg) * 100).toFixed(2)) : 0;
-
-      setBatchList((prev) => [
-        {
-          no: prev.length + 1,
-          kodeBatch: data.kodeBatch || `BP-2606-${String(prev.length + 1).padStart(4, '0')}`,
-          komoditas: data.komoditas || 'Padi',
-          varietas: data.varietas || 'Inpari 32',
-          sumberBahan: data.sumberBahan || 'PN-2605-0150',
-          tanggalMulai: data.tanggalMulai || '01/06/2026',
-          tanggalSelesai: data.tanggalSelesai || '07/06/2026',
-          targetKg: tKg,
-          hasilKg: hKg,
-          yieldPercent: yPct,
-          status: (data.status as any) || 'Proses',
-        },
-        ...prev,
-      ]);
+      toast.error(err?.response?.data?.message || 'Gagal menambahkan batch produksi');
     }
   };
 
   const handleSubmitUpdate = async (data: Partial<BatchProduksiItem>) => {
-    const idOrKode = selectedItem?.id || selectedItem?.kodeBatch || '';
+    if (!selectedItem?.id && !selectedItem?.kodeBatch) return;
     try {
-      const res = await batchProduksiService.updateBatchProduksi(idOrKode, data);
-      toast.success(res?.message || 'Data batch produksi berhasil diperbarui');
-      fetchBatchProduksi();
+      const id = selectedItem.id || selectedItem.kodeBatch;
+      await batchProduksiService.updateBatchProduksi(id, data);
+      toast.success('Batch produksi berhasil diperbarui!');
+      handleCloseModals();
+      prevParamsRef.current = '';
+      fetchBatchProduksi(true);
     } catch (err: any) {
       console.error('Error updating batch produksi:', err);
-      toast.success('Data batch produksi berhasil diperbarui');
-      setBatchList((prev) =>
-        prev.map((item) =>
-          item.kodeBatch === selectedItem?.kodeBatch || (selectedItem?.id && item.id === selectedItem.id)
-            ? ({ ...item, ...data } as BatchProduksiItem)
-            : item
-        )
-      );
+      toast.error(err?.response?.data?.message || 'Gagal memperbarui batch produksi');
     }
   };
 
   const handleSubmitDelete = async () => {
-    const idOrKode = selectedItem?.id || selectedItem?.kodeBatch || '';
+    if (!selectedItem?.id && !selectedItem?.kodeBatch) return;
     try {
-      const res = await batchProduksiService.deleteBatchProduksi(idOrKode);
-      toast.success(res?.message || 'Data batch produksi berhasil dihapus');
-      fetchBatchProduksi();
+      const id = selectedItem.id || selectedItem.kodeBatch;
+      await batchProduksiService.deleteBatchProduksi(id);
+      toast.success('Batch produksi berhasil dihapus!');
+      handleCloseModals();
+      prevParamsRef.current = '';
+      fetchBatchProduksi(true);
     } catch (err: any) {
       console.error('Error deleting batch produksi:', err);
-      toast.success('Data batch produksi berhasil dihapus');
-      setBatchList((prev) =>
-        prev.filter((item) => item.kodeBatch !== selectedItem?.kodeBatch && item.id !== selectedItem?.id)
-      );
+      toast.error(err?.response?.data?.message || 'Gagal menghapus batch produksi');
     }
   };
 
   return {
     batchList,
+    selectedBatch,
+    setSelectedBatch,
+    referensiGudangBahanList,
     loading,
-    filterPeriode,
-    setFilterPeriode,
+    stats,
+    // Filters
+    searchQuery,
+    setSearchQuery,
     filterKomoditas,
     setFilterKomoditas,
     filterVarietas,
     setFilterVarietas,
-    filterSumber,
-    setFilterSumber,
     filterStatus,
     setFilterStatus,
-    filterLokasi,
-    setFilterLokasi,
+    handleApplyFilters,
+    handleResetFilters,
+    komoditasOptions,
+    varietasOptions,
+    statusOptions,
+    // Pagination
     currentPage,
     setCurrentPage,
     pageSize,
     setPageSize,
     totalRecords,
     totalPages,
-    komoditasOptions,
-    varietasOptions,
-    sumberBahanOptions,
-    statusOptions,
-    lokasiOptions,
-    treatmentOptions,
-    handleApplyFilters,
-    handleResetFilters,
-    statItems,
-    tahapanProduksiList: INITIAL_TAHAPAN_PRODUKSI,
-    dokumenTerbaruList: INITIAL_DOKUMEN_TERBARU,
-    // Modal & CRUD Actions
+    // Modals
     isAddModalOpen,
     isEditModalOpen,
     isDetailModalOpen,
