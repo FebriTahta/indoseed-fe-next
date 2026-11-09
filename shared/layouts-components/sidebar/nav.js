@@ -35,6 +35,7 @@ export const MENUITEMS = [
   { path: "/produksi/pemeriksaan-lahan", icon: <i className="bx bx-map-alt side-menu__icon"></i>, type: "link", active: false, selected: false, title: "Monitoring Lahan" },
   { path: "/produksi/monitoringgreenhouse", icon: <i className="bx bx-home-smile side-menu__icon"></i>, type: "link", active: false, selected: false, title: "Monitoring Greenhouse" },
   { path: "/produksi/panen", icon: <i className="bx bx-cut side-menu__icon"></i>, type: "link", active: false, selected: false, title: "Panen" },
+  { path: "/produksi/gudang-bahan-belum-diproses", icon: <i className="bx bx-package side-menu__icon"></i>, type: "link", active: false, selected: false, title: "Gudang Bahan Belum Diproses" },
   { path: "/produksi/pengeringan", icon: <i className="bx bx-sun side-menu__icon"></i>, type: "link", active: false, selected: false, title: "Pengeringan" },
   { path: "/produksi/sortasi", icon: <i className="bx bx-filter-alt side-menu__icon"></i>, type: "link", active: false, selected: false, title: "Sortasi" },
   { path: "/produksi/treatment", icon: <i className="bx bx-shield-plus side-menu__icon"></i>, type: "link", active: false, selected: false, title: "Treatment" },

@@ -1,491 +1,606 @@
 import { useState, useCallback, useMemo, useEffect } from 'react';
-import { TreatmentBatchItem, ProsesTreatmentAktifItem } from '../types/treatment';
+import {
+  TreatmentBatchItem,
+  TreatmentStats,
+  ReferensiGudangBahanItem,
+} from '../types/treatment';
 import { toast } from 'react-toastify';
-import useGreenhouse from './useGreenhouse';
-import useKomoditas from './useKomoditas';
-import useVarietas from './useVarietas';
-import { Land } from '../types/greenhouse';
-import { Commodity } from '../types/commodity';
-import { Variety } from '../types/variety';
 import { treatmentService } from '../services/treatmentService';
-import { sortasiService } from '../services/sortasiService';
-import { SortasiBatchItem } from '../types/sortasi';
 
-export const DEFAULT_SORTASI_OPTIONS: SortasiBatchItem[] = [
-  { id: 'sr-1', kodeBatch: 'SR-2606-0001', komoditas: 'Padi', varietas: 'Inpari 32', alatSortasi: 'Air Screen Cleaner 01', beratMasuk: 9650, hasilLulus: 9120, hasilTolak: 530, recovery: 94.51, tanggalSortasi: '11/06/2026', status: 'Selesai' },
-  { id: 'sr-2', kodeBatch: 'SR-2606-0002', komoditas: 'Jagung', varietas: 'Pioneer 21', alatSortasi: 'Gravity Separator 02', beratMasuk: 7720, hasilLulus: 7250, hasilTolak: 470, recovery: 93.91, tanggalSortasi: '11/06/2026', status: 'Selesai' },
-  { id: 'sr-3', kodeBatch: 'SR-2606-0003', komoditas: 'Kedelai', varietas: 'Anjasmoro', alatSortasi: 'Color Sorter 01', beratMasuk: 5050, hasilLulus: 4720, hasilTolak: 330, recovery: 93.47, tanggalSortasi: '10/06/2026', status: 'Selesai' },
-  { id: 'sr-4', kodeBatch: 'SR-2606-0004', komoditas: 'Padi', varietas: 'Inpari 42', alatSortasi: 'Air Screen Cleaner 02', beratMasuk: 7960, hasilLulus: 7550, hasilTolak: 410, recovery: 94.85, tanggalSortasi: '10/06/2026', status: 'Selesai' },
-  { id: 'sr-5', kodeBatch: 'SR-2606-0005', komoditas: 'Jagung', varietas: 'Bisi 18', alatSortasi: 'Indent Cylinder 01', beratMasuk: 6180, hasilLulus: 5820, hasilTolak: 360, recovery: 94.17, tanggalSortasi: '09/06/2026', status: 'Selesai' },
-];
-
-export const INITIAL_RIWAYAT_TREATMENT_LIST: TreatmentBatchItem[] = [
+export const INITIAL_TREATMENT_BATCH_LIST: TreatmentBatchItem[] = [
   {
     no: 1,
-    kodeBatch: 'TR-2606-0001',
-    komoditas: 'Padi',
-    varietas: 'Inpari 32',
-    treatment: 'Fungisida + Insektisida',
+    kodeBatch: 'TR-2026-06-001',
+    tanggalProses: '02 Jun 2026',
+    tanggalSelesai: '02 Jun 2026',
+    petani: 'Budi Santoso',
+    petaniKode: 'BTN-001',
+    lahan: 'LHN-001 / Blok 01',
+    komoditas: 'Melon',
+    varietas: 'Melon Tere F1',
+    metodeTreatment: 'Fungisida',
+    bahan: 'Carbendazim',
+    jumlahBenih: 200,
+    beratAwal: 200,
+    beratAkhir: 198.5,
+    loss: 0.75,
     dosis: '2.5 ml/kg',
-    operator: 'Slamet Riyadi',
-    beratAwal: 9120,
-    beratAkhir: 9050,
-    loss: 0.77,
-    tanggalSelesai: '11/06/2026',
-    status: 'Selesai'
+    treatment: 'Fungisida (Carbendazim)',
+    operator: 'Admin Produksi',
+    status: 'Selesai',
+    lokasi: 'Ruang Treatment 1',
+    catatan: 'Benih terlihat sehat dan tidak ada kontaminasi. Siap untuk proses pengemasan.',
+    dibuatOleh: 'Admin Produksi',
+    noLot: 'LOT-2026-00021',
+    tahapanProses: [
+      { nama: 'Persiapan', tanggal: '02 Jun', status: 'completed' },
+      { nama: 'Perendaman', tanggal: '02 Jun', status: 'completed' },
+      { nama: 'Pengeringan', tanggal: '02 Jun', status: 'completed' },
+      { nama: 'Selesai', tanggal: '02 Jun', status: 'completed' },
+    ],
+    riwayatTreatment: [
+      { tanggal: '02 Jun 2026 14:35', aktivitas: 'Proses selesai', operator: 'Admin Produksi' },
+      { tanggal: '02 Jun 2026 10:20', aktivitas: 'Pengeringan', operator: 'Admin Produksi' },
+      { tanggal: '02 Jun 2026 08:10', aktivitas: 'Perendaman', operator: 'Admin Produksi' },
+      { tanggal: '02 Jun 2026 07:45', aktivitas: 'Persiapan', operator: 'Admin Produksi' },
+    ],
+    fotoDokumentasi: [
+      'https://images.unsplash.com/photo-1592417817098-8f3d69109853?w=500&auto=format&fit=crop&q=60',
+      'https://images.unsplash.com/photo-1589923188900-85dae523342b?w=500&auto=format&fit=crop&q=60',
+      'https://images.unsplash.com/photo-1574943320219-553eb213f72d?w=500&auto=format&fit=crop&q=60',
+      'https://images.unsplash.com/photo-1530836369250-ef72a3f5cda8?w=500&auto=format&fit=crop&q=60',
+    ],
   },
   {
     no: 2,
-    kodeBatch: 'TR-2606-0002',
-    komoditas: 'Jagung',
-    varietas: 'Pioneer 21',
-    treatment: 'Fungisida Systemic',
-    dosis: '3.0 ml/kg',
-    operator: 'Rina Agustina',
-    beratAwal: 7250,
-    beratAkhir: 7190,
-    loss: 0.83,
-    tanggalSelesai: '11/06/2026',
-    status: 'Selesai'
+    kodeBatch: 'TR-2026-06-002',
+    tanggalProses: '03 Jun 2026',
+    tanggalSelesai: '03 Jun 2026',
+    petani: 'Siti Rahayu',
+    petaniKode: 'SRN-002',
+    lahan: 'LHN-002 / Blok 02',
+    komoditas: 'Cabai',
+    varietas: 'Cabai Keriting',
+    metodeTreatment: 'Insektisida',
+    bahan: 'Imidakloprid',
+    jumlahBenih: 150,
+    beratAwal: 150,
+    beratAkhir: 148.8,
+    loss: 0.8,
+    dosis: '2.0 ml/kg',
+    treatment: 'Insektisida (Imidakloprid)',
+    operator: 'Admin Produksi',
+    status: 'Selesai',
+    lokasi: 'Ruang Treatment 1',
+    catatan: 'Perendaman benih cabai berjalan optimal dengan daya rekat baik.',
+    dibuatOleh: 'Admin Produksi',
+    noLot: 'LOT-2026-00030',
   },
   {
     no: 3,
-    kodeBatch: 'TR-2606-0003',
-    komoditas: 'Kedelai',
-    varietas: 'Anjasmoro',
-    treatment: 'Inokulan Rhizobium',
-    dosis: '5.0 gram/kg',
-    operator: 'Budi Santoso',
-    beratAwal: 4720,
-    beratAkhir: 4680,
-    loss: 0.85,
-    tanggalSelesai: '10/06/2026',
-    status: 'Selesai'
+    kodeBatch: 'TR-2026-06-003',
+    tanggalProses: '04 Jun 2026',
+    tanggalSelesai: '04 Jun 2026',
+    petani: 'Agus Setiawan',
+    petaniKode: 'AGS-003',
+    lahan: 'LHN-003 / Blok Utara',
+    komoditas: 'Padi',
+    varietas: 'Inpari 32',
+    metodeTreatment: 'Fungisida',
+    bahan: 'Mancozeb',
+    jumlahBenih: 300,
+    beratAwal: 300,
+    beratAkhir: 297.6,
+    loss: 0.8,
+    dosis: '3.0 g/kg',
+    treatment: 'Fungisida (Mancozeb)',
+    operator: 'Admin Produksi',
+    status: 'Selesai',
+    lokasi: 'Ruang Treatment 2',
+    catatan: 'Benih padi telah dilapisi mancozeb merata untuk proteksi blas.',
+    dibuatOleh: 'Admin Produksi',
+    noLot: 'LOT-2026-00024',
   },
   {
     no: 4,
-    kodeBatch: 'TR-2606-0004',
-    komoditas: 'Padi',
-    varietas: 'Inpari 42',
-    treatment: 'Fungisida + ZPT',
-    dosis: '2.0 ml/kg',
-    operator: 'Slamet Riyadi',
-    beratAwal: 7550,
-    beratAkhir: 7490,
-    loss: 0.79,
-    tanggalSelesai: '10/06/2026',
-    status: 'Selesai'
+    kodeBatch: 'TR-2026-06-004',
+    tanggalProses: '06 Jun 2026',
+    tanggalSelesai: '06 Jun 2026',
+    petani: 'Dewi Lestari',
+    petaniKode: 'DLR-004',
+    lahan: 'LHN-004 / Blok 02',
+    komoditas: 'Tomat',
+    varietas: 'Grand Rapids',
+    metodeTreatment: 'ZPT',
+    bahan: 'Asam Humat',
+    jumlahBenih: 100,
+    beratAwal: 100,
+    beratAkhir: 99.2,
+    loss: 0.8,
+    dosis: '1.5 ml/kg',
+    treatment: 'ZPT (Asam Humat)',
+    operator: 'Admin Produksi',
+    status: 'Dalam Proses',
+    lokasi: 'Ruang Treatment 1',
+    catatan: 'Proses perendaman dengan asam humat sedang berjalan di bak 2.',
+    dibuatOleh: 'Admin Produksi',
+    noLot: 'LOT-2026-00032',
   },
   {
     no: 5,
-    kodeBatch: 'TR-2606-0005',
-    komoditas: 'Jagung',
-    varietas: 'Bisi 18',
-    treatment: 'Insektisida Kontak',
-    dosis: '3.5 ml/kg',
-    operator: 'Ahmad Dahlan',
-    beratAwal: 5820,
-    beratAkhir: 5770,
-    loss: 0.86,
-    tanggalSelesai: '09/06/2026',
-    status: 'Selesai'
-  }
-];
-
-export const INITIAL_PROSES_TREATMENT_AKTIF_LIST: ProsesTreatmentAktifItem[] = [
+    kodeBatch: 'TR-2026-06-005',
+    tanggalProses: '08 Jun 2026',
+    tanggalSelesai: '08 Jun 2026',
+    petani: 'Budi Santoso',
+    petaniKode: 'BTN-001',
+    lahan: 'LHN-005 / Blok 03',
+    komoditas: 'Melon',
+    varietas: 'Melon Tere F1',
+    metodeTreatment: 'Insektisida',
+    bahan: 'Thiamethoxam',
+    jumlahBenih: 250,
+    beratAwal: 250,
+    beratAkhir: 247.9,
+    loss: 0.84,
+    dosis: '2.5 g/kg',
+    treatment: 'Insektisida (Thiamethoxam)',
+    operator: 'Admin Produksi',
+    status: 'Dalam Proses',
+    lokasi: 'Ruang Treatment 2',
+    catatan: 'Pengeringan benih setelah perlakuan thiamethoxam sedang dilakukan.',
+    dibuatOleh: 'Admin Produksi',
+    noLot: 'LOT-2026-00025',
+  },
   {
-    kodeBatch: 'PN-2606-0001',
+    no: 6,
+    kodeBatch: 'TR-2026-06-006',
+    tanggalProses: '10 Jun 2026',
+    tanggalSelesai: '10 Jun 2026',
+    petani: 'Rini Wulandari',
+    petaniKode: 'RW-005',
+    lahan: 'LHN-006 / Blok 06',
+    komoditas: 'Cabai',
+    varietas: 'Rawit',
+    metodeTreatment: 'Fungisida',
+    bahan: 'Propikonazol',
+    jumlahBenih: 120,
+    beratAwal: 120,
+    beratAkhir: 119.0,
+    loss: 0.83,
+    dosis: '2.0 ml/kg',
+    treatment: 'Fungisida (Propikonazol)',
+    operator: 'Admin Produksi',
+    status: 'Menunggu',
+    lokasi: 'Ruang Treatment 1',
+    catatan: 'Menunggu antrean perendaman batch cabai rawit.',
+    dibuatOleh: 'Admin Produksi',
+    noLot: 'LOT-2026-00026',
+  },
+  {
+    no: 7,
+    kodeBatch: 'TR-2026-06-007',
+    tanggalProses: '12 Jun 2026',
+    tanggalSelesai: '12 Jun 2026',
+    petani: 'Endang Sulastri',
+    petaniKode: 'ENS-007',
+    lahan: 'LHN-007 / Blok 07',
     komoditas: 'Padi',
     varietas: 'Inpari 32',
-    lokasi: 'DR-01',
-    treatment: 'Seed Coating (Protect+)',
-    dosis: '2,5 ml / Kg Benih',
-    operator: 'Slamet Riyadi',
-    beratAwal: 10000,
-    beratAkhir: 9560,
-    loss: 4.40,
-    mulai: '10/06/2026 09:15',
-    selesaiEstimasi: '10/06/2026 11:00',
-    progress: 75,
-    status: 'Proses'
+    metodeTreatment: 'Insektisida',
+    bahan: 'Emamektin',
+    jumlahBenih: 400,
+    beratAwal: 400,
+    beratAkhir: 396.8,
+    loss: 0.8,
+    dosis: '2.0 g/kg',
+    treatment: 'Insektisida (Emamektin)',
+    operator: 'Admin Produksi',
+    status: 'Menunggu',
+    lokasi: 'Ruang Treatment 2',
+    catatan: 'Menunggu bahan perlakuan emamektin disiapkan.',
+    dibuatOleh: 'Admin Produksi',
+    noLot: 'LOT-2026-00024',
   },
   {
-    kodeBatch: 'PN-2606-0002',
-    komoditas: 'Jagung',
-    varietas: 'Pioneer 21',
-    lokasi: 'DR-02',
-    treatment: 'Fungisida (Maxim XL)',
-    dosis: '2 ml / Kg Benih',
-    operator: 'Rina Agustina',
-    beratAwal: 8000,
-    beratAkhir: 7680,
-    loss: 4.00,
-    mulai: '10/06/2026 10:20',
-    selesaiEstimasi: '10/06/2026 12:00',
-    progress: 60,
-    status: 'Proses'
+    no: 8,
+    kodeBatch: 'TR-2026-06-008',
+    tanggalProses: '15 Jun 2026',
+    tanggalSelesai: '15 Jun 2026',
+    petani: 'Slamet Riyadi',
+    petaniKode: 'SRM-008',
+    lahan: 'LHN-008 / Blok 08',
+    komoditas: 'Kangkung',
+    varietas: 'Bima',
+    metodeTreatment: 'Biofungisida',
+    bahan: 'Trichoderma',
+    jumlahBenih: 100,
+    beratAwal: 100,
+    beratAkhir: 99.1,
+    loss: 0.9,
+    dosis: '5.0 g/kg',
+    treatment: 'Biofungisida (Trichoderma)',
+    operator: 'Admin Produksi',
+    status: 'Selesai',
+    lokasi: 'Ruang Treatment 1',
+    catatan: 'Aplikasi agen hayati Trichoderma berjalan baik dan merata.',
+    dibuatOleh: 'Admin Produksi',
+    noLot: 'LOT-2026-00028',
   },
   {
-    kodeBatch: 'PN-2606-0003',
-    komoditas: 'Kedelai',
-    varietas: 'Anjasmoro',
-    lokasi: 'DR-01',
-    treatment: 'Insektisida (Actara 25 WG)',
-    dosis: '1,5 g / Kg Benih',
-    operator: 'Budi Santoso',
-    beratAwal: 6000,
-    beratAkhir: 5760,
-    loss: 4.00,
-    mulai: '10/06/2026 08:30',
-    selesaiEstimasi: '10/06/2026 10:00',
-    progress: 90,
-    status: 'Proses'
+    no: 9,
+    kodeBatch: 'TR-2026-06-009',
+    tanggalProses: '18 Jun 2026',
+    tanggalSelesai: '18 Jun 2026',
+    petani: 'Tono Setiawan',
+    petaniKode: 'TSW-009',
+    lahan: 'LHN-009 / Blok 09',
+    komoditas: 'Selada',
+    varietas: 'Grand Rapids',
+    metodeTreatment: 'ZPT',
+    bahan: 'Rootone-F',
+    jumlahBenih: 80,
+    beratAwal: 80,
+    beratAkhir: 79.4,
+    loss: 0.75,
+    dosis: '1.0 g/kg',
+    treatment: 'ZPT (Rootone-F)',
+    operator: 'Admin Produksi',
+    status: 'Selesai',
+    lokasi: 'Ruang Treatment 1',
+    catatan: 'Perangsang akar Rootone-F teraplikasikan secara optimal.',
+    dibuatOleh: 'Admin Produksi',
+    noLot: 'LOT-2026-00029',
   },
   {
-    kodeBatch: 'PN-2606-0004',
-    komoditas: 'Padi',
-    varietas: 'Inpari 42',
-    lokasi: 'DR-03',
-    treatment: 'Bio Treatment (Trichoderma)',
-    dosis: '3 g / Kg Benih',
-    operator: 'Dewi Lestari',
-    beratAwal: 9200,
-    beratAkhir: 8820,
-    loss: 4.13,
-    mulai: '11/06/2026 09:00',
-    selesaiEstimasi: '11/06/2026 10:30',
-    progress: 20,
-    status: 'Proses'
-  }
+    no: 10,
+    kodeBatch: 'TR-2026-06-010',
+    tanggalProses: '20 Jun 2026',
+    tanggalSelesai: '20 Jun 2026',
+    petani: 'Sari Dewi',
+    petaniKode: 'SDW-010',
+    lahan: 'LHN-010 / Blok 10',
+    komoditas: 'Cabai',
+    varietas: 'Cabai Keriting',
+    metodeTreatment: 'Insektisida',
+    bahan: 'Abamektin',
+    jumlahBenih: 150,
+    beratAwal: 150,
+    beratAkhir: 148.7,
+    loss: 0.86,
+    dosis: '1.5 ml/kg',
+    treatment: 'Insektisida (Abamektin)',
+    operator: 'Admin Produksi',
+    status: 'Dalam Proses',
+    lokasi: 'Ruang Treatment 2',
+    catatan: 'Proses pelapisan benih cabai dengan abamektin sedang berputar di drum mixer.',
+    dibuatOleh: 'Admin Produksi',
+    noLot: 'LOT-2026-00030',
+  },
 ];
 
-export function useTreatment() {
-  const { lands } = useGreenhouse();
-  const { commodities } = useKomoditas();
-  const { varieties } = useVarietas();
+export const DEFAULT_TREATMENT_STATS: TreatmentStats = {
+  totalBatch: 12,
+  totalBatchDelta: 2,
+  totalBenihDiproses: '1.250 kg',
+  totalBenihDeltaPercent: 18,
+  batchSelesai: 10,
+  batchSelesaiDelta: 3,
+  dalamProses: 2,
+  dalamProsesDelta: -1,
+  batchBermasalah: 0,
+  batchBermasalahDelta: 0,
+  grafikProsesTreatment: [
+    { komoditas: 'Melon', selesai: 380, dalamProses: 250, menunggu: 0 },
+    { komoditas: 'Cabai', selesai: 150, dalamProses: 150, menunggu: 120 },
+    { komoditas: 'Padi', selesai: 300, dalamProses: 0, menunggu: 400 },
+    { komoditas: 'Tomat', selesai: 120, dalamProses: 100, menunggu: 0 },
+    { komoditas: 'Kangkung', selesai: 100, dalamProses: 0, menunggu: 0 },
+    { komoditas: 'Selada', selesai: 80, dalamProses: 0, menunggu: 0 },
+  ],
+  chartMetodeTreatment: [
+    { nama: 'Fungisida', count: 5, persentase: 41.7, color: '#10B981' },
+    { nama: 'Insektisida', count: 4, persentase: 33.3, color: '#0EA5E9' },
+    { nama: 'ZPT', count: 2, persentase: 16.7, color: '#F59E0B' },
+    { nama: 'Biofungisida', count: 1, persentase: 8.3, color: '#6366F1' },
+  ],
+  chartBahanTerbanyak: [
+    { nama: 'Carbendazim', persentase: 20 },
+    { nama: 'Imidakloprid', persentase: 15 },
+    { nama: 'Mancozeb', persentase: 12 },
+    { nama: 'Thiamethoxam', persentase: 10 },
+    { nama: 'Propikonazol', persentase: 8 },
+  ],
+};
 
-  const [batchList, setBatchList] = useState<TreatmentBatchItem[]>(INITIAL_RIWAYAT_TREATMENT_LIST);
-  const [sortasiOptions, setSortasiOptions] = useState<SortasiBatchItem[]>(DEFAULT_SORTASI_OPTIONS);
-  const [loading, setLoading] = useState(false);
-  const [apiStats, setApiStats] = useState<any>(null);
+export default function useTreatment() {
+  const [batchList, setBatchList] = useState<TreatmentBatchItem[]>(INITIAL_TREATMENT_BATCH_LIST);
+  const [stats, setStats] = useState<TreatmentStats>(DEFAULT_TREATMENT_STATS);
+  const [referensiGudangBahan, setReferensiGudangBahan] = useState<ReferensiGudangBahanItem[]>([]);
+  const [loading, setLoading] = useState<boolean>(false);
+  const [isSaving, setIsSaving] = useState<boolean>(false);
 
-  // Fetch Sortasi List for Reference Dropdown
-  const fetchSortasiOptions = useCallback(async () => {
+  // Selection
+  const [selectedDetailItem, setSelectedDetailItem] = useState<TreatmentBatchItem | null>(
+    INITIAL_TREATMENT_BATCH_LIST[0]
+  );
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+
+  // Filter States
+  const [search, setSearch] = useState<string>('');
+  const [filterPeriode, setFilterPeriode] = useState<string>('Semua Periode');
+  const [filterKomoditas, setFilterKomoditas] = useState<string>('Semua Komoditas');
+  const [filterStatus, setFilterStatus] = useState<string>('Semua Status');
+  const [filterMetode, setFilterMetode] = useState<string>('Semua Metode');
+
+  // Pagination States
+  const [currentPage, setCurrentPage] = useState<number>(1);
+  const [pageSize, setPageSize] = useState<number>(10);
+  const [totalRecords, setTotalRecords] = useState<number>(12);
+  const [totalPages, setTotalPages] = useState<number>(2);
+
+  // Modal States
+  const [isAddModalOpen, setIsAddModalOpen] = useState<boolean>(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState<boolean>(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState<boolean>(false);
+  const [isDocModalOpen, setIsDocModalOpen] = useState<boolean>(false);
+  const [itemToEdit, setItemToEdit] = useState<TreatmentBatchItem | null>(null);
+  const [itemToDelete, setItemToDelete] = useState<TreatmentBatchItem | null>(null);
+
+  // Fetch Treatment list & stats
+  const fetchTreatmentData = useCallback(async () => {
     try {
-      const res = await sortasiService.getSortasiList({ limit: 100 });
-      const list = res?.data || [];
-      if (list.length > 0) {
-        setSortasiOptions(list);
+      setLoading(true);
+      const params: any = {
+        page: currentPage,
+        limit: pageSize,
+      };
+
+      if (search) params.search = search;
+      if (filterKomoditas && filterKomoditas !== 'Semua Komoditas') params.komoditas = filterKomoditas;
+      if (filterStatus && filterStatus !== 'Semua Status') params.status = filterStatus;
+      if (filterMetode && filterMetode !== 'Semua Metode') params.metodeTreatment = filterMetode;
+
+      const res = await treatmentService.getTreatmentList(params);
+      if (res && res.status === 'success') {
+        const data = res.data || [];
+        setBatchList(data);
+        if (res.meta) {
+          setTotalRecords(res.meta.total || data.length);
+          setTotalPages(res.meta.totalPages || Math.ceil(data.length / pageSize));
+        }
+        if (res.stats) {
+          setStats(res.stats);
+        }
+
+        // Keep current selected item updated or set to first item
+        setSelectedDetailItem((prev) => {
+          if (!prev && data.length > 0) return data[0];
+          const found = data.find((d: TreatmentBatchItem) => d.id === prev?.id || d.kodeBatch === prev?.kodeBatch);
+          return found || (data.length > 0 ? data[0] : null);
+        });
       }
-    } catch (err) {
-      console.error('Error fetching Sortasi options:', err);
+    } catch (error) {
+      console.warn('Failed to fetch from treatment API, using initial sample data:', error);
+    } finally {
+      setLoading(false);
+    }
+  }, [currentPage, pageSize, search, filterKomoditas, filterStatus, filterMetode]);
+
+  // Fetch Referensi Gudang Bahan Belum Diproses (Status: 'Sudah Sortasi')
+  const fetchReferensiGudangBahan = useCallback(async () => {
+    try {
+      const res = await treatmentService.getReferensiGudangBahan();
+      if (res && res.status === 'success') {
+        setReferensiGudangBahan(res.data || []);
+      }
+    } catch (error) {
+      console.warn('Failed to fetch referensi gudang bahan:', error);
     }
   }, []);
 
   useEffect(() => {
-    fetchSortasiOptions();
-  }, [fetchSortasiOptions]);
-
-  // Filter states
-  const [filterPeriode, setFilterPeriode] = useState('01/06/2026 - 30/06/2026');
-  const [filterKomoditas, setFilterKomoditas] = useState<any>(null);
-  const [filterVarietas, setFilterVarietas] = useState<any>(null);
-  const [filterJenisTreatment, setFilterJenisTreatment] = useState<any>(null);
-  const [filterStatus, setFilterStatus] = useState<any>(null);
-  const [filterLokasi, setFilterLokasi] = useState<any>(null);
-
-  // Pagination states
-  const [currentPage, setCurrentPage] = useState(1);
-  const [pageSize, setPageSize] = useState(10);
-  const [totalRecords, setTotalRecords] = useState(22);
-  const [totalPages, setTotalPages] = useState(3);
-
-  // Modal states
-  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
-  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
-  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
-  const [selectedItem, setSelectedItem] = useState<TreatmentBatchItem | null>(null);
-
-  const fetchTreatment = useCallback(async () => {
-    setLoading(true);
-    try {
-      const res = await treatmentService.getTreatmentList({
-        page: currentPage,
-        limit: pageSize,
-        komoditas: filterKomoditas?.value || undefined,
-        varietas: filterVarietas?.value || undefined,
-        jenisTreatment: filterJenisTreatment?.value || undefined,
-        status: filterStatus?.value || undefined,
-        lokasi: filterLokasi?.value || undefined,
-      });
-
-      const list = res?.data || [];
-      if (list.length > 0) {
-        setBatchList(list);
-        setTotalRecords(res?.meta?.total || list.length);
-        setTotalPages(res?.meta?.totalPages || 1);
-        if (res?.stats) setApiStats(res.stats);
-      }
-    } catch (err: any) {
-      console.error('Error fetching Treatment:', err);
-    } finally {
-      setLoading(false);
-    }
-  }, [currentPage, pageSize, filterKomoditas, filterVarietas, filterJenisTreatment, filterStatus, filterLokasi]);
+    fetchTreatmentData();
+  }, [fetchTreatmentData]);
 
   useEffect(() => {
-    fetchTreatment();
-  }, [fetchTreatment]);
+    fetchReferensiGudangBahan();
+  }, [fetchReferensiGudangBahan]);
 
-  // Options
-  const komoditasOptions = useMemo(() => [
-    { value: '', label: 'Semua Komoditas' },
-    ...commodities.map((item: Commodity) => ({
-      value: item.namaKomoditas,
-      label: item.namaKomoditas
-    }))
-  ], [commodities]);
+  // Handle single item selection for Right Detail Panel
+  const handleSelectBatch = useCallback((item: TreatmentBatchItem) => {
+    setSelectedDetailItem(item);
+  }, []);
 
-  const varietasOptions = useMemo(() => [
-    { value: '', label: 'Semua Varietas' },
-    ...varieties.map((item: Variety) => ({
-      value: item.namaVarietas,
-      label: item.namaVarietas
-    }))
-  ], [varieties]);
+  // Handle row checkbox selection
+  const handleToggleSelectId = useCallback((id: string) => {
+    setSelectedIds((prev) =>
+      prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id]
+    );
+  }, []);
 
-  const jenisTreatmentOptions = [
-    { value: '', label: 'Semua Treatment' },
-    { value: 'Fungisida + Insektisida', label: 'Fungisida + Insektisida' },
-    { value: 'Fungisida Systemic', label: 'Fungisida Systemic' },
-    { value: 'Inokulan Rhizobium', label: 'Inokulan Rhizobium' },
-    { value: 'Fungisida + ZPT', label: 'Fungisida + ZPT' },
-    { value: 'Insektisida Kontak', label: 'Insektisida Kontak' },
-  ];
+  const handleSelectAll = useCallback(
+    (checked: boolean) => {
+      if (checked) {
+        setSelectedIds(batchList.map((item) => item.id || item.kodeBatch));
+      } else {
+        setSelectedIds([]);
+      }
+    },
+    [batchList]
+  );
 
-  const statusOptions = [
-    { value: '', label: 'Semua Status' },
-    { value: 'Selesai', label: 'Selesai' },
-    { value: 'Proses', label: 'Proses' },
-    { value: 'Pending', label: 'Pending' },
-  ];
+  // Filter options
+  const komoditasOptions = useMemo(() => {
+    const defaultList = ['Melon', 'Cabai', 'Padi', 'Tomat', 'Kangkung', 'Selada'];
+    return ['Semua Komoditas', ...defaultList];
+  }, []);
 
-  const lokasiOptions = useMemo(() => [
-    { value: '', label: 'Semua Lokasi' },
-    ...lands.map((item: Land) => ({
-      value: item.namaLahan,
-      label: item.namaLahan
-    }))
-  ], [lands]);
+  const statusOptions = useMemo(() => {
+    return ['Semua Status', 'Selesai', 'Dalam Proses', 'Menunggu'];
+  }, []);
 
-  const handleApplyFilters = useCallback(() => {
+  const periodeOptions = useMemo(() => {
+    return ['Semua Periode', 'Hari Ini', 'Minggu Ini', 'Bulan Ini', 'Tahun Ini'];
+  }, []);
+
+  const handleResetFilters = useCallback(() => {
+    setSearch('');
+    setFilterPeriode('Semua Periode');
+    setFilterKomoditas('Semua Komoditas');
+    setFilterStatus('Semua Status');
+    setFilterMetode('Semua Metode');
     setCurrentPage(1);
-    fetchTreatment();
-  }, [fetchTreatment]);
+  }, []);
 
-  const handleResetFilters = () => {
-    setFilterKomoditas(null);
-    setFilterVarietas(null);
-    setFilterJenisTreatment(null);
-    setFilterStatus(null);
-    setFilterLokasi(null);
-    setCurrentPage(1);
-    toast.info('Filter berhasil direset');
-  };
-
-  const statItems = useMemo(() => [
-    {
-      title: 'Total Batch Treatment',
-      value: apiStats?.totalBatchHariIni !== undefined ? `${apiStats.totalBatchHariIni}` : '22',
-      subtitle: 'Batch',
-      icon: 'ri-sprout-line',
-      bgColor: 'bg-emerald-100/80',
-      textColor: 'text-emerald-700'
-    },
-    {
-      title: 'Total Benih Diproses',
-      value: apiStats?.totalBeratAkhirKg ? `${apiStats.totalBeratAkhirKg} Kg` : '98.450 Kg',
-      subtitle: 'Dari 22 Batch',
-      icon: 'ri-flask-line',
-      bgColor: 'bg-blue-100/80',
-      textColor: 'text-blue-700'
-    },
-    {
-      title: 'Sedang Diproses',
-      value: apiStats?.prosesAktifCount !== undefined ? `${apiStats.prosesAktifCount}` : '4',
-      subtitle: 'Batch',
-      icon: 'ri-time-line',
-      bgColor: 'bg-amber-100/80',
-      textColor: 'text-amber-700'
-    },
-    {
-      title: 'Selesai Hari Ini',
-      value: apiStats?.selesaiCount !== undefined ? `${apiStats.selesaiCount}` : '6',
-      subtitle: 'Batch',
-      icon: 'ri-checkbox-circle-line',
-      bgColor: 'bg-emerald-100/80',
-      textColor: 'text-emerald-700'
-    },
-    {
-      title: 'Total Berat Awal',
-      value: apiStats?.totalBeratAwalKg ? `${apiStats.totalBeratAwalKg} Kg` : '102.800 Kg',
-      subtitle: '—',
-      icon: 'ri-scales-3-line',
-      bgColor: 'bg-purple-100/80',
-      textColor: 'text-purple-700'
-    },
-    {
-      title: 'Rata-rata Loss',
-      value: apiStats?.avgLoss || '0,85%',
-      subtitle: 'Dari Berat Awal',
-      icon: 'ri-line-chart-line',
-      bgColor: 'bg-rose-100/80',
-      textColor: 'text-rose-700'
-    },
-  ], [apiStats]);
-
-  // Modal Handlers
-  const handleOpenAddModal = () => {
-    setSelectedItem(null);
+  // Modal open/close handlers
+  const handleOpenAddModal = useCallback(() => {
+    setItemToEdit(null);
     setIsAddModalOpen(true);
-  };
+    fetchReferensiGudangBahan();
+  }, [fetchReferensiGudangBahan]);
 
-  const handleOpenEditModal = (item: TreatmentBatchItem) => {
-    setSelectedItem(item);
+  const handleOpenEditModal = useCallback((item: TreatmentBatchItem) => {
+    setItemToEdit(item);
     setIsEditModalOpen(true);
-  };
+    fetchReferensiGudangBahan();
+  }, [fetchReferensiGudangBahan]);
 
-  const handleOpenDetailModal = (item: TreatmentBatchItem) => {
-    setSelectedItem(item);
-    setIsDetailModalOpen(true);
-  };
-
-  const handleOpenDeleteModal = (item: TreatmentBatchItem) => {
-    setSelectedItem(item);
+  const handleOpenDeleteModal = useCallback((item: TreatmentBatchItem) => {
+    setItemToDelete(item);
     setIsDeleteModalOpen(true);
-  };
+  }, []);
 
-  const handleCloseModals = () => {
+  const handleOpenDocModal = useCallback((item?: TreatmentBatchItem) => {
+    if (item) setSelectedDetailItem(item);
+    setIsDocModalOpen(true);
+  }, []);
+
+  const handleCloseModals = useCallback(() => {
     setIsAddModalOpen(false);
     setIsEditModalOpen(false);
-    setIsDetailModalOpen(false);
     setIsDeleteModalOpen(false);
-    setSelectedItem(null);
-  };
+    setIsDocModalOpen(false);
+    setItemToEdit(null);
+    setItemToDelete(null);
+  }, []);
 
-  const handleSubmitCreate = async (data: Partial<TreatmentBatchItem>) => {
+  // Submit Create Treatment
+  const handleSubmitCreate = useCallback(
+    async (payload: Partial<TreatmentBatchItem>) => {
+      try {
+        setIsSaving(true);
+        const res = await treatmentService.createTreatment(payload);
+        if (res && res.status === 'success') {
+          toast.success(res.message || 'Proses treatment berhasil ditambahkan!');
+          handleCloseModals();
+          fetchTreatmentData();
+          fetchReferensiGudangBahan();
+        } else {
+          toast.error(res?.message || 'Gagal menambahkan treatment.');
+        }
+      } catch (error: any) {
+        toast.error(error.response?.data?.message || error.message || 'Terjadi kesalahan sistem.');
+      } finally {
+        setIsSaving(false);
+      }
+    },
+    [fetchTreatmentData, fetchReferensiGudangBahan, handleCloseModals]
+  );
+
+  // Submit Update Treatment
+  const handleSubmitUpdate = useCallback(
+    async (payload: Partial<TreatmentBatchItem>) => {
+      if (!itemToEdit?.id && !itemToEdit?.kodeBatch) return;
+      try {
+        setIsSaving(true);
+        const targetId = itemToEdit.id || itemToEdit.kodeBatch;
+        const res = await treatmentService.updateTreatment(targetId, payload);
+        if (res && res.status === 'success') {
+          toast.success(res.message || 'Data treatment berhasil diperbarui!');
+          handleCloseModals();
+          fetchTreatmentData();
+          fetchReferensiGudangBahan();
+        } else {
+          toast.error(res?.message || 'Gagal memperbarui data treatment.');
+        }
+      } catch (error: any) {
+        toast.error(error.response?.data?.message || error.message || 'Terjadi kesalahan.');
+      } finally {
+        setIsSaving(false);
+      }
+    },
+    [itemToEdit, fetchTreatmentData, fetchReferensiGudangBahan, handleCloseModals]
+  );
+
+  // Submit Delete Treatment
+  const handleSubmitDelete = useCallback(async () => {
+    if (!itemToDelete?.id && !itemToDelete?.kodeBatch) return;
     try {
-      const res = await treatmentService.createTreatment(data);
-      toast.success(res?.message || 'Data treatment berhasil ditambahkan');
-      fetchTreatment();
-    } catch (err: any) {
-      console.error('Error creating treatment:', err);
-      toast.success('Berhasil menambahkan data treatment (mode lokal)');
-      const bAwal = Number(data.beratAwal) || 9120;
-      const bAkhir = Number(data.beratAkhir) || 9050;
-      const l = bAwal > 0 ? Number((((bAwal - bAkhir) / bAwal) * 100).toFixed(2)) : 0;
-
-      setBatchList((prev) => [
-        {
-          no: prev.length + 1,
-          kodeBatch: data.kodeBatch || `TR-2606-${String(prev.length + 1).padStart(4, '0')}`,
-          komoditas: data.komoditas || 'Padi',
-          varietas: data.varietas || 'Inpari 32',
-          treatment: data.treatment || 'Fungisida + Insektisida',
-          dosis: data.dosis || '2.5 ml/kg',
-          operator: data.operator || 'Slamet Riyadi',
-          beratAwal: bAwal,
-          beratAkhir: bAkhir,
-          loss: l,
-          tanggalSelesai: data.tanggalSelesai || '11/06/2026',
-          status: (data.status as any) || 'Selesai',
-        },
-        ...prev,
-      ]);
+      setIsSaving(true);
+      const targetId = itemToDelete.id || itemToDelete.kodeBatch;
+      const res = await treatmentService.deleteTreatment(targetId);
+      if (res && res.status === 'success') {
+        toast.success(res.message || 'Data treatment berhasil dihapus!');
+        handleCloseModals();
+        fetchTreatmentData();
+      } else {
+        toast.error(res?.message || 'Gagal menghapus data treatment.');
+      }
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || error.message || 'Terjadi kesalahan.');
+    } finally {
+      setIsSaving(false);
     }
-  };
-
-  const handleSubmitUpdate = async (data: Partial<TreatmentBatchItem>) => {
-    const idOrKode = selectedItem?.id || selectedItem?.kodeBatch || '';
-    try {
-      const res = await treatmentService.updateTreatment(idOrKode, data);
-      toast.success(res?.message || 'Data treatment berhasil diperbarui');
-      fetchTreatment();
-    } catch (err: any) {
-      console.error('Error updating treatment:', err);
-      toast.success('Data treatment berhasil diperbarui');
-      setBatchList((prev) =>
-        prev.map((item) =>
-          item.kodeBatch === selectedItem?.kodeBatch || (selectedItem?.id && item.id === selectedItem.id)
-            ? ({ ...item, ...data } as TreatmentBatchItem)
-            : item
-        )
-      );
-    }
-  };
-
-  const handleSubmitDelete = async () => {
-    const idOrKode = selectedItem?.id || selectedItem?.kodeBatch || '';
-    try {
-      const res = await treatmentService.deleteTreatment(idOrKode);
-      toast.success(res?.message || 'Data treatment berhasil dihapus');
-      fetchTreatment();
-    } catch (err: any) {
-      console.error('Error deleting treatment:', err);
-      toast.success('Data treatment berhasil dihapus');
-      setBatchList((prev) =>
-        prev.filter((item) => item.kodeBatch !== selectedItem?.kodeBatch && item.id !== selectedItem?.id)
-      );
-    }
-  };
+  }, [itemToDelete, fetchTreatmentData, handleCloseModals]);
 
   return {
     batchList,
-    prosesAktifList: INITIAL_PROSES_TREATMENT_AKTIF_LIST,
+    stats,
+    referensiGudangBahan,
     loading,
+    isSaving,
+    // Selection
+    selectedDetailItem,
+    handleSelectBatch,
+    selectedIds,
+    handleToggleSelectId,
+    handleSelectAll,
+    // Filters
+    search,
+    setSearch,
     filterPeriode,
     setFilterPeriode,
     filterKomoditas,
     setFilterKomoditas,
-    filterVarietas,
-    setFilterVarietas,
-    filterJenisTreatment,
-    setFilterJenisTreatment,
     filterStatus,
     setFilterStatus,
-    filterLokasi,
-    setFilterLokasi,
+    filterMetode,
+    setFilterMetode,
+    komoditasOptions,
+    statusOptions,
+    periodeOptions,
+    handleResetFilters,
+    // Pagination
     currentPage,
     setCurrentPage,
     pageSize,
     setPageSize,
     totalRecords,
     totalPages,
-    komoditasOptions,
-    varietasOptions,
-    jenisTreatmentOptions,
-    statusOptions,
-    lokasiOptions,
-    sortasiOptions,
-    handleApplyFilters,
-    handleResetFilters,
-    statItems,
-    // Modal & CRUD Actions
+    // Modals
     isAddModalOpen,
     isEditModalOpen,
-    isDetailModalOpen,
     isDeleteModalOpen,
-    selectedItem,
+    isDocModalOpen,
+    itemToEdit,
+    itemToDelete,
     handleOpenAddModal,
     handleOpenEditModal,
-    handleOpenDetailModal,
     handleOpenDeleteModal,
+    handleOpenDocModal,
     handleCloseModals,
     handleSubmitCreate,
     handleSubmitUpdate,
     handleSubmitDelete,
   };
 }
-
-export default useTreatment;

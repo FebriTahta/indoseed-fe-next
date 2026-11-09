@@ -1,5 +1,5 @@
 import api from '@/app/lib/axios';
-import { TreatmentBatchItem } from '../types/treatment';
+import { TreatmentBatchItem, ReferensiGudangBahanItem } from '../types/treatment';
 
 const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8080/api';
 
@@ -10,6 +10,7 @@ export const treatmentService = {
     search?: string;
     komoditas?: string;
     varietas?: string;
+    metodeTreatment?: string;
     jenisTreatment?: string;
     status?: string;
     lokasi?: string;
@@ -20,6 +21,11 @@ export const treatmentService = {
 
   getTreatmentById: async (id: string) => {
     const response = await api.get(`${baseUrl}/produksi/treatment/${id}`);
+    return response.data;
+  },
+
+  getReferensiGudangBahan: async (): Promise<{ status: string; data: ReferensiGudangBahanItem[] }> => {
+    const response = await api.get(`${baseUrl}/produksi/treatment/referensi-gudang-bahan`);
     return response.data;
   },
 

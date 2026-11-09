@@ -25,6 +25,11 @@ export const batchProduksiService = {
     return response.data;
   },
 
+  getReferensiGudangBahan: async () => {
+    const response = await api.get(`${baseUrl}/produksi/batch-produksi/referensi-gudang-bahan`);
+    return response.data;
+  },
+
   createBatchProduksi: async (data: Partial<BatchProduksiItem>) => {
     const response = await api.post(`${baseUrl}/produksi/batch-produksi`, data);
     return response.data;
