@@ -1,7 +1,9 @@
 "use client";
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { FormValuesState } from '@/app/hooks/usePenanggungJawab';
+import peranService from '@/app/services/peranService';
+import lokasiService from '@/app/services/lokasiService';
 
 interface ModalTambahEditPersonelProps {
   isOpen: boolean;
@@ -15,7 +17,7 @@ interface ModalTambahEditPersonelProps {
   onRefreshKode: () => void;
 }
 
-const PERAN_OPTIONS = [
+const DEFAULT_PERAN_OPTIONS = [
   'Kepala Produksi',
   'Penanggung Jawab',
   'Koordinator Lapangan',
@@ -31,7 +33,7 @@ const AREA_MODUL_OPTIONS = [
   'Lainnya',
 ];
 
-const LOKASI_OPTIONS = [
+const DEFAULT_LOKASI_OPTIONS = [
   'Semua Lokasi',
   'Ngantang',
   'Wajak',
@@ -51,6 +53,43 @@ export default function ModalTambahEditPersonel({
   onSubmit,
   onRefreshKode,
 }: ModalTambahEditPersonelProps) {
+  const [peranOptions, setPeranOptions] = useState<string[]>(DEFAULT_PERAN_OPTIONS);
+  const [lokasiOptions, setLokasiOptions] = useState<string[]>(DEFAULT_LOKASI_OPTIONS);
+
+  useEffect(() => {
+    if (isOpen) {
+      peranService
+        .getPerans({ status: 'Aktif', pageSize: 100 })
+        .then((res) => {
+          if (res?.data && Array.isArray(res.data) && res.data.length > 0) {
+            const names = res.data.map((p: any) => p.namaPeran);
+            if (formValues.peran && !names.includes(formValues.peran)) {
+              names.unshift(formValues.peran);
+            }
+            setPeranOptions(names);
+          }
+        })
+        .catch((err) => {
+          console.error('Failed to load dynamic roles for penanggung jawab:', err);
+        });
+
+      lokasiService
+        .getLokasis({ status: 'Aktif', pageSize: 100 })
+        .then((res) => {
+          if (res?.data && Array.isArray(res.data) && res.data.length > 0) {
+            const names = res.data.map((l: any) => l.namaLokasi);
+            if (formValues.lokasi && !names.includes(formValues.lokasi)) {
+              names.unshift(formValues.lokasi);
+            }
+            setLokasiOptions(names);
+          }
+        })
+        .catch((err) => {
+          console.error('Failed to load dynamic locations for penanggung jawab:', err);
+        });
+    }
+  }, [isOpen, formValues.peran, formValues.lokasi]);
+
   if (!isOpen) return null;
 
   return (
@@ -240,7 +279,7 @@ export default function ModalTambahEditPersonel({
                       }
                       className="w-full px-3.5 py-2.5 bg-white border border-gray-200 rounded-xl text-xs text-gray-800 appearance-none focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 cursor-pointer"
                     >
-                      {PERAN_OPTIONS.map((opt) => (
+                      {peranOptions.map((opt) => (
                         <option key={opt} value={opt}>
                           {opt}
                         </option>
@@ -292,7 +331,7 @@ export default function ModalTambahEditPersonel({
                     }
                     className="w-full px-3.5 py-2.5 bg-white border border-gray-200 rounded-xl text-xs text-gray-800 appearance-none focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 cursor-pointer"
                   >
-                    {LOKASI_OPTIONS.map((opt) => (
+                    {lokasiOptions.map((opt) => (
                       <option key={opt} value={opt}>
                         {opt}
                       </option>

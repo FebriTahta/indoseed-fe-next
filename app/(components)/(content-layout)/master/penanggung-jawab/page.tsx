@@ -7,6 +7,8 @@ import 'react-toastify/dist/ReactToastify.css';
 
 import { usePenanggungJawab } from '@/app/hooks/usePenanggungJawab';
 import { PenanggungJawab } from '@/app/types/penanggungJawab';
+import peranService from '@/app/services/peranService';
+import lokasiService from '@/app/services/lokasiService';
 
 // Pop-up Modals
 import ModalTambahEditPersonel from './component/ModalTambahEditPersonel';
@@ -68,6 +70,50 @@ export default function MasterPenanggungJawabPage() {
   // Active Dropdown Action Row ID
   const [activeActionDropdownId, setActiveActionDropdownId] = useState<string | null>(null);
   const actionDropdownRef = useRef<HTMLDivElement>(null);
+
+  // Dynamic roles from Master Peran
+  const [peranOptions, setPeranOptions] = useState<string[]>([
+    'Kepala Produksi',
+    'Penanggung Jawab',
+    'Koordinator Lapangan',
+    'Staff QC',
+  ]);
+
+  // Dynamic locations from Master Lokasi
+  const [lokasiOptions, setLokasiOptions] = useState<string[]>([
+    'Semua Lokasi',
+    'Ngantang',
+    'Wajak',
+    'Lahan Terbuka Subang',
+    'Greenhouse Lamongan',
+    'Gudang Utama Kediri',
+  ]);
+
+  useEffect(() => {
+    peranService
+      .getPerans({ status: 'Aktif', pageSize: 100 })
+      .then((res) => {
+        if (res?.data && Array.isArray(res.data) && res.data.length > 0) {
+          const names = res.data.map((p: any) => p.namaPeran);
+          setPeranOptions(names);
+        }
+      })
+      .catch((err) => {
+        console.error('Failed to load roles for penanggung jawab filter:', err);
+      });
+
+    lokasiService
+      .getLokasis({ status: 'Aktif', pageSize: 100 })
+      .then((res) => {
+        if (res?.data && Array.isArray(res.data) && res.data.length > 0) {
+          const names = res.data.map((l: any) => l.namaLokasi);
+          setLokasiOptions(names);
+        }
+      })
+      .catch((err) => {
+        console.error('Failed to load locations for penanggung jawab filter:', err);
+      });
+  }, []);
 
   // Close dropdown on click outside
   useEffect(() => {
@@ -308,11 +354,12 @@ export default function MasterPenanggungJawabPage() {
                 }}
                 className="w-full pt-4 pb-1 px-3 bg-gray-50/70 border border-gray-200 rounded-xl text-xs font-semibold text-gray-800 appearance-none focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 cursor-pointer"
               >
-                <option value="Semua">Semua</option>
-                <option value="Kepala Produksi">Kepala Produksi</option>
-                <option value="Penanggung Jawab">Penanggung Jawab</option>
-                <option value="Koordinator Lapangan">Koordinator Lapangan</option>
-                <option value="Staff QC">Staff QC</option>
+                <option value="Semua">Semua Peran</option>
+                {peranOptions.map((opt) => (
+                  <option key={opt} value={opt}>
+                    {opt}
+                  </option>
+                ))}
               </select>
               <i className="ri-arrow-down-s-line absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"></i>
             </div>
@@ -355,12 +402,11 @@ export default function MasterPenanggungJawabPage() {
                 className="w-full pt-4 pb-1 px-3 bg-gray-50/70 border border-gray-200 rounded-xl text-xs font-semibold text-gray-800 appearance-none focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 cursor-pointer"
               >
                 <option value="Semua">Semua</option>
-                <option value="Semua Lokasi">Semua Lokasi</option>
-                <option value="Ngantang">Ngantang</option>
-                <option value="Wajak">Wajak</option>
-                <option value="Lahan Terbuka Subang">Lahan Terbuka</option>
-                <option value="Greenhouse Lamongan">Greenhouse</option>
-                <option value="Gudang Utama Kediri">Gudang Utama</option>
+                {lokasiOptions.map((opt) => (
+                  <option key={opt} value={opt}>
+                    {opt}
+                  </option>
+                ))}
               </select>
               <i className="ri-arrow-down-s-line absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"></i>
             </div>
