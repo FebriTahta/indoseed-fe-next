@@ -91,13 +91,12 @@ export default function SignUp() {
             }
 
             if (result.userId || result.message) {
-                toast.success(result.message || 'User registered successfully. Please check your email for OTP.', {
+                toast.success(result.message || 'Pendaftaran berhasil. Silahkan cek email untuk OTP.', {
                     position: 'top-right',
                     autoClose: 1500,
                 });
                 if (result.userId) {
                     setTimeout(() => {
-                        // kita bisa buat /verify-otp jika ada
                         router.push(`/auth/verify-otp?userId=${result.userId}`);
                     }, 1500);
                 }
@@ -124,64 +123,166 @@ export default function SignUp() {
     return (
         <Fragment>
             <div className="container">
-                <div className="grid grid-cols-12 justify-center items-center authentication authentication-basic h-full">
-                    <div className="xxl:col-span-4 xl:col-span-4 lg:col-span-3 md:col-span-3 sm:col-span-2 col-span-12"></div>
-                    <div className="xxl:col-span-4 xl:col-span-4 lg:col-span-6 md:col-span-6 sm:col-span-8 col-span-12">
-                        <div className="box my-4">
-                            <nav className="!block firebase-data mt-6 bg-light mx-auto p-2 rounded-md" aria-label="Tabs" role='tablist'>
-                                <div className="flex justify-center space-x-2 rtl:space-x-reverse">
-                                    <Image width={200} height={100} src="/assets/images/logo-web-green.png" alt="user-img" className='' />
-                                </div>
-                            </nav>
-                            <div className="box-body !p-[3rem]">
-                                <div className="grid grid-cols-12 gap-y-3">
-                                    <div className="xl:col-span-12 col-span-12">
-                                        {err1 && <div className="alert-danger px-4 py-3 shadow-md mb-2" role="alert">
-                                            <div className="flex">
-                                                <div>{err1} {countdown > 0 && `(Sisa waktu: ${countdown}s)`}</div>
-                                            </div>
-                                        </div>}
-                                    </div>
-                                    <div className="xl:col-span-12 col-span-12">
-                                        <label htmlFor="signup-username" className="form-label text-defaulttextcolor">Username<sup className="text-xs text-danger">*</sup></label>
-                                        <input type="text" name="username" className="form-control " onChange={changeHandler} value={username} id="signup-username" placeholder="Username" />
-                                    </div>
-                                    <div className="xl:col-span-12 col-span-12">
-                                        <label htmlFor="signup-email" className="form-label text-defaulttextcolor">Email<sup className="text-xs text-danger">*</sup></label>
-                                        <input type="email" name="email" className="form-control " onChange={changeHandler} value={email} id="signup-email" placeholder="Email" />
-                                    </div>
-                                    <div className="xl:col-span-12 col-span-12 mb-2">
-                                        <label htmlFor="signup-password" className="form-label text-defaulttextcolor block">Password<sup className="text-xs text-danger">*</sup></label>
-                                        <div className="relative">
-                                            <input type={(passwordshow1) ? 'text' : "password"} className="form-control form-control-lg !rounded-s-md"
-                                                name="password"
-                                                placeholder="Password" value={password}
-                                                onChange={changeHandler} />
-                                            <Link scroll={false} href="#!" onClick={(e) => { e.preventDefault(); setpasswordshow1(!passwordshow1); }} className="show-password-button text-textmuted dark:text-textmuted/50" id="button-addon2">
-                                                <i className={`${passwordshow1 ? 'ri-eye-line' : 'ri-eye-off-line'} align-middle`}></i>
-                                            </Link>
+                <div className="grid grid-cols-12 justify-center items-center authentication authentication-basic h-full min-h-screen">
+                    {/* The Empty Div for Background on Left */}
+                    <div className="hidden lg:block lg:col-span-7"></div>
+                    
+                    {/* Form container on Right */}
+                    <div className="col-span-12 sm:col-span-10 sm:col-start-2 md:col-span-8 md:col-start-3 lg:col-span-5 lg:col-start-8 flex justify-center lg:justify-end items-center h-full pr-0 lg:pr-8 xl:pr-12">
+                        <div className="box w-full max-w-sm bg-white py-5 px-6 shadow-2xl shadow-emerald-900/10 border-0 rounded-2xl my-4">
+                            
+                            <div className="flex justify-center mb-4">
+                                <Image width={160} height={64} src="/assets/images/logo-web-green.png" alt="Indoseed Logo" className="object-contain drop-shadow-sm" />
+                            </div>
+                            
+                            <h2 className="text-center text-2xl font-extrabold text-gray-900 tracking-tight">
+                                Buat Akun Baru
+                            </h2>
+                            <p className="mt-1 mb-5 text-center text-xs text-gray-600">
+                                Bergabung dengan sistem informasi perusahaan benih
+                            </p>
+
+                            {err1 && (
+                                <div className="mb-4 rounded-lg bg-red-50 p-3 border border-red-100 flex items-start">
+                                    <i className="ri-error-warning-fill text-red-500 text-lg mt-0.5 mr-3"></i>
+                                    <div>
+                                        <h3 className="text-sm font-medium text-red-800">Pendaftaran Gagal</h3>
+                                        <div className="mt-1 text-xs text-red-700">
+                                            {err1} {countdown > 0 && <span className="font-semibold block mt-1">Sisa waktu: {countdown}s</span>}
                                         </div>
                                     </div>
                                 </div>
-                                <Turnstile
-                                    key={turnstileKey}
-                                    siteKey={process.env.NEXT_PUBLIC_CLOUDFLARE_TURNISTILE_SITE_KEY || '0x4AAAAAADsac7zEzG0Ar8xw'}
-                                    onSuccess={(token) => setCaptchaToken(token)}
-                                    onExpire={() => setCaptchaToken(null)}
-                                    onError={() => setCaptchaToken(null)}
-                                />
-                                <div className="grid mt-4">
-                                    <button className="ti-btn ti-btn-primary" onClick={handleRegister} disabled={isLoading || countdown > 0}>
-                                        {isLoading ? 'Signing Up...' : (countdown > 0 ? `Tunggu ${countdown}s` : 'Sign Up')}
+                            )}
+
+                            <form className="space-y-4" onSubmit={handleRegister}>
+                                <div>
+                                    <label htmlFor="username" className="block text-xs font-medium text-gray-700">
+                                        Username
+                                    </label>
+                                    <div className="mt-1 relative rounded-md shadow-sm">
+                                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                            <i className="ri-user-line text-gray-400 text-sm"></i>
+                                        </div>
+                                        <input
+                                            id="username"
+                                            name="username"
+                                            type="text"
+                                            required
+                                            value={username}
+                                            onChange={changeHandler}
+                                            className="block w-full pl-9 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-emerald-500 focus:border-emerald-500 text-sm transition-colors"
+                                            placeholder="Pilih username"
+                                        />
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <label htmlFor="email" className="block text-xs font-medium text-gray-700">
+                                        Alamat Email
+                                    </label>
+                                    <div className="mt-1 relative rounded-md shadow-sm">
+                                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                            <i className="ri-mail-line text-gray-400 text-sm"></i>
+                                        </div>
+                                        <input
+                                            id="email"
+                                            name="email"
+                                            type="email"
+                                            required
+                                            value={email}
+                                            onChange={changeHandler}
+                                            className="block w-full pl-9 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-emerald-500 focus:border-emerald-500 text-sm transition-colors"
+                                            placeholder="nama@email.com"
+                                        />
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <label htmlFor="password" className="block text-xs font-medium text-gray-700">
+                                        Kata Sandi
+                                    </label>
+                                    <div className="mt-1 relative rounded-md shadow-sm">
+                                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                            <i className="ri-lock-line text-gray-400 text-sm"></i>
+                                        </div>
+                                        <input
+                                            id="password"
+                                            name="password"
+                                            type={passwordshow1 ? "text" : "password"}
+                                            required
+                                            value={password}
+                                            onChange={changeHandler}
+                                            className="block w-full pl-9 pr-9 py-2 border border-gray-300 rounded-lg focus:ring-emerald-500 focus:border-emerald-500 text-sm transition-colors"
+                                            placeholder="Minimal 8 karakter"
+                                        />
+                                        <div className="absolute inset-y-0 right-0 pr-3 flex items-center">
+                                            <button
+                                                type="button"
+                                                onClick={() => setpasswordshow1(!passwordshow1)}
+                                                className="text-gray-400 hover:text-gray-500 focus:outline-none"
+                                            >
+                                                <i className={passwordshow1 ? "ri-eye-line" : "ri-eye-off-line"} style={{ fontSize: '14px' }}></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="pt-1">
+                                    <div className="flex justify-center border border-gray-100 rounded-lg bg-gray-50/50 p-2 overflow-hidden">
+                                        <Turnstile
+                                            key={turnstileKey}
+                                            siteKey={process.env.NEXT_PUBLIC_CLOUDFLARE_TURNISTILE_SITE_KEY || '0x4AAAAAADsac7zEzG0Ar8xw'}
+                                            onSuccess={(token) => setCaptchaToken(token)}
+                                            onExpire={() => setCaptchaToken(null)}
+                                            onError={() => setCaptchaToken(null)}
+                                        />
+                                    </div>
+                                </div>
+
+                                <div className="pt-1">
+                                    <button
+                                        type="submit"
+                                        disabled={isLoading || countdown > 0}
+                                        className="w-full flex justify-center py-2 px-4 border border-transparent rounded-lg shadow-sm text-sm font-bold text-white bg-emerald-600 hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 disabled:opacity-70 transition-colors"
+                                    >
+                                        {isLoading ? (
+                                            <span className="flex items-center gap-2">
+                                                <i className="ri-loader-4-line animate-spin"></i> Mendaftar...
+                                            </span>
+                                        ) : countdown > 0 ? (
+                                            `Tunggu ${countdown}s`
+                                        ) : (
+                                            "Daftar Akun"
+                                        )}
                                     </button>
                                 </div>
-                                <div className="text-center">
-                                    <p className="text-textmuted dark:text-textmuted/50 mt-3 mb-0">Already have an account? <Link href="/" className="text-primary">Sign In</Link></p>
+                            </form>
+
+                            <div className="mt-5">
+                                <div className="relative">
+                                    <div className="absolute inset-0 flex items-center">
+                                        <div className="w-full border-t border-gray-200" />
+                                    </div>
+                                    <div className="relative flex justify-center text-xs">
+                                        <span className="px-2 bg-white text-gray-500">Sudah memiliki akun?</span>
+                                    </div>
+                                </div>
+
+                                <div className="mt-4">
+                                    <Link 
+                                        href="/" 
+                                        className="w-full flex justify-center py-2 px-4 border border-emerald-200 rounded-lg shadow-sm text-sm font-bold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 transition-colors"
+                                    >
+                                        Kembali ke Login
+                                    </Link>
                                 </div>
                             </div>
+                            
+                            <p className="text-center text-[10px] text-gray-400 mt-5">
+                                &copy; {new Date().getFullYear()} SI BENIH - Sistem Informasi Perusahaan Benih.
+                            </p>
                         </div>
                     </div>
-                    <div className="xxl:col-span-4 xl:col-span-4 lg:col-span-3 md:col-span-3 sm:col-span-2 col-span-12"></div>
                 </div>
             </div>
             <ToastContainer />

@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import userService from '@/app/services/userService';
 import { UserData } from '@/app/types/user';
+import { toast } from 'react-toastify';
 
 export function useUser() {
   const router = useRouter();
@@ -70,14 +71,17 @@ export function useUser() {
 
   const handleAdd = () => {
     console.log("Add user clicked");
+    toast.success('Form tambah user berhasil dibuka');
   };
 
   const handleEdit = (id: string) => {
     console.log("Edit user", id);
+    toast.success('Form edit user berhasil dibuka');
   };
 
   const handleDelete = (id: string) => {
     console.log("Delete user", id);
+    toast.success('Data user berhasil dihapus');
   };
 
   return {

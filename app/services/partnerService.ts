@@ -3,12 +3,14 @@ import { ApiResponse } from '@/app/types/api';
 import { Partner } from '@/app/types/partner';
 
 export const partnerService = {
-  getPartners: async (params: {
+  getPartners: async (params?: {
     page?: number;
     pageSize?: number;
     search?: string;
     kelompokTani?: string;
     status?: string;
+    commodityId?: string;
+    komoditasUtama?: string;
   }) => {
     const response = await api.get<ApiResponse<Partner[]>>('/master/partner', { params });
     return response.data;

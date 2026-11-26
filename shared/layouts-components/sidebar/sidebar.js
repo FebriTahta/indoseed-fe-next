@@ -2,7 +2,8 @@
 import Link from 'next/link';
 import React, { Fragment, useEffect, useRef, useState } from 'react'
 import SimpleBar from 'simplebar-react';
-import { MENUITEMS } from '../../layouts-components/sidebar/nav';
+import { MENUITEMS, filterMenuByRoles } from '../../layouts-components/sidebar/nav';
+import { getUserRoles } from '@/app/lib/auth';
 import Menuloop from './menuloop';
 import { data$, getState, setState } from '../services/switcherServices';
 import { usePathname } from 'next/navigation';
@@ -10,7 +11,9 @@ import { basePath } from '../../../next.config';
 import SpkButton from '../../../shared/@spk-reusable-components/uielements/spk-button';
 import Image from 'next/image';
 import { catchError, map, of } from 'rxjs';
+import { useSelector } from 'react-redux';
 const Sidebar = () => {
+	const settings = useSelector((state) => state.reducer.settings);
 	let [variable, setVariable] = useState(getState());
 	useEffect(() => {
 		const subscription = data$.subscribe((e) => {
@@ -24,6 +27,12 @@ const Sidebar = () => {
 	const local_varaiable = variable;
 
 	const [openMenu, setOpenMenu] = useState(MENUITEMS || [])
+
+	// Menu yang tampil disesuaikan dengan role user login (dibaca setelah mount agar cocok dengan SSR).
+	const [visibleMenu, setVisibleMenu] = useState(MENUITEMS);
+	useEffect(() => {
+		setVisibleMenu(filterMenuByRoles(MENUITEMS, getUserRoles()));
+	}, []);
 
 	const slidesArrow = (selector) => document.querySelector(selector);
 	const sidebarQuerySelectorAll = (selector) => document.querySelectorAll(selector);
@@ -397,17 +406,50 @@ const Sidebar = () => {
 
 	const Baselocation = usePathname();
 
-	useEffect(() => {
-		const normalizePath = (path) => {
-			return path && path.endsWith('/') ? path.slice(0, -1) : path;
+	const normalizePath = (path) => {
+		return path && path.endsWith('/') ? path.slice(0, -1) : path;
+	};
+
+	const findBestMatchingPath = (menu, currentPath) => {
+		const normalizedCurrent = normalizePath(currentPath);
+		if (!normalizedCurrent) return '';
+
+		const getAllPaths = (items) => {
+			let paths = [];
+			items?.forEach((item) => {
+				const p = normalizePath(item?.path);
+				if (p && p !== '#' && p !== '/') {
+					paths.push(p);
+				}
+				if (item?.children) {
+					paths = paths.concat(getAllPaths(item.children));
+				}
+			});
+			return paths;
 		};
 
+		const allPaths = getAllPaths(menu);
+		let targetPath = allPaths.find((p) => p === normalizedCurrent);
+		if (!targetPath) {
+			const candidatePaths = allPaths.filter((p) => normalizedCurrent.startsWith(p + '/'));
+			if (candidatePaths.length > 0) {
+				targetPath = candidatePaths.reduce((longest, current) =>
+					current.length > longest.length ? current : longest
+				, candidatePaths[0]);
+			}
+		}
+
+		return targetPath || normalizedCurrent;
+	};
+
+	useEffect(() => {
 		const pathName = normalizePath(Baselocation);
+		const matchPath = findBestMatchingPath(openMenu, pathName);
 
 		const updateMenu = (menu) => {
 			return menu?.map((menuItem) => {
 				const menuItemPath = normalizePath(menuItem?.path);
-				if (menuItemPath === pathName) {
+				if (menuItemPath === matchPath) {
 					menuItem.active = true;
 					menuItem.selected = true;
 				} else if (menuItem.children) {
@@ -656,12 +698,15 @@ const Sidebar = () => {
 	function setMenuUsingUrl(currentPath) {
 		hasParent = false;
 		hasParentLevel = 1;
+		const matchPath = findBestMatchingPath(openMenu, currentPath);
+
 		// Check current url and trigger the setSidemenu method to active the menu.
 		const setSubmenuRecursively = (items) => {
 
 			items?.forEach((item) => {
-				if (item.path == '') { }
-				else if (item.path === currentPath) {
+				const itemPath = normalizePath(item.path);
+				if (!itemPath) { }
+				else if (itemPath === matchPath) {
 					setSubmenu(null, item);
 				}
 				setSubmenuRecursively(item.children);
@@ -691,6 +736,18 @@ const Sidebar = () => {
 			setPreviousUrl(currentPath);
 		}
 	}, [Baselocation]);
+
+	// Auto-scroll active menu into center view
+	useEffect(() => {
+		const timeoutId = setTimeout(() => {
+			const activeMenuItem = document.querySelector(".side-menu__item.active");
+			if (activeMenuItem) {
+				activeMenuItem.scrollIntoView({ behavior: "smooth", block: "center" });
+			}
+		}, 300); // Slight delay to ensure DOM is fully updated
+		return () => clearTimeout(timeoutId);
+	}, [Baselocation, openMenu]);
+
 
 
 	const Sideclick = () => {
@@ -763,26 +820,53 @@ const Sidebar = () => {
 
 	};
 
+	const apiBase = (process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8080/api').replace(/\/api\/?$/, '');
+	const baseUrl = process.env.NEXT_PUBLIC_API_URL || apiBase || 'http://localhost:8080';
+
+	const logoKotakUrl = settings?.logoKotak
+		? (settings.logoKotak.startsWith('http') ? settings.logoKotak : `${baseUrl}${settings.logoKotak}`)
+		: null;
+
+	const logoUrl = settings?.logoWebsite
+		? (settings.logoWebsite.startsWith('http') ? settings.logoWebsite : `${baseUrl}${settings.logoWebsite}`)
+		: logoKotakUrl;
+
+	const finalLogoKotakUrl = logoKotakUrl || logoUrl;
+
 	return (
 		<Fragment>
 			<div ref={overlayRef} id="responsive-overlay" onClick={menuClose}></div>
 			<aside className={`app-sidebar ${isSticky ? "sticky-pin" : ""}`} id="sidebar" onMouseOver={Onhover} onMouseLeave={Outhover} >
 				<div className="main-sidebar-header">
-					<Link href="/dashboard/sales" className="header-logo">
-						<Image fill src={`${process.env.NODE_ENV === 'production' ? basePath : ''}/assets/images/logo-web-green.png`} alt="logo" className="desktop-logo" />
-						<Image fill src={`${process.env.NODE_ENV === 'production' ? basePath : ''}/assets/images/brand-logos/toggle-dark.png`} alt="logo" className="toggle-dark" />
-						<Image fill src={`${process.env.NODE_ENV === 'production' ? basePath : ''}/assets/images/logo-web-green.png`} alt="logo" className="desktop-dark" />
-						<Image fill src={`${process.env.NODE_ENV === 'production' ? basePath : ''}/assets/images/brand-logos/toggle-logo.png`} alt="logo" className="toggle-logo" />
-						<Image fill src={`${process.env.NODE_ENV === 'production' ? basePath : ''}/assets/images/brand-logos/toggle-white.png`} alt="logo" className="toggle-white" />
-						<Image fill src={`${process.env.NODE_ENV === 'production' ? basePath : ''}/assets/images/logo-web-green.png`} alt="logo" className="desktop-white" />
+					<Link href="/dashboard/sales" className="header-logo flex items-center justify-center">
+						{settings?.logoWebsite || settings?.logoKotak ? (
+							<>
+								<img src={logoUrl} alt="logo" className="desktop-logo !w-48 !h-14 object-contain" />
+								<img src={finalLogoKotakUrl} alt="logo" className="toggle-dark !w-28 !h-14 -mt-4 object-contain" />
+								<img src={logoUrl} alt="logo" className="desktop-dark !w-48 !h-14 object-contain" />
+								<img src={finalLogoKotakUrl} alt="logo" className="toggle-logo !w-28 !h-14 -mt-4 object-contain" />
+								<img src={finalLogoKotakUrl} alt="logo" className="toggle-white !w-28 !h-14 -mt-4 object-contain" />
+								<img src={logoUrl} alt="logo" className="desktop-white !w-48 !h-14 object-contain" />
+							</>
+						) : (
+							<>
+								<img src={`${process.env.NODE_ENV === 'production' ? basePath : ''}/assets/images/logo-web-green.png`} alt="logo" className="desktop-logo !w-48 !h-14 object-contain" />
+								<img src={`${process.env.NODE_ENV === 'production' ? basePath : ''}/assets/images/logo-web-green.png`} alt="logo" className="toggle-dark !w-28 !h-14 -mt-4 object-contain" />
+								<img src={`${process.env.NODE_ENV === 'production' ? basePath : ''}/assets/images/logo-web-green.png`} alt="logo" className="desktop-dark !w-48 !h-14 object-contain" />
+								<img src={`${process.env.NODE_ENV === 'production' ? basePath : ''}/assets/images/brand-logos/toggle-logo.png`} alt="logo" className="toggle-logo !w-28 !h-14 -mt-4 object-contain" />
+								<img src={`${process.env.NODE_ENV === 'production' ? basePath : ''}/assets/images/brand-logos/toggle-white.png`} alt="logo" className="toggle-white !w-28 !h-14 -mt-4 object-contain" />
+								<img src={`${process.env.NODE_ENV === 'production' ? basePath : ''}/assets/images/logo-web-green.png`} alt="logo" className="desktop-white !w-48 !h-14 object-contain" />
+							</>
+						)}
 					</Link>
 				</div>
 				<SimpleBar className='main-sidebar' id="sidebar-scroll">
+
 					<nav className='main-menu-container nav nav-pills flex-col sub-open'>
 						<div className="slide-left" id="slide-left" onClick={() => { slideLeft(); }}> <svg xmlns="http://www.w3.org/2000/svg" fill="#7b8191" width="24" height="24" viewBox="0 0 24 24"> <path d="M13.293 6.293 7.586 12l5.707 5.707 1.414-1.414L10.414 12l4.293-4.293z"></path> </svg> </div>
 
-						<ul className="main-menu">
-							{MENUITEMS.map((levelone, index) => (
+						<ul className="main-menu pb-28">
+							{visibleMenu.map((levelone, index) => (
 								<Fragment key={index}>
 									<li className={`${levelone.menutitle ? 'slide__category' : ''} ${levelone.type === 'link' ? 'slide' : ''}
                                                ${levelone.type === 'sub' ? 'slide has-sub' : ''} ${levelone?.active ? 'open' : ''} ${levelone?.selected ? 'active' : ''}`}>
@@ -833,6 +917,19 @@ const Sidebar = () => {
 						<div className="slide-right" id="slide-right" onClick={slideRight}><svg xmlns="http://www.w3.org/2000/svg" fill="#7b8191" width="24" height="24" viewBox="0 0 24 24"> <path d="M10.707 17.707 16.414 12l-5.707-5.707-1.414 1.414L13.586 12l-4.293 4.293z"></path> </svg></div>
 					</nav>
 				</SimpleBar>
+				<div className="p-4 mt-auto sticky bottom-0 z-10" style={{ backgroundColor: 'inherit' }}>
+					<Link href="/support" className="flex items-center gap-3 py-2 px-3 rounded-lg hover:bg-white/10 transition-colors">
+						<div className="">
+							<svg xmlns="http://www.w3.org/2000/svg" className="w-6 h-6" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
+								<path strokeLinecap="round" strokeLinejoin="round" d="M12 2C6.477 2 2 6.477 2 12c0 4.418 2.865 8.166 6.839 9.489.102.034.209.04.314.015l1.696-.424A3 3 0 0013.293 18.6L12.5 17.027a1.5 1.5 0 011.692-2.115l.182.046a3 3 0 003.585-1.921l1.642-4.106c.219-.548.219-1.157 0-1.705l-1.642-4.106A3 3 0 0014.375 5.2l-.182.046A1.5 1.5 0 0112.5 3.13L13.293 1.56a3 3 0 00-2.444-2.474l-1.696-.424a1.36 1.36 0 00-.314-.015C2.865 3.834 2 7.582 2 12z" />
+							</svg>
+						</div>
+						<div className="flex flex-col side-menu__label !mt-0 !mb-0 !leading-tight">
+							<span className="text-[13px] font-semibold leading-tight">Butuh Bantuan?</span>
+							<span className="text-[11px]">Hubungi Support</span>
+						</div>
+					</Link>
+				</div>
 			</aside>
 		</Fragment>
 	)

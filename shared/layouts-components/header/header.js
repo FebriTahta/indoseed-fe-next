@@ -1,5 +1,6 @@
 "use client"
 import Link from "next/link";
+import { clearSession } from '@/app/lib/auth';
 import { useRouter } from "next/navigation";
 import React, { Fragment, useEffect, useRef, useState } from "react";
 import { ThemeChanger, removeFromCart } from "@/shared/redux/action";
@@ -14,194 +15,195 @@ import { basePath } from '@/next.config';
 import { data$, getState, setState } from "../services/switcherServices";
 
 const Header = () => {
-    const router = useRouter();
+  const settings = useSelector((state) => state.reducer.settings);
+  const router = useRouter();
 
-    const handleLogout = async (e) => {
-        e.preventDefault();
-        try {
-            const token = localStorage.getItem('token');
-            const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8080/api';
-            if (token) {
-                await fetch(`${baseUrl}/auth/logout`, {
-                    method: 'POST',
-                    headers: {
-                        'Authorization': `Bearer ${token}`,
-                        'Content-Type': 'application/json'
-                    }
-                });
-            }
-        } catch (error) {
-            console.error("Logout error:", error);
-        } finally {
-            localStorage.removeItem('token');
-            router.push('/');
-        }
-    };
-
-    //Menu-Close
-    let [variable, setVariable] = useState(getState());
-
-    useEffect(() => {
-        const subscription = data$.subscribe((e) => {
-            // No need to manually update component state, the UI will re-render automatically
-            setVariable(e);
-        });
-
-        return () => subscription.unsubscribe(); // Clean up the subscription
-    }, []);
-  //MenuClose
-    function menuClose() {
-      const theme = variable;
-
-      if (window.innerWidth <= 992) {
-          const newState = {
-              toggled: "close"
+  const handleLogout = async (e) => {
+    e.preventDefault();
+    try {
+      const token = localStorage.getItem('token');
+      const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8080/api';
+      if (token) {
+        await fetch(`${baseUrl}/auth/logout`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
           }
-          setState(newState);
+        });
       }
+    } catch (error) {
+      console.error("Logout error:", error);
+    } finally {
+      clearSession();
+      router.push('/');
+    }
+  };
 
-      if (window.innerWidth >= 992) {
-          const local_varaiable = theme;
-          const newToggledValue = local_varaiable.toggled ? local_varaiable.toggled : '';
+  //Menu-Close
+  let [variable, setVariable] = useState(getState());
 
-          setState({ toggled: newToggledValue });
+  useEffect(() => {
+    const subscription = data$.subscribe((e) => {
+      // No need to manually update component state, the UI will re-render automatically
+      setVariable(e);
+    });
+
+    return () => subscription.unsubscribe(); // Clean up the subscription
+  }, []);
+  //MenuClose
+  function menuClose() {
+    const theme = variable;
+
+    if (window.innerWidth <= 992) {
+      const newState = {
+        toggled: "close"
       }
+      setState(newState);
+    }
+
+    if (window.innerWidth >= 992) {
+      const local_varaiable = theme;
+      const newToggledValue = local_varaiable.toggled ? local_varaiable.toggled : '';
+
+      setState({ toggled: newToggledValue });
+    }
   }
 
   const overlayRef = useRef(null);
- //Toggle-Function
+  //Toggle-Function
   const toggleSidebar = () => {
-      const theme = variable;
-      const sidemenuType = theme.dataNavLayout;
+    const theme = variable;
+    const sidemenuType = theme.dataNavLayout;
 
-      if (window.innerWidth >= 992) {
-          if (sidemenuType === "vertical") {
-              const verticalStyle = theme.dataVerticalStyle;
-              const navStyle = theme.dataNavStyle;
-              // Handle vertical styles
-              switch (verticalStyle) {
-                  case "closed":
-                      // Toggle between open/close state for "closed" vertical style
-                      setState({
-                          dataNavStyle: "",
-                          toggled: theme.toggled === "close-menu-close" ? "" : "close-menu-close"
-                      });
-                      break;
-                  case "overlay":
-                      // Handle icon-overlay state with window width check
-                      setState({
-                          dataNavStyle: "",
-                          toggled: theme.toggled === "icon-overlay-close" ? "" : "icon-overlay-close",
-                          iconOverlay: ""
-                      });
+    if (window.innerWidth >= 992) {
+      if (sidemenuType === "vertical") {
+        const verticalStyle = theme.dataVerticalStyle;
+        const navStyle = theme.dataNavStyle;
+        // Handle vertical styles
+        switch (verticalStyle) {
+          case "closed":
+            // Toggle between open/close state for "closed" vertical style
+            setState({
+              dataNavStyle: "",
+              toggled: theme.toggled === "close-menu-close" ? "" : "close-menu-close"
+            });
+            break;
+          case "overlay":
+            // Handle icon-overlay state with window width check
+            setState({
+              dataNavStyle: "",
+              toggled: theme.toggled === "icon-overlay-close" ? "" : "icon-overlay-close",
+              iconOverlay: ""
+            });
 
-                      if (theme.toggled !== "icon-overlay-close" && window.innerWidth >= 992) {
-                          setState({
-                              toggled: "icon-overlay-close",
-                              iconOverlay: "",
-                          });
-                      }
-                      break;
-                  case "icontext":
-                      // Handle icon-text state
-                      setState({
-                          dataNavStyle: "",
-                          toggled: theme.toggled === "icon-text-close" ? "" : "icon-text-close"
-                      });
-                      break;
-                  case "doublemenu":
-                      // Handle double menu state
-                      setState({ dataNavStyle: "" });
-                      if (theme.toggled === "double-menu-open") {
-                          setState({ toggled: "double-menu-close" });
-                      } else {
-                          if (theme.activeMenuItem) {
-                              const activeIndex = theme.menuItems.findIndex((item) => item.id === theme.activeMenuItem);
+            if (theme.toggled !== "icon-overlay-close" && window.innerWidth >= 992) {
+              setState({
+                toggled: "icon-overlay-close",
+                iconOverlay: "",
+              });
+            }
+            break;
+          case "icontext":
+            // Handle icon-text state
+            setState({
+              dataNavStyle: "",
+              toggled: theme.toggled === "icon-text-close" ? "" : "icon-text-close"
+            });
+            break;
+          case "doublemenu":
+            // Handle double menu state
+            setState({ dataNavStyle: "" });
+            if (theme.toggled === "double-menu-open") {
+              setState({ toggled: "double-menu-close" });
+            } else {
+              if (theme.activeMenuItem) {
+                const activeIndex = theme.menuItems.findIndex((item) => item.id === theme.activeMenuItem);
 
-                              if (activeIndex !== -1 && theme.menuItems[activeIndex].next) {
-                                  const newState = {
-                                      toggled: 'double-menu-open',
-                                      activeMenuItem: theme.menuItems[activeIndex].next.id,
-                                  }
-                                  setState(newState)
-                              }
-                              else {
-                                  const newState = {
-                                      toggled: 'double-menu-close'
-                                  }
-                                  setState(newState)
-                              }
-                          }
-                      }
-                      break;
-                  case "detached":
-                      // Handle detached menu state
-                      setState({
-                          toggled: theme.toggled === "detached-close" ? "" : "detached-close",
-                          iconOverlay: ""
-                      });
-                      break;
-                  default:
-                      setState({ toggled: "" });
-                      break;
-              }
-
-              // Handle navStyle changes
-              switch (navStyle) {
-                  case "menu-click":
-                      setState({
-                          toggled: theme.toggled === "menu-click-closed" ? "" : "menu-click-closed"
-                      });
-                      break;
-                  case "menu-hover":
-                      setState({
-                          toggled: theme.toggled === "menu-hover-closed" ? "" : "menu-hover-closed"
-                      });
-                      break;
-                  case "icon-click":
-                      setState({
-                          toggled: theme.toggled === "icon-click-closed" ? "" : "icon-click-closed"
-                      });
-                      break;
-                  case "icon-hover":
-                      setState({
-                          toggled: theme.toggled === "icon-hover-closed" ? "" : "icon-hover-closed"
-                      });
-                      break;
-              }
-          }
-      } else {
-          // For mobile view (screen width < 992px)
-          if (theme.toggled === "close") {
-              setState({ toggled: "open" });
-              setTimeout(() => {
-                  if (theme.toggled === "open") {
-                      const overlay = overlayRef.current
-                      if (overlay) {
-                          overlay.classList.add("active");
-                          overlay.addEventListener("click", () => {
-                              const overlay = overlayRef.current
-                              if (overlay) {
-                                  overlay.classList.remove("active");
-                                  menuClose();
-                              }
-                          });
-                      }
+                if (activeIndex !== -1 && theme.menuItems[activeIndex].next) {
+                  const newState = {
+                    toggled: 'double-menu-open',
+                    activeMenuItem: theme.menuItems[activeIndex].next.id,
                   }
+                  setState(newState)
+                }
+                else {
+                  const newState = {
+                    toggled: 'double-menu-close'
+                  }
+                  setState(newState)
+                }
+              }
+            }
+            break;
+          case "detached":
+            // Handle detached menu state
+            setState({
+              toggled: theme.toggled === "detached-close" ? "" : "detached-close",
+              iconOverlay: ""
+            });
+            break;
+          default:
+            setState({ toggled: "" });
+            break;
+        }
 
-                  window.addEventListener("resize", () => {
-                      if (window.innerWidth >= 992) {
-                          const overlay = overlayRef.current
-                          if (overlay) {
-                              overlay.classList.remove("active");
-                          }
-                      }
-                  });
-              }, 100);
-          } else {
-              setState({ toggled: "close" });
-          }
+        // Handle navStyle changes
+        switch (navStyle) {
+          case "menu-click":
+            setState({
+              toggled: theme.toggled === "menu-click-closed" ? "" : "menu-click-closed"
+            });
+            break;
+          case "menu-hover":
+            setState({
+              toggled: theme.toggled === "menu-hover-closed" ? "" : "menu-hover-closed"
+            });
+            break;
+          case "icon-click":
+            setState({
+              toggled: theme.toggled === "icon-click-closed" ? "" : "icon-click-closed"
+            });
+            break;
+          case "icon-hover":
+            setState({
+              toggled: theme.toggled === "icon-hover-closed" ? "" : "icon-hover-closed"
+            });
+            break;
+        }
       }
+    } else {
+      // For mobile view (screen width < 992px)
+      if (theme.toggled === "close") {
+        setState({ toggled: "open" });
+        setTimeout(() => {
+          if (theme.toggled === "open") {
+            const overlay = overlayRef.current
+            if (overlay) {
+              overlay.classList.add("active");
+              overlay.addEventListener("click", () => {
+                const overlay = overlayRef.current
+                if (overlay) {
+                  overlay.classList.remove("active");
+                  menuClose();
+                }
+              });
+            }
+          }
+
+          window.addEventListener("resize", () => {
+            if (window.innerWidth >= 992) {
+              const overlay = overlayRef.current
+              if (overlay) {
+                overlay.classList.remove("active");
+              }
+            }
+          });
+        }, 100);
+      } else {
+        setState({ toggled: "close" });
+      }
+    }
   };
 
   //full screen
@@ -216,49 +218,49 @@ const Header = () => {
       document.exitFullscreen().then(() => setFullScreen(false));
     }
   };
- 
+
 
 
   //Dark Model
 
-    //Dark-Theme
-    const toggleTheme = () => {
-      const currentTheme = getState();
+  //Dark-Theme
+  const toggleTheme = () => {
+    const currentTheme = getState();
+    const newState = {
+      class: currentTheme.class === 'dark' ? 'light' : 'dark',
+      dataHeaderStyles: currentTheme.class === 'dark' ? 'light' : 'dark',
+      dataMenuStyles: currentTheme.class === 'dark' ? 'light' : 'dark',
+    }
+    setState(newState)
+    if (newState.class != 'dark') {
       const newState = {
-          class: currentTheme.class === 'dark' ? 'light' : 'dark',
-          dataHeaderStyles: currentTheme.class === 'dark' ? 'light' : 'dark',
-          dataMenuStyles: 'dark',
+        bodyBg: '',
+        lightRgb: '',
+        darkBg: '',
+        inputBorder: '',
+        gray: '',
       }
       setState(newState)
-      if (newState.class != 'dark') {
-          const newState = {
-              bodyBg: '',
-              lightRgb: '',
-              darkBg: '',
-              inputBorder: '',
-              gray: '',
-          }
-          setState(newState)
-          localStorage.setItem("xintralightTheme", "light");
-          localStorage.removeItem("xintradarkTheme");
-          localStorage.removeItem("xintramenu");
-          localStorage.removeItem("xintraheader");
-          localStorage.removeItem("bodyBg");
-          localStorage.removeItem("darkBg");
-          localStorage.removeItem("bgImg");
-          localStorage.removeItem("lightRgb");
-      }
-      else {
-          localStorage.setItem("xintradarkTheme", "dark");
-          localStorage.removeItem("xintralightTheme");
-          localStorage.removeItem("xintramenu");
-          localStorage.removeItem("xintraheader");
-          localStorage.removeItem("bodyBg");
-          localStorage.removeItem("darkBg");
-          localStorage.removeItem("inputBorder");
-          localStorage.removeItem("lightRgb");
-          localStorage.removeItem("gray");
-      }
+      localStorage.setItem("xintralightTheme", "light");
+      localStorage.removeItem("xintradarkTheme");
+      localStorage.removeItem("xintramenu");
+      localStorage.removeItem("xintraheader");
+      localStorage.removeItem("bodyBg");
+      localStorage.removeItem("darkBg");
+      localStorage.removeItem("bgImg");
+      localStorage.removeItem("lightRgb");
+    }
+    else {
+      localStorage.setItem("xintradarkTheme", "dark");
+      localStorage.removeItem("xintralightTheme");
+      localStorage.removeItem("xintramenu");
+      localStorage.removeItem("xintraheader");
+      localStorage.removeItem("bodyBg");
+      localStorage.removeItem("darkBg");
+      localStorage.removeItem("inputBorder");
+      localStorage.removeItem("lightRgb");
+      localStorage.removeItem("gray");
+    }
   }
 
   //Switcher-Icon
@@ -502,16 +504,22 @@ const Header = () => {
     setCartItemCount(updatedCart.length);
   };
 
+  const apiBase = (process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8080/api').replace(/\/api\/?$/, '');
+  const baseUrl = process.env.NEXT_PUBLIC_API_URL || apiBase || 'http://localhost:8080';
+
+  const logoUrl = settings?.logoWebsite
+    ? (settings.logoWebsite.startsWith('http') ? settings.logoWebsite : `${baseUrl}${settings.logoWebsite}`)
+    : (settings?.logoKotak ? (settings.logoKotak.startsWith('http') ? settings.logoKotak : `${baseUrl}${settings.logoKotak}`) : null);
 
   return (
     <Fragment>
       <header className="app-header" id="header">
         {/* <!-- Start::main-header-container --> */}
         <div className="main-header-container container-fluid">
-        {variable.toggled === "open" && (
+          {variable.toggled === "open" && (
 
-<div ref={overlayRef} id="responsive-overlay"></div>
-)}
+            <div ref={overlayRef} id="responsive-overlay"></div>
+          )}
 
           {/* <!-- Start::header-content-left --> */}
           <div className="header-content-left">
@@ -519,12 +527,70 @@ const Header = () => {
             <div className="header-element">
               <div className="horizontal-logo">
                 <Link href="/dashboard/sales" className="header-logo">
-                  <Image fill src={`${process.env.NODE_ENV === 'production' ? basePath : ''}/assets/images/brand-logos/desktop-logo.png`} alt="logo" className="desktop-logo" />
-                  <Image fill src={`${process.env.NODE_ENV === 'production' ? basePath : ''}/assets/images/brand-logos/toggle-dark.png`} alt="logo" className="toggle-dark" />
-                  <Image fill src={`${process.env.NODE_ENV === 'production' ? basePath : ''}/assets/images/brand-logos/desktop-dark.png`} alt="logo" className="desktop-dark" />
-                  <Image fill src={`${process.env.NODE_ENV === 'production' ? basePath : ''}/assets/images/brand-logos/toggle-logo.png`} alt="logo" className="toggle-logo" />
-                  <Image fill src={`${process.env.NODE_ENV === 'production' ? basePath : ''}/assets/images/brand-logos/toggle-white.png`} alt="logo" className="toggle-white" />
-                  <Image fill src={`${process.env.NODE_ENV === 'production' ? basePath : ''}/assets/images/brand-logos/desktop-white.png`} alt="logo" className="desktop-white" />
+                  {settings?.logoWebsite ? (
+                    <>
+                      <div className="relative flex desktop-logo w-48 h-14 items-center justify-center">
+                        <img src={logoUrl} alt="logo" className="!w-full !h-full object-contain opacity-0" />
+                        <div className="absolute inset-0" style={{ WebkitMaskImage: `url(${logoUrl})`, maskImage: `url(${logoUrl})`, WebkitMaskSize: 'contain', maskSize: 'contain', WebkitMaskRepeat: 'no-repeat', maskRepeat: 'no-repeat', WebkitMaskPosition: 'center', maskPosition: 'center', backgroundColor: settings.logoColor || '#11b238' }}></div>
+                      </div>
+                      <div className="relative flex toggle-dark w-28 h-14 items-center justify-center -mt-4">
+                        <img src={logoUrl} alt="logo" className="!w-full !h-full object-contain opacity-0" />
+                        <div className="absolute inset-0" style={{ WebkitMaskImage: `url(${logoUrl})`, maskImage: `url(${logoUrl})`, WebkitMaskSize: 'contain', maskSize: 'contain', WebkitMaskRepeat: 'no-repeat', maskRepeat: 'no-repeat', WebkitMaskPosition: 'center', maskPosition: 'center', backgroundColor: settings.logoColor || '#11b238' }}></div>
+                      </div>
+                      <div className="relative flex desktop-dark w-48 h-14 items-center justify-center">
+                        <img src={logoUrl} alt="logo" className="!w-full !h-full object-contain opacity-0" />
+                        <div className="absolute inset-0" style={{ WebkitMaskImage: `url(${logoUrl})`, maskImage: `url(${logoUrl})`, WebkitMaskSize: 'contain', maskSize: 'contain', WebkitMaskRepeat: 'no-repeat', maskRepeat: 'no-repeat', WebkitMaskPosition: 'center', maskPosition: 'center', backgroundColor: settings.logoColor || '#11b238' }}></div>
+                      </div>
+                      <div className="relative flex toggle-logo w-28 h-14 items-center justify-center -mt-4">
+                        <img src={logoUrl} alt="logo" className="!w-full !h-full object-contain opacity-0" />
+                        <div className="absolute inset-0" style={{ WebkitMaskImage: `url(${logoUrl})`, maskImage: `url(${logoUrl})`, WebkitMaskSize: 'contain', maskSize: 'contain', WebkitMaskRepeat: 'no-repeat', maskRepeat: 'no-repeat', WebkitMaskPosition: 'center', maskPosition: 'center', backgroundColor: settings.logoColor || '#11b238' }}></div>
+                      </div>
+                      <div className="relative flex toggle-white w-28 h-14 items-center justify-center -mt-4">
+                        <img src={logoUrl} alt="logo" className="!w-full !h-full object-contain opacity-0" />
+                        <div className="absolute inset-0" style={{ WebkitMaskImage: `url(${logoUrl})`, maskImage: `url(${logoUrl})`, WebkitMaskSize: 'contain', maskSize: 'contain', WebkitMaskRepeat: 'no-repeat', maskRepeat: 'no-repeat', WebkitMaskPosition: 'center', maskPosition: 'center', backgroundColor: settings.logoColor || '#11b238' }}></div>
+                      </div>
+                      <div className="relative flex desktop-white w-48 h-14 items-center justify-center">
+                        <img src={logoUrl} alt="logo" className="!w-full !h-full object-contain opacity-0" />
+                        <div className="absolute inset-0" style={{ WebkitMaskImage: `url(${logoUrl})`, maskImage: `url(${logoUrl})`, WebkitMaskSize: 'contain', maskSize: 'contain', WebkitMaskRepeat: 'no-repeat', maskRepeat: 'no-repeat', WebkitMaskPosition: 'center', maskPosition: 'center', backgroundColor: settings.logoColor || '#11b238' }}></div>
+                      </div>
+                    </>
+                  ) : settings?.logoColor ? (
+                    <>
+                      <div className="relative flex desktop-logo w-48 h-14 items-center justify-center">
+                        <img src={`${process.env.NODE_ENV === 'production' ? basePath : ''}/assets/images/brand-logos/desktop-logo.png`} alt="logo" className="!w-full !h-full object-contain opacity-0" />
+                        <div className="absolute inset-0" style={{ WebkitMaskImage: `url(${`${process.env.NODE_ENV === 'production' ? basePath : ''}/assets/images/brand-logos/desktop-logo.png`})`, maskImage: `url(${`${process.env.NODE_ENV === 'production' ? basePath : ''}/assets/images/brand-logos/desktop-logo.png`})`, WebkitMaskSize: 'contain', maskSize: 'contain', WebkitMaskRepeat: 'no-repeat', maskRepeat: 'no-repeat', WebkitMaskPosition: 'center', maskPosition: 'center', backgroundColor: settings.logoColor }}></div>
+                      </div>
+                      <div className="relative flex toggle-dark w-28 h-14 items-center justify-center -mt-4">
+                        <img src={`${process.env.NODE_ENV === 'production' ? basePath : ''}/assets/images/brand-logos/toggle-dark.png`} alt="logo" className="!w-full !h-full object-contain opacity-0" />
+                        <div className="absolute inset-0" style={{ WebkitMaskImage: `url(${`${process.env.NODE_ENV === 'production' ? basePath : ''}/assets/images/brand-logos/toggle-dark.png`})`, maskImage: `url(${`${process.env.NODE_ENV === 'production' ? basePath : ''}/assets/images/brand-logos/toggle-dark.png`})`, WebkitMaskSize: 'contain', maskSize: 'contain', WebkitMaskRepeat: 'no-repeat', maskRepeat: 'no-repeat', WebkitMaskPosition: 'center', maskPosition: 'center', backgroundColor: settings.logoColor }}></div>
+                      </div>
+                      <div className="relative flex desktop-dark w-48 h-14 items-center justify-center">
+                        <img src={`${process.env.NODE_ENV === 'production' ? basePath : ''}/assets/images/brand-logos/desktop-dark.png`} alt="logo" className="!w-full !h-full object-contain opacity-0" />
+                        <div className="absolute inset-0" style={{ WebkitMaskImage: `url(${`${process.env.NODE_ENV === 'production' ? basePath : ''}/assets/images/brand-logos/desktop-dark.png`})`, maskImage: `url(${`${process.env.NODE_ENV === 'production' ? basePath : ''}/assets/images/brand-logos/desktop-dark.png`})`, WebkitMaskSize: 'contain', maskSize: 'contain', WebkitMaskRepeat: 'no-repeat', maskRepeat: 'no-repeat', WebkitMaskPosition: 'center', maskPosition: 'center', backgroundColor: settings.logoColor }}></div>
+                      </div>
+                      <div className="relative flex toggle-logo w-28 h-14 items-center justify-center -mt-4">
+                        <img src={`${process.env.NODE_ENV === 'production' ? basePath : ''}/assets/images/brand-logos/toggle-logo.png`} alt="logo" className="!w-full !h-full object-contain opacity-0" />
+                        <div className="absolute inset-0" style={{ WebkitMaskImage: `url(${`${process.env.NODE_ENV === 'production' ? basePath : ''}/assets/images/brand-logos/toggle-logo.png`})`, maskImage: `url(${`${process.env.NODE_ENV === 'production' ? basePath : ''}/assets/images/brand-logos/toggle-logo.png`})`, WebkitMaskSize: 'contain', maskSize: 'contain', WebkitMaskRepeat: 'no-repeat', maskRepeat: 'no-repeat', WebkitMaskPosition: 'center', maskPosition: 'center', backgroundColor: settings.logoColor }}></div>
+                      </div>
+                      <div className="relative flex toggle-white w-28 h-14 items-center justify-center -mt-4">
+                        <img src={`${process.env.NODE_ENV === 'production' ? basePath : ''}/assets/images/brand-logos/toggle-white.png`} alt="logo" className="!w-full !h-full object-contain opacity-0" />
+                        <div className="absolute inset-0" style={{ WebkitMaskImage: `url(${`${process.env.NODE_ENV === 'production' ? basePath : ''}/assets/images/brand-logos/toggle-white.png`})`, maskImage: `url(${`${process.env.NODE_ENV === 'production' ? basePath : ''}/assets/images/brand-logos/toggle-white.png`})`, WebkitMaskSize: 'contain', maskSize: 'contain', WebkitMaskRepeat: 'no-repeat', maskRepeat: 'no-repeat', WebkitMaskPosition: 'center', maskPosition: 'center', backgroundColor: settings.logoColor }}></div>
+                      </div>
+                      <div className="relative flex desktop-white w-48 h-14 items-center justify-center">
+                        <img src={`${process.env.NODE_ENV === 'production' ? basePath : ''}/assets/images/brand-logos/desktop-white.png`} alt="logo" className="!w-full !h-full object-contain opacity-0" />
+                        <div className="absolute inset-0" style={{ WebkitMaskImage: `url(${`${process.env.NODE_ENV === 'production' ? basePath : ''}/assets/images/brand-logos/desktop-white.png`})`, maskImage: `url(${`${process.env.NODE_ENV === 'production' ? basePath : ''}/assets/images/brand-logos/desktop-white.png`})`, WebkitMaskSize: 'contain', maskSize: 'contain', WebkitMaskRepeat: 'no-repeat', maskRepeat: 'no-repeat', WebkitMaskPosition: 'center', maskPosition: 'center', backgroundColor: settings.logoColor }}></div>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <img src={`${process.env.NODE_ENV === 'production' ? basePath : ''}/assets/images/brand-logos/desktop-logo.png`} alt="logo" className="desktop-logo !w-48 !h-14 object-contain" />
+                      <img src={`${process.env.NODE_ENV === 'production' ? basePath : ''}/assets/images/brand-logos/toggle-dark.png`} alt="logo" className="toggle-dark !w-28 !h-14 -mt-4 object-contain" />
+                      <img src={`${process.env.NODE_ENV === 'production' ? basePath : ''}/assets/images/brand-logos/desktop-dark.png`} alt="logo" className="desktop-dark !w-48 !h-14 object-contain" />
+                      <img src={`${process.env.NODE_ENV === 'production' ? basePath : ''}/assets/images/brand-logos/toggle-logo.png`} alt="logo" className="toggle-logo !w-28 !h-14 -mt-4 object-contain" />
+                      <img src={`${process.env.NODE_ENV === 'production' ? basePath : ''}/assets/images/brand-logos/toggle-white.png`} alt="logo" className="toggle-white !w-28 !h-14 -mt-4 object-contain" />
+                      <img src={`${process.env.NODE_ENV === 'production' ? basePath : ''}/assets/images/brand-logos/desktop-white.png`} alt="logo" className="desktop-white !w-48 !h-14 object-contain" />
+                    </>
+                  )}
                 </Link>
               </div>
             </div>
@@ -623,133 +689,6 @@ const Header = () => {
               </Link>
             </li>
             {/* <!-- End::header-element --> */}
-
-            {/* <!-- Start::header-element --> */}
-            <SpkDropdown Customclass="header-element country-selector  hidden sm:block [--placement:bottom-right] rtl:[--placement:bottom-left]" Linktag={true} Navigate='#!' Customtoggleclass='header-link hs-dropdown-toggle ti-dropdown-toggle' Svgicon='m10.5 21 5.25-11.25L21 21m-9-3h7.5M3 5.621a48.474 48.474 0 0 1 6-.371m0 0c1.12 0 2.233.038 3.334.114M9 5.25V3m3.334 2.364C11.176 10.658 7.69 15.08 3 17.502m9.334-12.138c.896.061 1.785.147 2.666.257m-4.589 8.495a18.023 18.023 0 0 1-3.827-5.802'
-              SvgClass='w-6 h-6 header-link-icon' Linkclass='header-link hs-dropdown-toggle ti-dropdown-toggle' Svg={true} Custommenuclass='main-header-dropdown min-w-[10rem] hidden' SvgStroke="currentColor" Strokewidth="1.5" Svvgviewbox="0 0 24 24">
-              <li>
-                <Link scroll={false}
-                  className="ti-dropdown-item flex items-center"
-                  href="#!"
-                >
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center">
-                      <span className="avatar avatar-rounded avatar-xs leading-none me-2">
-                        <Image fill src={`${process.env.NODE_ENV === 'production' ? basePath : ''}/assets/images/flags/us_flag.jpg`} alt="img" />
-                      </span>
-                      English
-                    </div>
-                  </div>
-                </Link>
-              </li>
-              <li>
-                <Link scroll={false}
-                  className="ti-dropdown-item flex items-center"
-                  href="#!"
-                >
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center">
-                      <span className="avatar avatar-rounded avatar-xs leading-none me-2">
-                        <Image fill src={`${process.env.NODE_ENV === 'production' ? basePath : ''}/assets/images/flags/spain_flag.jpg`} alt="img" />
-                      </span>
-                      español
-                    </div>
-                  </div>
-                </Link>
-              </li>
-              <li>
-                <Link scroll={false}
-                  className="ti-dropdown-item flex items-center"
-                  href="#!"
-                >
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center">
-                      <span className="avatar avatar-rounded avatar-xs leading-none me-2">
-                        <Image fill src={`${process.env.NODE_ENV === 'production' ? basePath : ''}/assets/images/flags/french_flag.jpg`} alt="img" />
-                      </span>
-                      français
-                    </div>
-                  </div>
-                </Link>
-              </li>
-              <li>
-                <Link scroll={false}
-                  className="ti-dropdown-item flex items-center"
-                  href="#!"
-                >
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center">
-                      <span className="avatar avatar-rounded avatar-xs leading-none me-2">
-                        <Image fill src={`${process.env.NODE_ENV === 'production' ? basePath : ''}/assets/images/flags/uae_flag.jpg`} alt="img" />
-                      </span>
-                      عربي
-                    </div>
-                  </div>
-                </Link>
-              </li>
-              <li>
-                <Link scroll={false}
-                  className="ti-dropdown-item flex items-center"
-                  href="#!"
-                >
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center">
-                      <span className="avatar avatar-rounded avatar-xs leading-none me-2">
-                        <Image fill src={`${process.env.NODE_ENV === 'production' ? basePath : ''}/assets/images/flags/germany_flag.jpg`} alt="img" />
-                      </span>
-                      Deutsch
-                    </div>
-                  </div>
-                </Link>
-              </li>
-              <li>
-                <Link scroll={false}
-                  className="ti-dropdown-item flex items-center"
-                  href="#!"
-                >
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center">
-                      <span className="avatar avatar-rounded avatar-xs leading-none me-2">
-                        <Image fill src={`${process.env.NODE_ENV === 'production' ? basePath : ''}/assets/images/flags/china_flag.jpg`} alt="img" />
-                      </span>
-                      中国人
-                    </div>
-                  </div>
-                </Link>
-              </li>
-              <li>
-                <Link scroll={false}
-                  className="ti-dropdown-item flex items-center"
-                  href="#!"
-                >
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center">
-                      <span className="avatar avatar-rounded avatar-xs leading-none me-2">
-                        <Image fill src={`${process.env.NODE_ENV === 'production' ? basePath : ''}/assets/images/flags/italy_flag.jpg`} alt="img" />
-                      </span>
-                      Italiano
-                    </div>
-                  </div>
-                </Link>
-              </li>
-              <li>
-                <Link scroll={false}
-                  className="ti-dropdown-item flex items-center"
-                  href="#!"
-                >
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center">
-                      <span className="avatar avatar-rounded avatar-xs leading-none me-2">
-                        <Image fill src={`${process.env.NODE_ENV === 'production' ? basePath : ''}/assets/images/flags/russia_flag.jpg`} alt="img" />
-                      </span>
-                      Русский
-                    </div>
-                  </div>
-                </Link>
-              </li>
-            </SpkDropdown>
-            {/* <!-- End::header-element --> */}
-
             {/* <!-- Start::header-element --> */}
             {/* <!-- light and dark theme --> */}
             <li className="header-element header-theme-mode hidden !items-center sm:block md:!px-[0.5rem] px-2" onClick={() => toggleTheme()}>
@@ -757,7 +696,7 @@ const Header = () => {
                 aria-label="anchor"
                 className="hs-dark-mode-active:hidden flex hs-dark-mode group flex-shrink-0 justify-center items-center gap-2  rounded-full font-medium transition-all text-xs dark:bg-bgdark dark:hover:bg-black/20 text-textmuted dark:text-textmuted/50 dark:hover:text-white dark:focus:ring-white/10 dark:focus:ring-offset-white/10"
                 href="#!"
-                
+
               >
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
@@ -778,7 +717,7 @@ const Header = () => {
                 aria-label="anchor"
                 className="hs-dark-mode-active:flex hidden hs-dark-mode group flex-shrink-0 justify-center items-center gap-2  rounded-full font-medium text-defaulttextcolor  transition-all text-xs dark:bg-bodybg dark:bg-bgdark dark:hover:bg-black/20  dark:hover:text-white dark:focus:ring-white/10 dark:focus:ring-offset-white/10"
                 href="#!"
-                
+
               >
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
@@ -800,115 +739,6 @@ const Header = () => {
 
             {/* <!-- End::header-element --> */}
 
-            {/* <!-- Start::header-element --> */}
-            <SpkDropdown Customclass="header-element cart-dropdown [--auto-close:inside]" Linktag={true} Navigate='#!' Svg={true} Linkclass='header-link hs-dropdown-toggle ti-dropdown-toggle' Badgetag={true} Badgeclass='rounded-full header-icon-badge text-white' Custommenuclass='main-header-dropdown'
-              Badgecolor='secondary' Badgeid='cart-icon-badge' Badgetext={remainingCount2} Badgepill={true} SvgClass='w-6 h-6 header-link-icon' SvgStroke="currentColor" Strokewidth="1.5" Svvgviewbox="0 0 24 24"
-              Svgicon='M2.25 3h1.386c.51 0 .955.343 1.087.835l.383 1.437M7.5 14.25a3 3 0 0 0-3 3h15.75m-12.75-3h11.218c1.121-2.3 2.1-4.684 2.924-7.138a60.114 60.114 0 0 0-16.536-1.84M7.5 14.25 5.106 5.272M6 20.25a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0Zm12.75 0a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0Z'>
-
-              {/* <!-- Start::header-link|dropdown-toggle --> */}
-
-              {/* <!-- End::header-link|dropdown-toggle --> */}
-              {/* <!-- Start::main-header-dropdown --> */}
-              <div className="p-4">
-                <div className="flex items-center justify-between">
-                  <p className="mb-0 text-[15px] font-medium">
-                    Cart Items
-                    <SpkBadge variant="primarytint2color"
-                      customClass="text-white ms-1 !py-[0.15rem] rounded-full"
-                      Id="cart-data"
-                    >
-                      {remainingCount2} {remainingCount2 !== 1 ? '' : ''}
-                    </SpkBadge>
-                  </p>
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs font-medium text-textmuted dark:text-textmuted/50">
-                      Sub Total :
-                    </span>
-                    <h6 className="mb-0"> $740</h6>
-                  </div>
-                </div>
-              </div>
-              <hr className="dropdown-divider" />
-              <SimpleBar className="list-none mb-0" id="header-cart-items-scroll">
-                {card.slice(0, maxDisplayItems).map((idx, index) => (
-                  <li className="ti-dropdown-item block" key={index}>
-                    {!card.includes(idx.id) && (
-                      <div className="flex items-center cart-dropdown-item gap-4">
-                        <div className="leading-none">
-                          <span className="avatar avatar-xl bg-primary/10">
-                            <Image fill src={`${process.env.NODE_ENV === 'production' ? basePath : ''}${idx.productpicture}`} alt="Wireless Headphones" />
-                          </span>
-                        </div>
-                        <div className="flex-auto">
-                          <div className="flex items-center justify-between mb-0">
-                            <div className="mb-0 text-[14px] font-medium">
-                              <Link scroll={false} href="/apps/ecommerce/cart">{idx.title}</Link>
-                              <div className="truncate">
-                                <p className="mb-0 header-cart-text truncate text-[11px] text-textmuted dark:text-textmuted/50">
-                                  {idx.data}
-                                </p>
-                                <h6 className="font-medium mb-0 mt-1">
-                                  <span className="text-success font-normal me-1 text-[11px] inline-block">
-                                    (Qty : {idx.quantity})
-                                  </span>
-                                  {idx.price}
-                                </h6>
-                              </div>
-                            </div>
-                            <div className="text-end">
-                              <Link scroll={false} onClick={(event) => handleDelete(idx.id, event)}
-                                href="#!"
-                                className="header-cart-remove dropdown-item-close"
-                                aria-label="anchor"
-                              >
-                                <i className="ri-close-line"></i>
-                              </Link>
-                              <h6 className="font-medium mb-0 mt-3">
-                                <span className="text-info op-4 font-normal me-1 text-[11px] inline-block">
-                                  Total :
-                                </span>
-                                {idx.discount}
-                              </h6>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    )}
-                  </li>
-                ))}
-
-              </SimpleBar>
-              <div className={`p-4 empty-header-item border-t grid items-center ${cartItemCount === 0 ? 'hidden' : 'block'}`}>
-                <Link scroll={false}
-                  href="/apps/ecommerce/checkout"
-                  className="ti-btn ti-btn-primary btn-wave text-center"
-                >
-                  Proceed to checkout
-                </Link>
-              </div>
-              <div className={`p-[3rem] empty-item ${cartItemCount === 0 ? 'block' : 'hidden'}`}>
-                <div className="text-center">
-                  <span className="avatar avatar-xl avatar-rounded bg-primary/10 !text-primary">
-                    <i className="ri-shopping-cart-2-line fs-2"></i>
-                  </span>
-                  <h6 className="font-medium mb-1 mt-3">
-                    Your Cart is Empty
-                  </h6>
-                  <span className="mb-3 font-normal text-[13px] block">
-                    Add some items to make me happy :)
-                  </span>
-                  <Link scroll={false}
-                    href="/apps/ecommerce/products"
-                    className="ti-btn bg-primarytint1color text-white btn-wave ti-btn-sm m-1"
-                    data-abc="true"
-                  >
-                    continue shopping{" "}
-                    <i className="bi bi-arrow-right ms-1"></i>
-                  </Link>
-                </div>
-              </div>
-              {/* <!-- End::main-header-dropdown --> */}
-            </SpkDropdown>
             {/* <!-- End::header-element --> */}
 
             {/* <!-- Start::header-element --> */}
@@ -1040,7 +870,7 @@ const Header = () => {
 
             {/* <!-- Start::header-element --> */}
             <SpkDropdown Customclass="header-element" Linktag={true} Navigate='#!' Linkclass='header-link hs-dropdown-toggle ti-dropdown-toggle' Id="mainHeaderProfile" Imagetag={true}
-              Imageclass='flex items-center avatar avatar-sm mb-0' image={`${process.env.NODE_ENV === 'production' ? basePath : ''}/assets/images/faces/15.jpg`}
+              Imageclass='flex items-center avatar avatar-sm mb-0' image={settings?.logoKotak || `${process.env.NODE_ENV === 'production' ? basePath : ''}/assets/images/faces/15.jpg`}
               Custommenuclass='main-header-dropdown  pt-0 overflow-hidden header-profile-dropdown ' Menulabel='mainHeaderProfile'>
 
               {/* <!-- End::header-link|dropdown-toggle --> */}
@@ -1143,7 +973,7 @@ const Header = () => {
                   />
                 </svg>
               </Link>
-              
+
               {/* <!-- End::header-link|switcher-icon --> */}
             </li>
             {/* <!-- End::header-element --> */}

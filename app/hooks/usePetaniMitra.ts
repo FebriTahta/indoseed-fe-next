@@ -3,8 +3,13 @@ import { useRouter } from 'next/navigation';
 import { toast } from 'react-toastify';
 import partnerService from '@/app/services/partnerService';
 import greenhouseService from '@/app/services/greenhouseService';
+import commodityService from '@/app/services/commodityService';
+import penanggungJawabService from '@/app/services/penanggungJawabService';
+import kelompokTaniService from '@/app/services/kelompokTaniService';
 import { Partner } from '@/app/types/partner';
 import { Land } from '@/app/types/greenhouse';
+import { PenanggungJawab } from '@/app/types/penanggungJawab';
+import { KelompokTani } from '@/app/types/kelompokTani';
 
 export function usePetaniMitra() {
   const router = useRouter();
@@ -46,12 +51,17 @@ export function usePetaniMitra() {
   const [isSubmitLoading, setIsSubmitLoading] = useState(false);
   const [modalMode, setModalMode] = useState<'add' | 'edit'>('add');
 
+  const [penanggungJawabList, setPenanggungJawabList] = useState<PenanggungJawab[]>([]);
+  const [kelompokTaniList, setKelompokTaniList] = useState<KelompokTani[]>([]);
+
   const [formValues, setFormValues] = useState({
     id: '',
     kodePetani: '',
     namaPetani: '',
+    penanggungJawabId: '',
+    kelompokTaniId: '',
     kelompokTani: '',
-    komoditasUtama: 'Padi',
+    komoditasUtama: '',
     noKtp: '',
     noTelepon: '',
     alamat: '',
@@ -71,14 +81,7 @@ export function usePetaniMitra() {
     { value: 'Non Aktif', label: 'Non Aktif' }
   ];
 
-  const komoditasOptions = [
-    { value: 'Padi', label: 'Padi' },
-    { value: 'Jagung', label: 'Jagung' },
-    { value: 'Kedelai', label: 'Kedelai' },
-    { value: 'Kacang Tanah', label: 'Kacang Tanah' },
-    { value: 'Cabai', label: 'Cabai' },
-    { value: 'Kacang Hijau', label: 'Kacang Hijau' }
-  ];
+  const [komoditasOptions, setKomoditasOptions] = useState<{value: string, label: string}[]>([]);
 
   // Debounce search input
   useEffect(() => {
@@ -143,6 +146,40 @@ export function usePetaniMitra() {
     }
   }, []);
 
+  // API Call: Fetch commodities
+  const fetchCommodities = useCallback(async () => {
+    try {
+      const result = await commodityService.getCommodities({ pageSize: 1000 });
+      if (result.status === 'success') {
+        const options = (result.data || []).map(c => ({
+          value: c.namaKomoditas,
+          label: c.namaKomoditas
+        }));
+        setKomoditasOptions(options);
+      }
+    } catch (err) {
+      console.error('Error fetching commodities:', err);
+    }
+  }, []);
+
+  // API Call: Fetch Penanggung Jawab & Kelompok Tani
+  const fetchPjAndKt = useCallback(async () => {
+    try {
+      const [pjRes, ktRes] = await Promise.all([
+        penanggungJawabService.getPenanggungJawab({ pageSize: 100, status: 'Aktif' }).catch(() => null),
+        kelompokTaniService.getKelompokTani({ pageSize: 500, status: 'Aktif' }).catch(() => null),
+      ]);
+      if (pjRes && pjRes.data) {
+        setPenanggungJawabList(Array.isArray(pjRes.data) ? pjRes.data : []);
+      }
+      if (ktRes && ktRes.data) {
+        setKelompokTaniList(Array.isArray(ktRes.data) ? ktRes.data : []);
+      }
+    } catch (err) {
+      console.error('Error fetching PJ & KT in usePetaniMitra:', err);
+    }
+  }, []);
+
   // Auth Guard & Setup on Load
   useEffect(() => {
     const checkAuthAndInit = async () => {
@@ -172,6 +209,8 @@ export function usePetaniMitra() {
 
         await fetchAllPartnersForStats();
         await fetchGreenhouses();
+        await fetchCommodities();
+        await fetchPjAndKt();
         await fetchPartnersList(1);
         setLoading(false);
       } catch (err: any) {
@@ -181,7 +220,7 @@ export function usePetaniMitra() {
       }
     };
     checkAuthAndInit();
-  }, [router, fetchAllPartnersForStats, fetchGreenhouses, fetchPartnersList]);
+  }, [router, fetchAllPartnersForStats, fetchGreenhouses, fetchCommodities, fetchPjAndKt, fetchPartnersList]);
 
   // Reactive updates on filters change
   useEffect(() => {
@@ -273,8 +312,10 @@ export function usePetaniMitra() {
       id: '',
       kodePetani: formattedCode,
       namaPetani: '',
+      penanggungJawabId: '',
+      kelompokTaniId: '',
       kelompokTani: '',
-      komoditasUtama: 'Padi',
+      komoditasUtama: komoditasOptions.length > 0 ? komoditasOptions[0].value : '',
       noKtp: '',
       noTelepon: '',
       alamat: '',
@@ -297,8 +338,10 @@ export function usePetaniMitra() {
       id: partner.id,
       kodePetani: partner.kodePetani,
       namaPetani: partner.namaPetani,
+      penanggungJawabId: partner.penanggungJawabId || (partner.penanggungJawab?.id || ''),
+      kelompokTaniId: partner.kelompokTaniId || '',
       kelompokTani: partner.kelompokTani || '',
-      komoditasUtama: partner.komoditasUtama || 'Padi',
+      komoditasUtama: partner.komoditasUtama || (komoditasOptions.length > 0 ? komoditasOptions[0].value : ''),
       noKtp: partner.noKtp || '',
       noTelepon: partner.noTelepon || '',
       alamat: partner.alamat || '',
@@ -328,6 +371,8 @@ export function usePetaniMitra() {
       const formData = new FormData();
       formData.append('kodePetani', formValues.kodePetani);
       formData.append('namaPetani', formValues.namaPetani);
+      if (formValues.penanggungJawabId) formData.append('penanggungJawabId', formValues.penanggungJawabId);
+      if (formValues.kelompokTaniId) formData.append('kelompokTaniId', formValues.kelompokTaniId);
       formData.append('kelompokTani', formValues.kelompokTani);
       formData.append('komoditasUtama', formValues.komoditasUtama);
       formData.append('noKtp', formValues.noKtp || '');
@@ -479,6 +524,8 @@ export function usePetaniMitra() {
     kelompokTaniOptions,
     statusOptions,
     komoditasOptions,
+    penanggungJawabList,
+    kelompokTaniList,
     search,
     setSearch,
     filterKelompok,
@@ -515,6 +562,7 @@ export function usePetaniMitra() {
     handleViewDetail,
     handleFileChange,
     handleClearImage,
+    setImageFile,
   };
 }
 export default usePetaniMitra;

@@ -1467,7 +1467,7 @@ div:where(.swal2-container) div:where(.swal2-validation-message){
 [bg-img=bgimg2][data-menu-styles=light] .app-sidebar .main-sidebar-header,
 [bg-img=bgimg1][data-menu-styles=light] .app-sidebar .main-sidebar-header {
   border-block-end: 1px solid rgba(0, 0, 0, 0.04) !important;
-  // @apply border-b-[rgba(0, 0, 0, 0.04)] #{!important}
+  // @apply border-b-[rgba(0,0,0,0.04)] #{!important}
 }
 .custom-range-slide .rangeslider-thumb {
   @apply border-[rgb(var(--default-border)_/_0.1)] bg-[rgb(var(--body-bg))] #{!important};

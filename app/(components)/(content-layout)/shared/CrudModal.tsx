@@ -1,4 +1,5 @@
 import React from 'react';
+import { buttonClass } from './buttonStyles';
 
 interface CrudModalProps {
   isOpen: boolean;
@@ -9,6 +10,7 @@ interface CrudModalProps {
   submitText?: string;
   cancelText?: string;
   isLoading?: boolean;
+  maxWidthClass?: string;
 }
 
 export default function CrudModal({
@@ -19,21 +21,22 @@ export default function CrudModal({
   onSubmit,
   submitText = 'Simpan Data',
   cancelText = 'Batal',
-  isLoading = false
+  isLoading = false,
+  maxWidthClass = 'max-w-lg'
 }: CrudModalProps) {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-[100] overflow-y-auto">
+    <div className="fixed inset-0 z-[9999] overflow-y-auto">
       {/* Backdrop */}
       <div 
-        className="fixed inset-0 bg-black/50 transition-opacity" 
+        className="fixed inset-0 bg-black/50 backdrop-blur-sm transition-opacity" 
         onClick={isLoading ? undefined : onClose}
       ></div>
 
       {/* Center Container */}
       <div className="flex min-h-full items-center justify-center p-4">
-        <div className="relative w-full max-w-lg rounded-lg bg-white shadow-xl overflow-hidden border border-defaultborder animate-slide-down">
+        <div className={`relative w-full ${maxWidthClass} rounded-lg bg-white shadow-xl overflow-hidden border border-defaultborder animate-slide-down`}>
           {/* Header */}
           <div className="flex items-center justify-between p-4 border-b border-defaultborder bg-emerald-600 text-white">
             <h5 className="text-white font-bold mb-0">{title}</h5>
@@ -58,14 +61,14 @@ export default function CrudModal({
               <button
                 type="button"
                 onClick={onClose}
-                className="py-2 px-4 rounded border text-gray-600 hover:bg-gray-100 text-xs font-semibold transition-colors disabled:opacity-50 disabled:pointer-events-none"
+                className={buttonClass('secondary')}
                 disabled={isLoading}
               >
                 {cancelText}
               </button>
               <button
                 type="submit"
-                className="py-2 px-4 rounded text-white bg-emerald-600 hover:bg-emerald-700 text-xs font-semibold transition-colors flex items-center gap-1.5 disabled:opacity-80"
+                className={buttonClass('primary')}
                 disabled={isLoading}
               >
                 {isLoading && (

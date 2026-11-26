@@ -2,10 +2,24 @@ import  { Fragment } from 'react'
 import { MapContainer, TileLayer, CircleMarker , Popup, Polyline, Rectangle, Polygon, Circle }  from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 
-const SpkLeaflet = ({ position,
-  Circlepostion,Zoom ,scrollWheel,Customclass="", Id,  CirclepathOptions , MarkerpathOptions, PolylinepathOptions,
-     Polyllinepositions, PolygonpathOptions, Polygonposition, ReactanglepathOptions, Bounds, MUltipolygonposition, Multipolyineposition
- }) => {
+const SpkLeaflet = ({
+  position,
+  Circlepostion = undefined,
+  Zoom,
+  scrollWheel,
+  Customclass = "",
+  Id,
+  CirclepathOptions = undefined,
+  MarkerpathOptions = undefined,
+  PolylinepathOptions = undefined,
+  Polyllinepositions = undefined,
+  PolygonpathOptions = undefined,
+  Polygonposition = undefined,
+  ReactanglepathOptions = undefined,
+  Bounds = undefined,
+  MUltipolygonposition = undefined,
+  Multipolyineposition = undefined,
+}) => {
   return (
     <Fragment>
          <MapContainer center={position} zoom={Zoom} scrollWheelZoom={scrollWheel} className={Customclass} id={Id} style={{ height: "300px" }}>

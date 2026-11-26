@@ -14,6 +14,8 @@ export interface Land {
   petaniMitra: string;
   commodityId: string | null;
   partnerId: string | null;
+  varietas?: string | null;
+  varietyId?: string | null;
   tglDibuat: string;
   dibuatOleh: string;
   keterangan: string;

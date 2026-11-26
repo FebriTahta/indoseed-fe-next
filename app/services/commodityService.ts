@@ -3,7 +3,7 @@ import { ApiResponse } from '@/app/types/api';
 import { Commodity } from '@/app/types/commodity';
 
 export const commodityService = {
-  getCommodities: async (params: {
+  getCommodities: async (params?: {
     page?: number;
     pageSize?: number;
     search?: string;
@@ -19,12 +19,12 @@ export const commodityService = {
     return response.data;
   },
 
-  createCommodity: async (data: FormData) => {
+  createCommodity: async (data: FormData | Record<string, any>) => {
     const response = await api.post<ApiResponse<Commodity>>('/master/commodity', data);
     return response.data;
   },
 
-  updateCommodity: async (id: string, data: FormData) => {
+  updateCommodity: async (id: string, data: FormData | Record<string, any>) => {
     const response = await api.put<ApiResponse<Commodity>>(`/master/commodity/${id}`, data);
     return response.data;
   },

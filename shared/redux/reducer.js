@@ -12,7 +12,7 @@ let initialState = {
     lang: "en",
     dir: "ltr",
     class: "light",
-    dataMenuStyles: "dark",
+    dataMenuStyles: "light",
     dataNavLayout: "vertical",
     dataHeaderStyles: "light",
     dataVerticalStyle: "overlay",
@@ -37,6 +37,7 @@ let initialState = {
         class: ""
     },
     selectedItem: null,
+    settings: null,
     wishlist: [],
     cart: [],
     count: 0,
@@ -266,6 +267,12 @@ export default function reducer(state = initialState, action) {
             return {
                 ...state,
                 selectedItem: payload
+            };
+
+        case "SET_SETTINGS":
+            return {
+                ...state,
+                settings: payload
             };
 
         case ADD_TO_WISHLIST:

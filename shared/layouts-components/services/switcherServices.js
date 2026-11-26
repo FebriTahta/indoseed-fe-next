@@ -8,7 +8,7 @@ const initialState = {
     lang: "en",
     dir: "ltr",
     class: "light",
-    dataMenuStyles: "dark",
+    dataMenuStyles: "light",
     dataNavLayout: "vertical",
     dataHeaderStyles: "light",
     dataVerticalStyle: "overlay",
